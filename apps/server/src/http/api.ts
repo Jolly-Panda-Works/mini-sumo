@@ -28,7 +28,7 @@ import type { PaymentService } from "../economy/payments.js";
  *   GET  /api/profile            balances, owned items, stats            (Bearer token)
  *   GET  /api/ledger?limit=50    transaction history                     (Bearer token)
  *   POST /api/shop/purchase      { itemId, idempotencyKey }              (Bearer token)
- *   PUT  /api/profile/appearance { hair, hairColor, face, outfit }       (Bearer token)
+ *   PUT  /api/profile/appearance { hair, hairColor, face, outfit, mask }     (Bearer token)
  *   POST /api/profile/sync { name, appearance, xp, matches, wins, updatedAt } (Bearer token)
  *   GET  /api/account/email                 the email saving your progress   (Bearer token)
  *   POST /api/account/email/start { email, lang }   sign in: email a code -> { purpose: link | restore } (Bearer token)

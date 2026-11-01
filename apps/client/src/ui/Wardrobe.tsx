@@ -8,6 +8,7 @@ import {
   HAIR_COLORS,
   rarityOfPrice,
   HAIR_STYLES,
+  MASKS,
   OUTFITS,
   PLAYER_COLORS,
   Phase,
@@ -75,7 +76,7 @@ export function PreviewSumo({
         yaw += r * Math.PI * 2;
         squash = r < 0.15 ? Math.sin((r / 0.15) * Math.PI) * 0.18 : 0;
         arms = wave;
-      } else if (reaction.category === "face") {
+      } else if (reaction.category === "face" || reaction.category === "mask") {
         // A big nod, squashing down and back up.
         headNod = Math.sin(r * Math.PI * 3) * 0.35 * (1 - r);
         squash = wave * 0.16;
@@ -105,6 +106,7 @@ const FOCUS: Record<CosmeticCategory, { position: [number, number, number]; targ
   hair: { position: [0, 0.98, 2.6], target: [0, 0.88, 0] },
   hairColor: { position: [0, 0.98, 2.6], target: [0, 0.88, 0] },
   face: { position: [0, 0.72, 2.35], target: [0, 0.72, 0] },
+  mask: { position: [0, 0.78, 3], target: [0, 0.62, 0] },
   outfit: { position: [0, 0.25, 2.7], target: [0, -0.2, 0] },
   // Not a wardrobe tab (portraits are picked on the profile), but keep the whole wrestler in view.
   avatar: { position: [0, 0.4, 3.4], target: [0, 0, 0] },
@@ -209,6 +211,7 @@ const TABS: readonly Tab[] = [
   { category: "hair", label: "Hair", icon: "tab-hair", options: HAIR_STYLES },
   { category: "hairColor", label: "Colour", icon: "tab-color", options: HAIR_COLORS },
   { category: "face", label: "Face", icon: "tab-face", options: FACES },
+  { category: "mask", label: "Mask", icon: "tab-mask", options: MASKS },
   { category: "outfit", label: "Outfit", icon: "tab-outfit", options: OUTFITS },
 ];
 
@@ -278,9 +281,14 @@ function ItemGrid({ tab, look, color, value, worn, owned, priceOf, onPick, tryin
   );
 }
 
+/** A look with one item put on. Masks cover the face, so putting on a face takes the mask off. */
+function wearing(look: Appearance, category: CosmeticCategory, index: number): Appearance {
+  return { ...look, ...(category === "face" ? { mask: 0 } : {}), [category]: index } as Appearance;
+}
+
 /** The item drawn on your wrestler (rendered once, then cached). */
 function ItemThumb({ category, look, index, color }: { category: CosmeticCategory; look: Appearance; index: number; color: string }) {
-  const appearance = { ...look, [category]: index } as Appearance;
+  const appearance = wearing(look, category, index);
   // Hair colours show on your hairstyle; with none (bald), on a bowl cut so the colour shows.
   if (category === "hairColor" && HAIR_STYLES[appearance.hair]?.id === "bald") {
     appearance.hair = HAIR_STYLES.findIndex((h) => h.id === "bowl");
@@ -303,7 +311,9 @@ export function Wardrobe() {
   const owned = ownedItems();
   const catalogPrices = new Map((economy.catalog?.items ?? []).map((i) => [i.id, i.price] as const));
   const priceOf = (id: string) => catalogPrices.get(id) ?? cosmeticPrice(id);
-  const [tab, setTab] = useState<Tab>(TABS[guided ? 3 : 0]!);
+  // Masks need a server that sells them: an older one has them in neither its catalog nor its state.
+  const visibleTabs = TABS.filter((t) => t.category !== "mask" || !economy.catalog || economy.catalog.items.some((i) => i.category === "mask"));
+  const [tab, setTab] = useState<Tab>(guided ? TABS.find((t) => t.category === "outfit")! : TABS[0]!);
   // Tapping an item you don't own tries it on (in the preview) until you buy it or pick another.
   const [trying, setTrying] = useState<{ category: CosmeticCategory; index: number } | null>(null);
   // Each tab opens at the top of its list (where the item you wear is).
@@ -335,7 +345,7 @@ export function Wardrobe() {
   const pick = (category: CosmeticCategory, index: number) => {
     if (owned.has(cosmeticItemId(category, index))) {
       setTrying(null);
-      wear({ ...appearance, [category]: index } as Appearance);
+      wear(wearing(appearance, category, index));
       react(category);
     } else {
       // Not owned: straight to the buy window; the preview only changes once it's bought.
@@ -391,7 +401,7 @@ export function Wardrobe() {
       await buyItem(id);
       audio.sample("purchase");
       setTrying(null);
-      wear({ ...settingsStore.get().appearance, [category]: index } as Appearance);
+      wear(wearing(settingsStore.get().appearance, category, index));
       react(category);
     } catch (error) {
       void showError("Couldn't buy", error instanceof Error ? error.message : "Try again.");
@@ -405,13 +415,13 @@ export function Wardrobe() {
   }
 
   // What the preview shows: your look, with the item being tried on.
-  const previewLook = trying ? ({ ...appearance, [trying.category]: trying.index } as Appearance) : appearance;
+  const previewLook = trying ? wearing(appearance, trying.category, trying.index) : appearance;
 
   // Desktop: the category tabs hang on the panel's outer left edge; phones: under the preview.
   const sideTabs = !useMediaQuery(PHONE_QUERY);
   const tabs = (
     <div className="tabs" role="tablist" aria-label="Categories">
-              {TABS.map((t) => (
+              {visibleTabs.map((t) => (
                 <button
                   key={t.category}
                   type="button"

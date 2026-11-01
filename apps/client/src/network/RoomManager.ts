@@ -651,7 +651,7 @@ class RoomManager {
         powerUp: p.powerUp ?? "",
         powerUpMs: p.powerUpMs ?? 0,
         isBot: Boolean(p.isBot),
-        appearance: { hair: p.hair ?? 0, hairColor: p.hairColor ?? 0, face: p.face ?? 0, outfit: p.outfit ?? 0, avatar: p.avatar ?? 0 },
+        appearance: { hair: p.hair ?? 0, hairColor: p.hairColor ?? 0, face: p.face ?? 0, outfit: p.outfit ?? 0, mask: p.mask ?? 0, avatar: p.avatar ?? 0 },
         level: p.level ?? 1,
         accountId: p.accountId ?? "",
         isHost: id === state.hostId,
