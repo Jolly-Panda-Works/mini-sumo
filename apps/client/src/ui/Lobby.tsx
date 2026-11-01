@@ -10,6 +10,7 @@ import { friendsAvailable, friendsStore, inviteFriend, loadFriends } from "../ne
 import { useStore } from "../store";
 import { pushToast, setInviteUiOpen, showError, showMessage, showWarning, uiStore } from "../uiStore";
 import { PlayerBadge } from "./PlayerBadge";
+import { settingsStore } from "../settings";
 
 export function Lobby() {
   const game = useStore(gameStore);
@@ -17,8 +18,10 @@ export function Lobby() {
   const { mode } = useStore(networkStore);
   const offline = mode === "offline";
   const economy = useStore(economyStore);
+  const stage = useStore(settingsStore).introStage;
+  const intro = stage === "firstPlaying" || stage === "secondPlaying";
   const arena = economy.catalog?.arenas.find((a) => a.id === game.arenaId);
-  const paid = (arena?.entryFee ?? 0) > 0;
+  const paid = !intro && (arena?.entryFee ?? 0) > 0;
   const you = game.players.find((p) => p.isYou);
   const isHost = Boolean(you?.isHost);
   const connected = game.players.filter((p) => p.connected);
@@ -26,7 +29,7 @@ export function Lobby() {
   const full = connected.length >= game.maxPlayers;
   const searching = !game.isPrivate && game.searchRemainingMs > 0;
   // Online paid arenas start on their own; everything else is started by the host.
-  const autoStart = paid && !offline;
+  const autoStart = intro || paid && !offline;
   // The button unlocks one second after the wait is over (and the bots have arrived).
   const [armed, setArmed] = useState(false);
   useEffect(() => {
@@ -116,7 +119,7 @@ export function Lobby() {
               </li>
             ) : (
               <li key={`empty-${i}`} className="roster__item roster__item--empty">
-                {!offline && friendsAvailable() ? (
+                {intro ? "Your practice partner is joining…" : !offline && friendsAvailable() ? (
                   <button className="roster__invite" onClick={() => setInviteUiOpen(true)} aria-label="Invite a friend">
                     <span className="roster__plus" aria-hidden="true">
                       +

@@ -17,6 +17,7 @@ import {
   levelUpCoins,
   xpForMatch,
   INTRO_OUTFIT_ID,
+  INTRO_PLAYERS,
   type LeaderboardEntry,
   type LeaderboardResponse,
 } from "@mini-sumo/shared";
@@ -304,11 +305,13 @@ export class Economy {
     return !completed.includes(round) && (round === 1 || completed.includes(1));
   }
 
-  recordIntroBout(accountId: string, round: 1 | 2, placement: number, durationMs: number) {
+  recordIntroBout(accountId: string, round: 1 | 2, placement: number, durationMs: number, attemptId: string = randomUUID(), won = placement === 1) {
     return this.tx(() => {
       if (round === 2 && !this.introRounds(accountId).includes(1)) throw new EconomyError("bad_request", "Finish your first guided bout first.");
-      const result = this.recordMatchDetailed({ matchId: `intro:${accountId}:${round}`, durationMs, rewarded: false, arenaId: "rookie", playerCount: 4, participants: [{ accountId, placement, won: placement === 1, completed: true }] });
-      if (round === 1) this.db.prepare("INSERT INTO ownership (account_id, item_id, transaction_id, acquired_at) VALUES (?, ?, NULL, ?) ON CONFLICT DO NOTHING").run(accountId, INTRO_OUTFIT_ID, this.timestamp());
+      const retry = round === 1 && !won;
+      const matchId = retry ? `intro-attempt:${accountId}:${attemptId}` : `intro:${accountId}:${round}`;
+      const result = this.recordMatchDetailed({ matchId, durationMs, rewarded: false, arenaId: "rookie", playerCount: INTRO_PLAYERS[round], participants: [{ accountId, placement, won, completed: true }] });
+      if (round === 1 && won) this.db.prepare("INSERT INTO ownership (account_id, item_id, transaction_id, acquired_at) VALUES (?, ?, NULL, ?) ON CONFLICT DO NOTHING").run(accountId, INTRO_OUTFIT_ID, this.timestamp());
       return result;
     });
   }

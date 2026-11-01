@@ -10,10 +10,10 @@ afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
 
 describe("first guided bout", () => {
   it.each([1, 42, 999])("guarantees first place for an idle or outward-moving learner (seed %i)", (seed) => {
-    const s = new GameSession(createConfig(), 4, { coached: true, botLevel: "easy", seed });
+    const s = new GameSession(createConfig(), 2, { coached: true, botLevel: "easy", seed });
     s.addPlayer("you", "Learner");
-    for (let i = 0; i < 3; i++) s.addBot("you");
-    expect(s.humans).toHaveLength(1); expect(s.bots).toHaveLength(3);
+    s.addBot("you");
+    expect(s.humans).toHaveLength(1); expect(s.bots).toHaveLength(1);
     s.requestStart("you");
     advance(s, s.cfg.entranceMs + s.cfg.countdownMs + 100);
     for (let i = 0; i < 1200 && s.phase === Phase.Playing; i++) {
@@ -64,6 +64,8 @@ describe("one-time guided progression", () => {
     const { LocalConnection } = await import(path);
     const room = new LocalConnection({ introRound: 1, name: "Learner", appearance: {}, isPrivate: false, maxPlayers: 4, botLevel: "hard", arenaId: "rookie" });
     vi.advanceTimersByTime(40000);
+    expect(room.state.players.size).toBe(2);
+    expect(room.state.maxPlayers).toBe(2);
     expect(room.state.phase).toBe("roundOver"); expect(room.state.winnerId).toBe(room.sessionId);
     const economyPath = "../../client/src/network/localEconomy.ts";
     const { localEconomy } = await import(economyPath);
@@ -75,7 +77,36 @@ describe("one-time guided progression", () => {
     vi.resetModules();
     const reloaded = (await import(economyPath)).localEconomy;
     expect(reloaded.profile().introRounds).toEqual([1]);
-    reloaded.finish({ id: "retry", arenaId: "rookie", fee: 0, status: "paid" }, { introRound: 1, matchId: "retry", placement: 1, won: true, completed: true, players: 4, draw: false, durationMs: 30000 });
+    reloaded.finish({ id: "retry", arenaId: "rookie", fee: 0, status: "paid" }, { introRound: 1, matchId: "retry", placement: 1, won: true, completed: true, players: 2, draw: false, durationMs: 30000 });
     expect(reloaded.profile()).toEqual(first);
+  });
+  it("a lost first attempt gives no XP or gift and remains retryable", async () => {
+    const e = new Economy(":memory:", { economy: true, shop: true, premiumCurrency: false, realMoneyPurchases: false }, silentEventSink);
+    const { accountId } = e.createGuest();
+    e.recordIntroBout(accountId, 1, 2, 30000, "lost-attempt", false);
+    e.recordIntroBout(accountId, 1, 2, 30000, "lost-attempt", false);
+    expect(e.profile(accountId).stats.matches).toBe(1);
+    expect(e.profile(accountId).level.xp).toBe(0);
+    expect(e.profile(accountId).owned).not.toContain(INTRO_OUTFIT_ID);
+    expect(e.canStartIntro(accountId, 1)).toBe(true);
+    expect(e.canStartIntro(accountId, 2)).toBe(false);
+    e.recordIntroBout(accountId, 1, 1, 30000, "won-attempt", true);
+    expect(e.profile(accountId).stats.matches).toBe(2);
+    expect(e.profile(accountId).owned).toContain(INTRO_OUTFIT_ID);
+    e.close();
+
+    vi.resetModules();
+    vi.stubGlobal("window", { localStorage: { getItem: () => null, setItem: () => undefined } });
+    const path = "../../client/src/network/localEconomy.ts";
+    const { localEconomy } = await import(path);
+    localEconomy.finish({ id: "lost", arenaId: "rookie", fee: 0, status: "paid" }, { introRound: 1, matchId: "lost", placement: 2, won: false, completed: true, players: 2, draw: false, durationMs: 30000 });
+    expect(localEconomy.profile().introRounds).toEqual([]);
+    expect(localEconomy.profile().level.xp).toBe(0);
+    expect(localEconomy.profile().owned).not.toContain(INTRO_OUTFIT_ID);
+    const progressPath = "../../client/src/ui/introProgress.ts";
+    const { afterIntroResult } = await import(progressPath);
+    expect(afterIntroResult("firstPlaying", false)).toBe("firstRetry");
+    expect(afterIntroResult("firstPlaying", true)).toBe("firstWin");
+    expect(afterIntroResult("secondPlaying", false)).toBe("profile");
   });
 });

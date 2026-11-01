@@ -19,7 +19,7 @@ const STEPS = [
   { target: "shop", title: "Visit the shop", text: "Use Sumo Coins to unlock new looks and make your wrestler your own. You're ready — enjoy the ring!" },
 ] as const;
 
-/** First-run journey: home tour, two isolated bot bouts, outfit and real profile. */
+/** First-run journey: bot bouts first; the home tour follows the real profile. */
 export function MenuOnboarding() {
   const settings = useStore(settingsStore);
   const economy = useStore(economyStore);
@@ -50,6 +50,7 @@ export function MenuOnboarding() {
   // Resume safely after a refresh or a connection loss; account history prevents duplicate gifts/XP.
   useEffect(() => {
     if (inRoom || busy || session.status === "connecting" || economy.status !== "ready" || settings.menuTourCompleted) return;
+    if (stage === "menu" && !economy.profile?.introRounds?.includes(2)) settingsStore.update({ introStage: "first" });
     if (stage === "firstPlaying" || stage === "secondPlaying") {
       const first = stage === "firstPlaying";
       const completed = economy.profile?.introRounds?.includes(first ? 1 : 2);
@@ -80,8 +81,11 @@ export function MenuOnboarding() {
   if (stage === "first" || stage === "second") return <Dialog title={stage === "first" ? "Choose your first arena!" : "One more bout!"} className="intro-lesson" variant="sub" hideClose dismissible={false} onClose={() => undefined}
     footer={<GreenArtButton label={busy ? "STARTING…" : "ENTER ROOKIE"} disabled={busy} autoFocus onClick={() => void start(stage === "first" ? 1 : 2)} />}>
     <PandaCoach pose={stage === "first" ? "ready" : "kick"} className="intro-panda" />
-    <p>{stage === "first" ? "Arenas have entry fees and level requirements. Start with a free guided bout in Rookie, the first arena, against three easy bots. Your coach has your back!" : "Try your Sakura outfit in another free Rookie bout against easy bots. Use everything you've learned!"}</p>
+    <p>{stage === "first" ? "Let's play! Your first Rookie bout is a free one-on-one against a gentle bot. Your coach has your back — push your partner out!" : "Try your Sakura outfit in another free Rookie bout against easy bots. Use everything you've learned!"}</p>
     {error && <p role="alert">{error}</p>}
+  </Dialog>;
+  if (stage === "firstRetry") return <Dialog title="You've got this!" className="intro-lesson" variant="sub" hideClose dismissible={false} onClose={() => undefined} footer={<GreenArtButton label="TRY AGAIN" disabled={busy} autoFocus onClick={() => void start(1)} />}>
+    <PandaCoach pose="reach" className="intro-panda" /><p>That's okay! Every wrestler needs practice. Take a breath and try again — your coach is cheering for you!</p>{error && <p role="alert">{error}</p>}
   </Dialog>;
   if (stage === "firstWin") return <Dialog title="Your first victory!" className="intro-lesson" variant="sub" hideClose dismissible={false} onClose={() => undefined} footer={<GreenArtButton label="MY GIFT!" autoFocus onClick={() => nextStage("gift")} />}>
     <PandaCoach pose="celebrate" className="intro-panda" /><p>First place! Fantastic work in the ring. Your first win and XP are saved. Let's celebrate with a new outfit for your wrestler!</p>
@@ -97,15 +101,15 @@ export function MenuOnboarding() {
     <PandaCoach pose="bow" className="intro-panda" /><p>Training complete! Watch your progress, keep practising and challenge new rivals. Good luck in every battle — I'll be cheering for you!</p>
   </Dialog>;
   if (!active) return null;
-  const next = () => step === STEPS.length - 1 ? nextStage("first") : settingsStore.update({ menuTourIndex: step + 1 });
+  const next = () => step === STEPS.length - 1 ? nextStage("goodbye") : settingsStore.update({ menuTourIndex: step + 1 });
   return createPortal(<div className="menu-tour" role="dialog" aria-modal="true" aria-labelledby="menu-tour-title">
     <div className="menu-tour__blocker" />
     {rect ? <div className="menu-tour__spotlight" style={{ left: rect.x, top: rect.y, width: rect.width, height: rect.height }} /> : <div className="menu-tour__shade" />}
     <section className={`menu-tour__card${rect?.cardAtTop ? " menu-tour__card--top" : ""}`}>
       <PandaCoach pose={(["reach", "kick", "present"] as const)[step]!} />
       <div><span className="tutorial__step">YOUR HOME · {step + 1} / {STEPS.length}</span><h2 id="menu-tour-title">{STEPS[step]!.title}</h2><p>{STEPS[step]!.text}</p></div>
-      <GreenArtButton autoFocus label={step === STEPS.length - 1 ? "FIRST BOUT!" : "NEXT"} onClick={next} />
-      <button className="art menu-tour__skip" onClick={() => nextStage("first")} aria-label="Skip menu tips"><img src={`${import.meta.env.BASE_URL}ui/label-empty.webp`} alt="" /><span>SKIP TIPS</span></button>
+      <GreenArtButton autoFocus label={step === STEPS.length - 1 ? "FINISH" : "NEXT"} onClick={next} />
+      <button className="art menu-tour__skip" onClick={() => nextStage("goodbye")} aria-label="Skip menu tips"><img src={`${import.meta.env.BASE_URL}ui/label-empty.webp`} alt="" /><span>SKIP TIPS</span></button>
     </section>
   </div>, popupLayer());
 }

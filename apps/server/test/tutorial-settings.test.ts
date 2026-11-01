@@ -13,7 +13,7 @@ afterEach(() => vi.unstubAllGlobals());
 describe("first-time dash choice", () => {
   it("asks a new player once, then preserves the choice during replay and reload", async () => {
     const { settingsStore, storage } = await loadSettings(null);
-    expect(settingsStore.get().introStage).toBe("menu");
+    expect(settingsStore.get().introStage).toBe("first");
     expect(settingsStore.get().dashModeChosen).toBe(false);
     expect(settingsStore.get().starterRewardPresented).toBe(false);
     expect(settingsStore.get().menuTourCompleted).toBe(false);

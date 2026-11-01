@@ -219,7 +219,7 @@ export function Tutorial() {
         {done && step < 2 ? <button className="tutorial__art-button tutorial__next" aria-label="Great! Continue" onClick={() => changeStep(step + 1)}><img src={`${import.meta.env.BASE_URL}ui/btn-start-blank.webp`} alt="" draggable={false} /><span>CONTINUE</span></button> : !done && <span>Try it in the ring</span>}
         {!done && <button className="tutorial__art-button tutorial__skip" aria-label="Skip practice" onClick={skipPractice}><img src={`${import.meta.env.BASE_URL}ui/label-empty.webp`} alt="" draggable={false} /><span>SKIP PRACTICE</span></button>}
       </div>
-      {touch && !done && <div className="tutorial__stick" style={{ backgroundImage: `url(${import.meta.env.BASE_URL}hud/joy-base.webp)` }} role="application" aria-label="Practice joystick: drag to move"
+      {touch && !done && <div className={`tutorial__stick${step === 0 && knob.x === 0 && knob.y === 0 ? " tutorial__stick--hint" : ""}`} style={{ backgroundImage: `url(${import.meta.env.BASE_URL}hud/joy-base.webp)` }} role="application" aria-label="Practice joystick: drag to move"
         onPointerDown={(e) => { if (stick.current !== null) return; stick.current = e.pointerId; e.currentTarget.setPointerCapture(e.pointerId); moveStick(e); }}
         onPointerMove={(e) => { if (e.pointerId === stick.current) moveStick(e); }}
         onPointerUp={(e) => { if (e.pointerId !== stick.current) return; stick.current = null; p.touch = { x: 0, y: 0 }; setKnob({ x: 0, y: 0 }); }}
@@ -227,7 +227,7 @@ export function Tutorial() {
         onPointerCancel={() => { stick.current = null; p.touch = { x: 0, y: 0 }; setKnob({ x: 0, y: 0 }); }}>
         <img src={`${import.meta.env.BASE_URL}hud/joy-knob.webp`} style={{ transform: `translate(${knob.x}px, ${knob.y}px)` }} alt="" draggable={false} />
       </div>}
-      {step > 0 && !done && <button className="tutorial__dash" aria-label="Press to dash"
+      {step > 0 && !done && <button className={`tutorial__dash${cooldown <= 0 ? " tutorial__dash--hint" : ""}`} aria-label="Press to dash"
         onPointerDown={(e) => { if (dashPointer.current !== null) return; dashPointer.current = e.pointerId; e.currentTarget.setPointerCapture(e.pointerId); begin(); }}
         onPointerUp={(e) => { if (e.pointerId !== dashPointer.current) return; dashPointer.current = null; }}
         onPointerCancel={() => { dashPointer.current = null; }}

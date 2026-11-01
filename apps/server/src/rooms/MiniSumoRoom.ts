@@ -1,6 +1,7 @@
 import { Room, ServerError, type Client } from "colyseus";
 import {
   ClientMessage,
+  INTRO_PLAYERS,
   Phase,
   ServerMessage,
   sanitizeBotLevel,
@@ -121,7 +122,7 @@ export class MiniSumoRoom extends Room<MiniSumoState> {
     if (arena && arena.entryFee > 0 && !getEconomy()) throw new ServerError(4004, "Paid arenas are not available.");
     this.arena = arena;
     this.arenaId = isPrivate ? PRIVATE_ARENA_ID : arena!.id;
-    const maxPlayers = arena ? arena.maxPlayers : sanitizeMaxPlayers(options.maxPlayers);
+    const maxPlayers = this.introRound ? INTRO_PLAYERS[this.introRound] : arena ? arena.maxPlayers : sanitizeMaxPlayers(options.maxPlayers);
 
     this.state = new MiniSumoState();
     this.maxClients = this.introRound ? 1 : maxPlayers;
@@ -175,7 +176,7 @@ export class MiniSumoRoom extends Room<MiniSumoState> {
 
     this.setSimulationInterval((deltaTime) => {
       if (!(this.introRound && this.session.phase === Phase.RoundOver)) this.session.update(deltaTime);
-      if (this.introRound && this.session.phase === Phase.Lobby && this.session.players.size === 4) this.session.requestStart(this.session.hostId);
+      if (this.introRound && this.session.phase === Phase.Lobby && this.session.players.size === this.session.maxPlayers) this.session.requestStart(this.session.hostId);
       this.flushEvents();
       this.syncState();
     }, 1000 / DEFAULT_CONFIG.tickRate);
@@ -353,7 +354,7 @@ export class MiniSumoRoom extends Room<MiniSumoState> {
     // Training is practice: bouts count for stats and XP, but pay no coins.
     const introPlayer = this.introRound ? participants.find((p) => p.completed) : undefined;
     const { rewards, progress } = this.introRound && introPlayer
-      ? economy.recordIntroBout(introPlayer.accountId, this.introRound, introPlayer.placement, durationMs)
+      ? economy.recordIntroBout(introPlayer.accountId, this.introRound, introPlayer.placement, durationMs, matchId, introPlayer.won)
       : economy.recordMatchDetailed({
       matchId,
       durationMs,

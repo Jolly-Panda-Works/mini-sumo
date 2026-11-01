@@ -1,6 +1,7 @@
 import {
   ARENA_RADIUS,
   QUICK_MATCH_WAIT_MS,
+  INTRO_PLAYERS,
   ClientMessage,
   ServerMessage,
   sanitizeBotLevel,
@@ -74,7 +75,7 @@ export class LocalConnection implements GameConnection {
     this.arenaId = options.isPrivate ? "private" : (options.arenaId ?? "training");
     // Every local arena bout (free or paid) goes through the local economy, except private rooms.
     this.entry = options.entry ?? (options.isPrivate ? null : { id: randomCode(), arenaId: this.arenaId, fee: 0, status: "paid" });
-    this.session = new GameSession(createArenaConfig(this.arenaId, { quickMatchWaitMs: OFFLINE_SEARCH_MS }), options.maxPlayers, {
+    this.session = new GameSession(createArenaConfig(this.arenaId, { quickMatchWaitMs: OFFLINE_SEARCH_MS }), options.introRound ? INTRO_PLAYERS[options.introRound] : options.maxPlayers, {
       quickMatch: !options.isPrivate,
       botLevel: options.introRound ? "easy" : sanitizeBotLevel(options.botLevel),
       coached: options.introRound === 1,
@@ -202,7 +203,7 @@ export class LocalConnection implements GameConnection {
   private tick(): void {
     const now = performance.now();
     if (!(this.introRound && this.session.phase === "roundOver")) this.session.update(now - this.lastTick);
-    if (this.introRound && this.session.phase === "lobby" && this.session.players.size === 4) this.session.requestStart(this.sessionId);
+    if (this.introRound && this.session.phase === "lobby" && this.session.players.size === this.session.maxPlayers) this.session.requestStart(this.sessionId);
     this.lastTick = now;
     this.flush();
   }

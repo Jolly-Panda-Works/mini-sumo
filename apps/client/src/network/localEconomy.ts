@@ -347,8 +347,8 @@ export const localEconomy = {
     if (result.introRound) {
       if (state.introRounds?.includes(result.introRound)) return base;
       if (result.introRound === 2 && !state.introRounds?.includes(1)) return base;
-      state.introRounds = [...(state.introRounds ?? []), result.introRound];
-      if (result.introRound === 1 && !state.owned.includes(INTRO_OUTFIT_ID)) state.owned.push(INTRO_OUTFIT_ID);
+      if (result.introRound !== 1 || result.won) state.introRounds = [...(state.introRounds ?? []), result.introRound];
+      if (result.introRound === 1 && result.won && !state.owned.includes(INTRO_OUTFIT_ID)) state.owned.push(INTRO_OUTFIT_ID);
     }
     entry.status = "done";
     const levelBefore = levelFromXp(state.xp).level;

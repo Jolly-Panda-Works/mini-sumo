@@ -6,6 +6,7 @@ import { useStore } from "../store";
 import { economyStore } from "../network/economyClient";
 import { settingsStore } from "../settings";
 import { GreenArtButton } from "./ArtButtons";
+import { afterIntroResult } from "./introProgress";
 import { audio } from "../audio/AudioManager";
 import { avatarSrc } from "./Avatar";
 import { KeyCap, useHotkey, useKeyboardUi } from "./Hotkey";
@@ -14,7 +15,7 @@ const BASE = import.meta.env.BASE_URL;
 
 /**
  * Results in the scoreboard frame (public/ui/results-board.webp): the headline on the top
- * plaque, the four places, the coins won in the prize panel and the buttons in the dark
+ * plaque, the actual players, the coins won in the prize panel and the buttons in the dark
  * area at the bottom. Positions are measured from the art.
  */
 export function Results() {
@@ -28,7 +29,7 @@ export function Results() {
   const intro = settings.introStage === "firstPlaying" || settings.introStage === "secondPlaying";
   const continueIntro = () => {
     if (!result) return;
-    settingsStore.update({ introStage: settings.introStage === "firstPlaying" ? "firstWin" : "profile" });
+    settingsStore.update({ introStage: afterIntroResult(settings.introStage, game.winnerId === you?.id && !game.isDraw) });
     void roomManager.leave();
   };
   const paid = !intro && (arena?.entryFee ?? 0) > 0;
@@ -59,26 +60,19 @@ export function Results() {
 
   return (
     <div className="overlay">
-      <section className="results-board" aria-label="Round results" aria-live="polite">
+      <section className="results-board" style={standings.length === 2 || standings.length === 3 ? { backgroundImage: `url(${BASE}ui/results-board-${standings.length}.webp)` } : undefined} aria-label="Round results" aria-live="polite">
         <h2 className="results-board__title">{headline}</h2>
 
-        {[0, 1, 2, 3].map((i) => {
-          const p = standings[i];
-          return (
-            <div key={i} className={`results-board__row${p?.isYou ? " results-board__row--you" : ""}`} style={{ top: `${ROWS[i]}%` }}>
-              {p && (
-                <>
-                  <img className="results-board__avatar" src={avatarSrc(p.appearance.avatar)} alt="" width={160} height={160} />
-                  <span className="results-board__name">{p.isYou ? `${p.name} (you)` : p.name}</span>
-                  {!p.isYou && p.accountId && <AddFriend accountId={p.accountId} name={p.name} />}
-                  <span className="results-board__note">
-                    {!p.connected || p.elimReason === "left" ? "Left" : p.alive ? "In the ring" : "Out"}
-                  </span>
-                </>
-              )}
-            </div>
-          );
-        })}
+        {standings.map((p, i) => (
+          <div key={p.id} className={`results-board__row${p.isYou ? " results-board__row--you" : ""}`} style={{ top: `${ROWS[i]}%` }}>
+            <img className="results-board__avatar" src={avatarSrc(p.appearance.avatar)} alt="" width={160} height={160} />
+            <span className="results-board__name">{p.isYou ? `${p.name} (you)` : p.name}</span>
+            {!p.isYou && p.accountId && <AddFriend accountId={p.accountId} name={p.name} />}
+            <span className="results-board__note">
+              {!p.connected || p.elimReason === "left" ? "Left" : p.alive ? "In the ring" : "Out"}
+            </span>
+          </div>
+        ))}
 
         <div className="results-board__rewards">
           <div className="reward-frame reward-frame--coin" aria-label={won > 0 ? `You won ${won} Sumo Coins` : "No coins this time"}>

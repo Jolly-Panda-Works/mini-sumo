@@ -56,6 +56,7 @@ export function allCosmeticItemIds(): { id: string; category: CosmeticCategory; 
  * default look is always valid. Everything else is bought once and owned for good.
  */
 export const INTRO_OUTFIT_ID = "outfit.sakura";
+export const INTRO_PLAYERS = { 1: 2, 2: 4 } as const;
 
 export const STARTER_ITEMS: readonly string[] = [
   "hair.topknot",

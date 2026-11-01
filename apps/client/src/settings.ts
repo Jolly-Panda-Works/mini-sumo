@@ -1,7 +1,7 @@
 import { DEFAULT_APPEARANCE, sanitizeAppearance, sanitizeBotLevel, type Appearance, type BotLevel } from "@mini-sumo/shared";
 import { createStore } from "./store";
 
-export const INTRO_STAGES = ["menu", "first", "firstPlaying", "firstWin", "gift", "customize", "second", "secondPlaying", "profile", "goodbye", "done"] as const;
+export const INTRO_STAGES = ["menu", "first", "firstPlaying", "firstRetry", "firstWin", "gift", "customize", "second", "secondPlaying", "profile", "goodbye", "done"] as const;
 export type IntroStage = typeof INTRO_STAGES[number];
 
 export type TouchMode = "auto" | "on" | "off";
@@ -37,7 +37,7 @@ export interface Settings {
 const KEY = "mini-sumo:settings";
 
 function load(): Settings {
-  const defaults: Settings = { musicVolume: 0.5, sfxVolume: 0.8, touchControls: "auto", joystick: "floating", vibration: true, name: "", onboarded: false, tutorialCompleted: false, dashMode: "manual", dashModeChosen: false, starterRewardPresented: false, menuTourCompleted: false, introStage: "menu", menuTourIndex: 0, botLevel: "normal", appearance: { ...DEFAULT_APPEARANCE } };
+  const defaults: Settings = { musicVolume: 0.5, sfxVolume: 0.8, touchControls: "auto", joystick: "floating", vibration: true, name: "", onboarded: false, tutorialCompleted: false, dashMode: "manual", dashModeChosen: false, starterRewardPresented: false, menuTourCompleted: false, introStage: "first", menuTourIndex: 0, botLevel: "normal", appearance: { ...DEFAULT_APPEARANCE } };
   try {
     const raw = window.localStorage.getItem(KEY);
     if (!raw) return defaults;
@@ -58,7 +58,7 @@ function load(): Settings {
       dashModeChosen: typeof parsed.dashModeChosen === "boolean" ? parsed.dashModeChosen : parsed.tutorialCompleted === true,
       starterRewardPresented: typeof parsed.starterRewardPresented === "boolean" ? parsed.starterRewardPresented : parsed.tutorialCompleted === true,
       menuTourCompleted: typeof parsed.menuTourCompleted === "boolean" ? parsed.menuTourCompleted : parsed.tutorialCompleted === true,
-      introStage: INTRO_STAGES.includes(parsed.introStage as IntroStage) ? parsed.introStage as IntroStage : (parsed.menuTourCompleted ?? parsed.tutorialCompleted) ? "done" : "menu",
+      introStage: INTRO_STAGES.includes(parsed.introStage as IntroStage) ? parsed.introStage as IntroStage : (parsed.menuTourCompleted ?? parsed.tutorialCompleted) ? "done" : "first",
       menuTourIndex: Number.isInteger(parsed.menuTourIndex) ? Math.max(0, Math.min(2, parsed.menuTourIndex!)) : 0,
       appearance: sanitizeAppearance(parsed.appearance),
       botLevel: sanitizeBotLevel(parsed.botLevel),

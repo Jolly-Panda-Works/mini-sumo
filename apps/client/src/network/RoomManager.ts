@@ -1,6 +1,7 @@
 import { Client } from "colyseus.js";
 import {
   COUNTDOWN_MS,
+  INTRO_PLAYERS,
   ClientMessage,
   PLAYER_COLORS,
   Phase,
@@ -273,7 +274,7 @@ class RoomManager {
   async enterIntroArena(introRound: 1 | 2): Promise<boolean> {
     await this.modeReady;
     const { name, appearance } = settingsStore.get();
-    const local: LocalRoomOptions = { name, appearance, isPrivate: false, maxPlayers: 4, botLevel: "easy", arenaId: "rookie", introRound, level: myLevel() };
+    const local: LocalRoomOptions = { name, appearance, isPrivate: false, maxPlayers: INTRO_PLAYERS[introRound], botLevel: "easy", arenaId: "rookie", introRound, level: myLevel() };
     return this.connect(async () => wrapColyseusRoom(await this.client.create(ROOM_NAME, { ...local, authToken: await this.authToken() })), local);
   }
 
