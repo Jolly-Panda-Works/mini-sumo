@@ -141,9 +141,9 @@ export class MiniSumoRoom extends Room<MiniSumoState> {
     this.onMessage(ClientMessage.Input, (client, message: unknown) => {
       this.session.handleInput(client.sessionId, message);
     });
-    this.onMessage(ClientMessage.Dash, (client) => {
+    this.onMessage(ClientMessage.Dash, (client, direction: unknown) => {
       // Rejected dashes (cooldown, wrong phase) are silently ignored; the HUD shows cooldown.
-      this.session.handleDash(client.sessionId);
+      this.session.handleDash(client.sessionId, direction);
       this.flushEvents();
     });
     this.onMessage(ClientMessage.StartMatch, (client) => {

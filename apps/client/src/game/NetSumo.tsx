@@ -173,7 +173,13 @@ export const NetSumo = memo(function NetSumo({ id, name, colorIndex, isYou, hair
           b.inputX = roomManager.localInput.x;
           b.inputY = roomManager.localInput.y;
           // Only a dash the server will accept (ready, not already dashing): no snapping back.
-          if (roomManager.takeDashPress() && !p.dashing && p.dashCooldownMs <= 0 && tryDash(b, nowMs, sim, 0)) lastDashAt.set(id, nowMs);
+          const dash = roomManager.takeDashPress();
+          if (dash && !p.dashing && p.dashCooldownMs <= 0) {
+            const { inputX, inputY } = b;
+            b.inputX = dash.x; b.inputY = dash.y;
+            if (tryDash(b, nowMs, sim, 0)) lastDashAt.set(id, nowMs);
+            b.inputX = inputX; b.inputY = inputY;
+          }
         }
         stepMovement(b, dt, sim, nowMs);
         const ex = p.x - b.x;

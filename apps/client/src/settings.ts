@@ -17,6 +17,8 @@ export interface Settings {
   name: string;
   /** The first-run name prompt has been completed. */
   onboarded: boolean;
+  tutorialCompleted: boolean;
+  dashMode: "manual" | "auto";
   /** Bot difficulty for training and private rooms. */
   botLevel: BotLevel;
   /** Hair, face and outfit; sent when joining and when changed in the lobby. */
@@ -26,7 +28,7 @@ export interface Settings {
 const KEY = "mini-sumo:settings";
 
 function load(): Settings {
-  const defaults: Settings = { musicVolume: 0.5, sfxVolume: 0.8, touchControls: "auto", joystick: "floating", vibration: true, name: "", onboarded: false, botLevel: "normal", appearance: { ...DEFAULT_APPEARANCE } };
+  const defaults: Settings = { musicVolume: 0.5, sfxVolume: 0.8, touchControls: "auto", joystick: "floating", vibration: true, name: "", onboarded: false, tutorialCompleted: false, dashMode: "manual", botLevel: "normal", appearance: { ...DEFAULT_APPEARANCE } };
   try {
     const raw = window.localStorage.getItem(KEY);
     if (!raw) return defaults;
@@ -42,6 +44,8 @@ function load(): Settings {
       vibration: typeof parsed.vibration === "boolean" ? parsed.vibration : true,
       name: typeof parsed.name === "string" ? parsed.name.slice(0, 32) : "",
       onboarded: typeof parsed.onboarded === "boolean" ? parsed.onboarded : Boolean(parsed.name?.trim()),
+      tutorialCompleted: parsed.tutorialCompleted === true,
+      dashMode: parsed.dashMode === "auto" ? "auto" : "manual",
       appearance: sanitizeAppearance(parsed.appearance),
       botLevel: sanitizeBotLevel(parsed.botLevel),
     };

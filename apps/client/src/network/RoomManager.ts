@@ -331,22 +331,22 @@ class RoomManager {
 
   /** Your latest stick input, for moving your own wrestler at once (prediction). */
   localInput = { x: 0, y: 0 };
-  private dashPressed = false;
+  private dashPressed: { x: number; y: number } | null = null;
 
   sendInput(x: number, y: number): void {
     this.localInput = { x, y };
     this._room?.send(ClientMessage.Input, { x, y });
   }
 
-  dash(): void {
-    this.dashPressed = true;
-    this._room?.send(ClientMessage.Dash);
+  dash(direction: { x: number; y: number }): void {
+    this.dashPressed = direction;
+    this._room?.send(ClientMessage.Dash, direction);
   }
 
   /** A dash press not yet shown on your own wrestler (taken once). */
-  takeDashPress(): boolean {
+  takeDashPress(): { x: number; y: number } | null {
     const pressed = this.dashPressed;
-    this.dashPressed = false;
+    this.dashPressed = null;
     return pressed;
   }
 
@@ -608,6 +608,8 @@ class RoomManager {
   }
 
   private detach(): void {
+    this.dashPressed = null;
+    this.localInput = { x: 0, y: 0 };
     window.clearInterval(this.watchdog);
     this._room?.removeAllListeners();
     this._room = null;

@@ -10,6 +10,7 @@ import { NetSumo } from "./NetSumo";
 import { ItemFlag } from "./PowerUpFlags";
 import { themeFor } from "./arenaThemes";
 import { uiStore } from "../uiStore";
+import { DashGuide } from "./DashGuide";
 
 export function GameCanvas() {
   const session = useStore(sessionStore);
@@ -62,6 +63,7 @@ export function GameCanvas() {
           ))
         : <MenuSumos />}
       <ItemFlag />
+      {inRoom && <DashGuide />}
       <Effects />
       {inRoom && <Callouts />}
       <CameraRig orbit={!inRoom} />

@@ -94,6 +94,9 @@ export function SettingsPanel() {
 
         <section className="settings__section" aria-label="Controls">
           <h3 className="settings__heading">Controls</h3>
+          <Segmented label="Dash" name="dash-mode" value={settings.dashMode} options={[["auto", "Automatic"], ["manual", "Manual"]]} onChange={(dashMode) => settingsStore.update({ dashMode })} />
+          <p className="hint">{settings.dashMode === "auto" ? "Dashes toward the nearest opponent in range when ready. The drum shows recharge only." : "Hold the dash button or Space to preview your path. Release to dash."}</p>
+          {!inRoom && <button className="tutorial__replay" onClick={() => { close(); settingsStore.update({ tutorialCompleted: false }); }}>Learn to play / Replay tutorial</button>}
           <div className="field">
             <span className="field__label">Joystick</span>
             <div className="art-choice" role="radiogroup" aria-label="Joystick">

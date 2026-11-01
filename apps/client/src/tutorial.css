@@ -1,0 +1,31 @@
+.tutorial { position: fixed; inset: 0; z-index: 12; pointer-events: auto; color: #472b19; font-family: "Baloo 2", sans-serif; background: #223952; }
+.tutorial__arena { position: absolute; inset: 0; }
+.tutorial__card { position: absolute; top: max(12px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); width: min(92vw, 650px); padding: 14px 18px; box-sizing: border-box; display: flex; gap: 12px; align-items: center; border: 5px solid #8b4e28; border-radius: 22px; background: #fff0cd; box-shadow: 0 5px 0 #402816, inset 0 0 0 3px #e8b750; }
+.tutorial__coach { width: 85px; height: 105px; object-fit: contain; flex-shrink: 0; }
+.tutorial__copy h2 { font-size: clamp(20px, 4vw, 29px); line-height: 1.1; margin: 4px 0; }
+.tutorial__copy p { font-size: clamp(14px, 2.8vw, 18px); line-height: 1.3; margin: 5px 0; }
+.tutorial__step { font-weight: 800; font-size: 12px; letter-spacing: 1px; color: #a34922; }
+.tutorial__actions { position: absolute; bottom: max(22px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); display: grid; justify-items: center; gap: 6px; text-align: center; color: #fff7df; text-shadow: 0 2px 3px #332111; }
+.tutorial button { font: inherit; cursor: pointer; touch-action: none; }
+.tutorial__next, .tutorial__replay { border: 3px solid #583016; border-radius: 14px; background: #397e39; color: #fff8d5; font-weight: 800; padding: 10px 20px; box-shadow: 0 3px 0 #412613; }
+.tutorial__next { white-space: nowrap; }
+.tutorial__skip { border: 0; background: #402b24bb; color: #fff8df; border-radius: 8px; padding: 4px 12px; }
+.tutorial__stick { position: absolute; bottom: max(80px, env(safe-area-inset-bottom)); left: 18px; width: 118px; height: 118px; display: grid; place-items: center; background-position: center; background-size: contain; background-repeat: no-repeat; touch-action: none; }
+.tutorial__stick img { width: 62px; pointer-events: none; user-select: none; }
+.tutorial__dash { position: absolute; bottom: max(88px, env(safe-area-inset-bottom)); right: 18px; width: 110px; height: 110px; border: 0; background: none; padding: 0; color: #fff4c9; text-shadow: 0 2px 2px #312419; }
+.tutorial__dash img { display: block; width: 100%; pointer-events: none; }
+.tutorial__dash span { font-size: 11px; font-weight: 800; }
+.tutorial__card--choice { top: 50%; transform: translate(-50%, -50%); flex-wrap: wrap; max-height: 90dvh; overflow-y: auto; }
+.tutorial__card--choice .tutorial__copy { flex: 1; min-width: 150px; }
+.tutorial__choices { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; }
+.tutorial__choices button { display: grid; gap: 8px; padding: 16px 12px; border: 3px solid #96532a; border-radius: 14px; background: #ffdda0; color: #472b19; text-align: left; }
+.tutorial__choices strong { font-size: 23px; }
+.tutorial__choices span { font-size: 16px; line-height: 1.3; }
+.tutorial button:focus-visible { outline: 4px solid #ffc52f; outline-offset: 4px; }
+.dash-btn__mode { position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); background: #3a251e; color: #ffe4a1; border-radius: 8px; padding: 2px 10px; font-weight: 800; font-size: 12px; }
+.dlg-settings .settings__grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); }
+.dlg-settings .settings__section { min-width: 0; }
+.dialog .segmented__opt--on { background: #397e39; color: #fff8d5; }
+.dialog .segmented__opt { min-width: 0; overflow-wrap: anywhere; }
+@media (max-height: 500px) { .tutorial__card { left: 12px; top: 8px; transform: none; width: min(52vw, 480px); padding: 8px 12px; } .tutorial__coach { width: 55px; height: 65px; } .tutorial__copy p { font-size: 13px; } .tutorial__copy h2 { font-size: 20px; } .tutorial__card--choice { width: min(90vw, 650px); left: 50%; top: 50%; transform: translate(-50%, -50%); } }
+@media (max-width: 360px) { .tutorial__choices { grid-template-columns: 1fr; } .tutorial__coach { width: 60px; height: 80px; } }

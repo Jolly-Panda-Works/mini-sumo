@@ -385,14 +385,22 @@ export class GameSession {
     return true;
   }
 
-  handleDash(id: string): ActionResult {
+  handleDash(id: string, direction?: unknown): ActionResult {
     const player = this.players.get(id);
     if (!player || !player.connected) return fail("Unknown player.");
     if (!this.consumeToken(player)) return fail("Too many requests.");
     if (this.phase !== Phase.Playing) return fail("Dash is only available during a bout.");
     if (!player.alive) return fail("You are out of this round.");
+    const aim = direction === undefined ? null : validateMoveInput(direction);
+    if (direction !== undefined && (!aim || Math.hypot(aim.x, aim.y) < 0.01)) return fail("Invalid dash direction.");
     const cooldown = player.powerUp === "thunder" ? Math.min(this.cfg.thunderDashCooldownMs, this.humanDashCooldownMs()) : this.humanDashCooldownMs();
-    if (!tryDash(player, this.time, this.cfg, cooldown)) return fail("Dash is cooling down.");
+    const inputX = player.inputX;
+    const inputY = player.inputY;
+    if (aim) { player.inputX = aim.x; player.inputY = aim.y; }
+    const dashed = tryDash(player, this.time, this.cfg, cooldown);
+    player.inputX = inputX;
+    player.inputY = inputY;
+    if (!dashed) return fail("Dash is cooling down.");
     player.dashCooldownTotal = cooldown;
     this.events.push({ type: "dash", id });
     return OK;

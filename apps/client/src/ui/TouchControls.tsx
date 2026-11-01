@@ -1,4 +1,4 @@
-import { useRef, useState, type PointerEvent } from "react";
+import { useEffect, useRef, useState, type PointerEvent } from "react";
 import { vibrate } from "../haptics";
 import { inputController } from "../input/InputController";
 import { gameStore } from "../network/RoomManager";
@@ -30,7 +30,9 @@ interface StickState {
  */
 export function TouchControls() {
   const game = useStore(gameStore);
-  const { joystick } = useStore(settingsStore);
+  const { joystick, dashMode } = useStore(settingsStore);
+  const dashPointer = useRef<number | null>(null);
+  useEffect(() => () => { inputController.endDashAim(true); inputController.setTouchVector(0, 0); }, []);
   const you = game.players.find((p) => p.isYou);
   const zoneRef = useRef<HTMLDivElement>(null);
   const pointerId = useRef<number | null>(null);
@@ -107,6 +109,7 @@ export function TouchControls() {
         onPointerMove={onMove}
         onPointerUp={onUp}
         onPointerCancel={onUp}
+        onLostPointerCapture={onUp}
         role="application"
         aria-label="Movement joystick: drag to move"
       >
@@ -123,14 +126,28 @@ export function TouchControls() {
         style={{ ["--cool" as string]: `${progress * 360}deg` }}
         onPointerDown={(e) => {
           e.preventDefault();
+          if (dashMode === "auto" || dashPointer.current !== null) return;
+          dashPointer.current = e.pointerId;
+          e.currentTarget.setPointerCapture(e.pointerId);
           if (ready) vibrate(18);
-          inputController.requestDash();
+          inputController.beginDashAim();
         }}
-        aria-label={ready ? "Dash" : "Dash recharging"}
+        onPointerUp={(e) => {
+          if (dashPointer.current !== e.pointerId) return;
+          dashPointer.current = null;
+          inputController.endDashAim();
+        }}
+        onPointerCancel={() => { dashPointer.current = null; inputController.endDashAim(true); }}
+        onLostPointerCapture={() => { dashPointer.current = null; inputController.endDashAim(true); }}
+        onKeyDown={(e) => { if (e.key === "Enter" && !e.repeat) inputController.beginDashAim(); }}
+        onKeyUp={(e) => { if (e.key === "Enter") inputController.endDashAim(); }}
+        aria-disabled={dashMode === "auto"}
+        aria-label={dashMode === "auto" ? (ready ? "Auto dash ready" : "Auto dash recharging") : ready ? "Hold to aim, release to dash" : "Dash recharging"}
       >
         {/* The DASH art; while recharging, a dark sweep shows what's left, with the seconds */}
         {!ready && <span className="dash-btn__cool" aria-hidden="true" />}
         {!ready && <span className="dash-btn__time">{(cooldown / 1000).toFixed(1)}</span>}
+        {dashMode === "auto" && <span className="dash-btn__mode">AUTO</span>}
       </button>
     </div>
   );

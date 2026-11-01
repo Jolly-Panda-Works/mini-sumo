@@ -1,5 +1,6 @@
 import {
   ARENA_RADIUS,
+  QUICK_MATCH_WAIT_MS,
   ClientMessage,
   ServerMessage,
   sanitizeBotLevel,
@@ -12,7 +13,7 @@ import type { GameConnection } from "./connection";
 import { localEconomy, type LocalEntry } from "./localEconomy";
 
 /** Offline quick match: a short, natural-feeling "search" before bots fill the room. */
-const OFFLINE_SEARCH_MS = 10_000;
+const OFFLINE_SEARCH_MS = QUICK_MATCH_WAIT_MS;
 const TICK_MS = 1000 / 30;
 const roundUp100 = (ms: number) => Math.ceil(ms / 100) * 100;
 
@@ -109,7 +110,7 @@ export class LocalConnection implements GameConnection {
         s.handleInput(id, message);
         return;
       case ClientMessage.Dash:
-        s.handleDash(id);
+        s.handleDash(id, message);
         break;
       case ClientMessage.StartMatch:
         result = s.requestStart(id);
