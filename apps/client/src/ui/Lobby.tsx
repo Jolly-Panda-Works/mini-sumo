@@ -60,6 +60,12 @@ export function Lobby() {
   // The picker belongs to this room: close it when leaving.
   useEffect(() => () => setInviteUiOpen(false), []);
   const inRoomIds = new Set(game.players.map((p) => p.accountId).filter(Boolean));
+  // Guided bouts never show matchmaking. A server that doesn't seat the bots itself yet gets
+  // asked for them here (and starts the bout once the room is full).
+  useEffect(() => {
+    if (intro && isHost && connected.length < game.maxPlayers) roomManager.addBot();
+  }, [intro, isHost, connected.length, game.maxPlayers]);
+  if (intro) return null;
 
   // The start button sits in the fixed footer, so the waiting room never scrolls.
   const startArea = autoStart ? (

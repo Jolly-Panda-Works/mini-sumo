@@ -100,7 +100,12 @@
 .dlg-intro-lesson .sub-dialog__foot { display: flex; justify-content: center; }
 .dlg-intro-lesson p { margin: 0; line-height: 1.4; }
 .intro-panda { width: min(58%, 220px); flex-shrink: 0; }
-.dlg-starter-reward .intro-panda { width: min(44%, 165px); }
+/* A smaller panda, so the text under it always shows in full. */
+.dlg-starter-reward .sub-dialog__inner { top: 40%; height: 51%; }
+.dlg-starter-reward .sub-dialog__body { justify-content: center; gap: 6px; }
+.dlg-starter-reward .intro-panda { width: min(34%, 130px); }
+.dlg-starter-reward p { flex-shrink: 0; font-size: clamp(13px, 3.6cqw, 16px); }
+@media (max-height: 620px) { .dlg-starter-reward .intro-panda { width: 70px; } }
 .intro-outfit__preview { width: 100%; height: 150px; flex-shrink: 0; }
 .dlg-intro-outfit .intro-panda { width: 95px; }
 .intro-panel-footer { display: flex; align-items: center; gap: 8px; width: 100%; text-align: center; color: #472b19; }
