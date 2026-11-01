@@ -119,7 +119,7 @@ export function Lobby() {
               </li>
             ) : (
               <li key={`empty-${i}`} className="roster__item roster__item--empty">
-                {intro ? "Your practice partner is joining…" : !offline && friendsAvailable() ? (
+                {!offline && friendsAvailable() ? (
                   <button className="roster__invite" onClick={() => setInviteUiOpen(true)} aria-label="Invite a friend">
                     <span className="roster__plus" aria-hidden="true">
                       +

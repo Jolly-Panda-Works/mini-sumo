@@ -128,7 +128,7 @@ export class MiniSumoRoom extends Room<MiniSumoState> {
     this.maxClients = this.introRound ? 1 : maxPlayers;
     // Training: quick match with bot fill. Paid: humans only, automatic start. Private: host starts.
     this.session = new GameSession(createArenaConfig(this.arenaId), maxPlayers, {
-      quickMatch: !isPrivate && !this.paid && this.introRound !== 1,
+      quickMatch: !isPrivate && !this.paid && !this.introRound,
       botLevel: this.introRound ? "easy" : sanitizeBotLevel(options.botLevel),
       coached: this.introRound === 1,
       paidArena: this.paid ? { startDelayMs: ECONOMY.paidStartDelayMs, cancelAfterMs: ECONOMY.paidCancelAfterMs } : undefined,
@@ -176,7 +176,6 @@ export class MiniSumoRoom extends Room<MiniSumoState> {
 
     this.setSimulationInterval((deltaTime) => {
       if (!(this.introRound && this.session.phase === Phase.RoundOver)) this.session.update(deltaTime);
-      if (this.introRound && this.session.phase === Phase.Lobby && this.session.players.size === this.session.maxPlayers) this.session.requestStart(this.session.hostId);
       this.flushEvents();
       this.syncState();
     }, 1000 / DEFAULT_CONFIG.tickRate);
@@ -220,9 +219,9 @@ export class MiniSumoRoom extends Room<MiniSumoState> {
       throw new ServerError(4003, result.error);
     }
     if (accountId) this.accounts.set(client.sessionId, accountId);
-    // The first guided bout is a duel with no matchmaking: straight into the ring.
-    if (this.introRound === 1) {
-      this.session.addBot(client.sessionId);
+    // Guided bouts have no matchmaking: every seat is filled at once, straight into the ring.
+    if (this.introRound) {
+      while (this.session.players.size < this.session.maxPlayers) this.session.addBot(client.sessionId);
       this.session.requestStart(client.sessionId);
     }
     this.flushEvents();

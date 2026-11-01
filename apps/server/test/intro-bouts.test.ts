@@ -84,6 +84,17 @@ describe("one-time guided progression", () => {
     reloaded.finish({ id: "retry", arenaId: "rookie", fee: 0, status: "paid" }, { introRound: 1, matchId: "retry", placement: 1, won: true, completed: true, players: 2, draw: false, durationMs: 30000 });
     expect(reloaded.profile()).toEqual(first);
   });
+  it("the second bout also starts at once, with all three bots and no matchmaking", async () => {
+    vi.resetModules(); vi.useFakeTimers({ toFake: ["setInterval", "clearInterval", "performance"] });
+    vi.stubGlobal("window", { setInterval, clearInterval, localStorage: { getItem: () => null, setItem: () => undefined } });
+    const path = "../../client/src/network/LocalConnection.ts";
+    const { LocalConnection } = await import(path);
+    const room = new LocalConnection({ introRound: 2, name: "Learner", appearance: {}, isPrivate: false, maxPlayers: 4, botLevel: "hard", arenaId: "rookie" });
+    expect(room.state.players.size).toBe(4);
+    expect(room.state.searchRemainingMs).toBe(0);
+    expect(["waiting", "lobby"]).not.toContain(room.state.phase);
+    await room.leave();
+  });
   it("a lost first attempt gives no XP or gift and remains retryable", async () => {
     const e = new Economy(":memory:", { economy: true, shop: true, premiumCurrency: false, realMoneyPurchases: false }, silentEventSink);
     const { accountId } = e.createGuest();

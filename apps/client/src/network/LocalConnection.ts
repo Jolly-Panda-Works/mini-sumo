@@ -76,7 +76,7 @@ export class LocalConnection implements GameConnection {
     // Every local arena bout (free or paid) goes through the local economy, except private rooms.
     this.entry = options.entry ?? (options.isPrivate ? null : { id: randomCode(), arenaId: this.arenaId, fee: 0, status: "paid" });
     this.session = new GameSession(createArenaConfig(this.arenaId, { quickMatchWaitMs: OFFLINE_SEARCH_MS }), options.introRound ? INTRO_PLAYERS[options.introRound] : options.maxPlayers, {
-      quickMatch: !options.isPrivate && options.introRound !== 1,
+      quickMatch: !options.isPrivate && !options.introRound,
       botLevel: options.introRound ? "easy" : sanitizeBotLevel(options.botLevel),
       coached: options.introRound === 1,
     });
@@ -101,9 +101,9 @@ export class LocalConnection implements GameConnection {
       standings: [],
     };
     this.session.addPlayer(this.sessionId, options.name, options.appearance, options.level);
-    // The first guided bout is a duel with no matchmaking: straight into the ring.
-    if (options.introRound === 1) {
-      this.session.addBot(this.sessionId);
+    // Guided bouts have no matchmaking: every seat is filled at once, straight into the ring.
+    if (options.introRound) {
+      while (this.session.players.size < this.session.maxPlayers) this.session.addBot(this.sessionId);
       this.session.requestStart(this.sessionId);
     }
     this.sync();
@@ -208,7 +208,6 @@ export class LocalConnection implements GameConnection {
   private tick(): void {
     const now = performance.now();
     if (!(this.introRound && this.session.phase === "roundOver")) this.session.update(now - this.lastTick);
-    if (this.introRound && this.session.phase === "lobby" && this.session.players.size === this.session.maxPlayers) this.session.requestStart(this.sessionId);
     this.lastTick = now;
     this.flush();
   }
