@@ -2,6 +2,15 @@
 .tutorial__arena { position: absolute; inset: 0; }
 .tutorial__card { position: absolute; top: max(12px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); width: min(92vw, 650px); padding: 14px 18px; box-sizing: border-box; display: flex; gap: 12px; align-items: center; border: 5px solid #8b4e28; border-radius: 22px; background: #fff0cd; box-shadow: 0 5px 0 #402816, inset 0 0 0 3px #e8b750; }
 .tutorial__coach { width: 85px; height: 105px; object-fit: contain; flex-shrink: 0; }
+.tutorial__guides { position: relative; width: 112px; flex: 0 0 112px; align-self: stretch; display: grid; place-items: center; }
+.tutorial__panda { width: 112px; height: 130px; object-fit: contain; filter: drop-shadow(0 3px 0 #65401a33); animation: panda-enter 0.35s ease-out; }
+.tutorial__panda--aim { transform: rotate(-3deg); }
+.tutorial__panda--cheer { animation: panda-cheer 0.5s ease-out; }
+.tutorial__partner { position: absolute; width: 32px; height: 42px; object-fit: contain; bottom: -3px; right: -7px; filter: drop-shadow(0 1px 0 #553a25); }
+@keyframes panda-enter { from { opacity: 0; transform: translateY(10px) scale(0.94); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes panda-cheer { 0% { transform: translateY(8px) scale(0.9); } 55% { transform: translateY(-8px) scale(1.04); } 100% { transform: translateY(0) scale(1); } }
+@media (max-height: 500px), (max-width: 360px) { .tutorial__guides { width: 70px; flex-basis: 70px; } .tutorial__panda { width: 70px; height: 86px; } .tutorial__partner { width: 24px; height: 30px; } }
+@media (prefers-reduced-motion: reduce) { .tutorial__panda, .tutorial__panda--cheer { animation: none; } }
 .tutorial__copy h2 { font-size: clamp(20px, 4vw, 29px); line-height: 1.1; margin: 4px 0; }
 .tutorial__copy p { font-size: clamp(14px, 2.8vw, 18px); line-height: 1.3; margin: 5px 0; }
 .tutorial__step { font-weight: 800; font-size: 12px; letter-spacing: 1px; color: #a34922; }

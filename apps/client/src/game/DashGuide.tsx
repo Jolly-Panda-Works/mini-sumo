@@ -1,12 +1,15 @@
-import { forwardRef, useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { DoubleSide, type Group } from "three";
 import { inputController } from "../input/InputController";
 import { settingsStore } from "../settings";
+import { advanceDashLine, type DashLineAim } from "./dashLineMotion";
 
-/** A translucent floor arrow: its tip is the predicted unblocked dash endpoint. */
-export const DashArrow = forwardRef<Group>(function DashArrow(_, ref) {
-  const uniforms = useMemo(() => ({ time: { value: 0 } }), []);
+/** A soft floor line that draws outward, fades at its end and follows aim smoothly. */
+export function DashLine({ sample }: { sample: () => DashLineAim | null }) {
+  const root = useRef<Group>(null);
+  const motion = useRef({ opacity: 0, reveal: 0, angle: 0, distance: 1, showing: false });
+  const uniforms = useMemo(() => ({ time: { value: 0 }, opacity: { value: 0 }, reveal: { value: 0 } }), []);
   const reducedMotion = useRef(false);
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -14,53 +17,52 @@ export const DashArrow = forwardRef<Group>(function DashArrow(_, ref) {
     update(); media.addEventListener("change", update);
     return () => media.removeEventListener("change", update);
   }, []);
-  useFrame(({ clock }) => { uniforms.time.value = reducedMotion.current ? 0 : clock.elapsedTime; });
-  return <group ref={ref} visible={false}>
+  useFrame(({ clock }, delta) => {
+    if (!root.current) return;
+    const aim = sample();
+    const active = Boolean(aim?.ready);
+    const s = motion.current;
+    const instant = reducedMotion.current;
+    advanceDashLine(s, aim, delta, instant);
+    if (active && aim) {
+      root.current.position.set(aim.px, 0.06, aim.py);
+    }
+    root.current.visible = s.opacity > 0.005;
+    root.current.rotation.y = s.angle;
+    root.current.scale.z = s.distance;
+    uniforms.time.value = instant ? 0 : clock.elapsedTime;
+    uniforms.opacity.value = s.opacity;
+    uniforms.reveal.value = s.reveal;
+  });
+  return <group ref={root} visible={false}>
     <mesh position-z={0.5} rotation-x={Math.PI / 2} renderOrder={5}>
-      <planeGeometry args={[1.5, 1]} />
+      <planeGeometry args={[1.2, 1]} />
       <shaderMaterial uniforms={uniforms} transparent depthWrite={false} side={DoubleSide} toneMapped={false}
-        vertexShader={`
-          varying vec2 vUv;
-          void main() {
-            vUv = uv;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-          }
-        `}
+        vertexShader={`varying vec2 vUv;
+          void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`}
         fragmentShader={`
-          uniform float time;
+          uniform float time; uniform float opacity; uniform float reveal;
           varying vec2 vUv;
           void main() {
-            float x = abs((vUv.x - 0.5) * 1.5);
+            float side = abs((vUv.x - 0.5) * 1.2);
             float reach = vUv.y;
-            float halfWidth = reach < 0.70 ? 0.22 : 0.62 * (1.0 - reach) / 0.30;
-            float silhouette = 1.0 - smoothstep(halfWidth - 0.035, halfWidth + 0.015, x);
-            float edgeFade = 1.0 - smoothstep(0.0, halfWidth, x);
-            float outwardFade = 1.0 - smoothstep(0.55, 1.14, reach);
-            float startFade = smoothstep(0.04, 0.20, reach);
-            // Red chevrons flow away from the wrestler and disappear toward the endpoint.
-            float wave = fract(reach * 3.2 - x * 0.65 - time * 1.1);
-            float stripe = smoothstep(0.58, 0.74, wave) * (1.0 - smoothstep(0.84, 0.99, wave));
-            float pulse = 0.92 + 0.08 * sin(time * 4.0);
-            float alpha = silhouette * startFade * (0.42 + 0.35 * edgeFade + 0.18 * stripe) * outwardFade * pulse;
-            vec3 red = mix(vec3(0.88, 0.12, 0.08), vec3(1.0, 0.45, 0.22), stripe * 0.6);
-            gl_FragColor = vec4(red, alpha);
+            float core = 1.0 - smoothstep(0.025, 0.13, side);
+            float glow = (1.0 - smoothstep(0.08, 0.32, side)) * 0.22;
+            float endFade = 1.0 - smoothstep(0.40, 1.0, reach);
+            float startFade = smoothstep(0.06, 0.24, reach);
+            float draw = 1.0 - smoothstep(reveal - 0.10, reveal + 0.01, reach);
+            float flow = 0.92 + 0.08 * sin(reach * 18.0 - time * 5.0);
+            float alpha = (core * 0.64 + glow) * endFade * startFade * draw * opacity * flow;
+            gl_FragColor = vec4(mix(vec3(0.90, 0.12, 0.08), vec3(1.0, 0.35, 0.18), core), alpha);
           }
         `} />
     </mesh>
   </group>;
-});
+}
 
 export function DashGuide() {
-  const ref = useRef<Group>(null);
-  useFrame(() => {
-    const root = ref.current;
-    if (!root) return;
-    const aim = inputController.getDashAim();
-    root.visible = Boolean(aim && (inputController.aiming || settingsStore.get().dashMode === "auto"));
-    if (!aim || !root.visible) return;
-    root.position.set(aim.px, 0.055, aim.py);
-    root.rotation.y = Math.atan2(aim.x, aim.y);
-    root.scale.z = aim.distance;
-  });
-  return <DashArrow ref={ref} />;
+  return <DashLine sample={() => {
+    if (!inputController.aiming && settingsStore.get().dashMode !== "auto") return null;
+    return inputController.getDashAim();
+  }} />;
 }

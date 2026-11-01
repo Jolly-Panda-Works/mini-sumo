@@ -1,25 +1,31 @@
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import type { Group } from "three";
+import type { Mesh } from "three";
+import { lerpAngle } from "@mini-sumo/shared";
 import { createBody, DEFAULT_CONFIG, dashDistance, tryDash, type SimBody } from "@mini-sumo/sim";
 import { settingsStore, touchControlsEnabled } from "../settings";
-import { DashArrow } from "../game/DashGuide";
+import { DashLine } from "../game/DashGuide";
 import { Arena } from "../game/Arena";
 import { CameraRig } from "../game/CameraRig";
 import { themeFor } from "../game/arenaThemes";
 import { SumoModel, useSumoParts } from "../game/SumoModel";
+import { Effects } from "../game/Effects";
+import { Callouts } from "../game/Callouts";
+import { dustBus, hitStop, lastDashAt, lastHitAt, lastHit, pulseBus } from "../game/effectsBus";
+import { practiceDash, practiceImpact, practiceSuccess } from "../game/practiceEffects";
 import { useStore } from "../store";
 import { stepPracticeBodies } from "../game/practicePhysics";
 
 const KEYS: Record<string, [number, number]> = { KeyW: [0, -1], ArrowUp: [0, -1], KeyS: [0, 1], ArrowDown: [0, 1], KeyA: [-1, 0], ArrowLeft: [-1, 0], KeyD: [1, 0], ArrowRight: [1, 0] };
 interface Practice {
   me: SimBody; opponent: SimBody; keys: Set<string>; touch: { x: number; y: number };
-  held: boolean; heldAt: number; time: number; moved: number; aimedDash: boolean; step: number; done: boolean;
+  held: boolean; heldAt: number; time: number; moved: number; aimedDash: boolean; hitTarget: boolean; step: number; done: boolean;
 }
 function reset(p: Practice, step: number) {
-  p.me = createBody("you", step === 2 ? 1.5 : -1.5, 0, 0);
-  p.opponent = createBody("coach", step === 2 ? 4.5 : 2, 0, Math.PI);
-  p.moved = 0; p.aimedDash = false; p.held = false; p.keys.clear(); p.touch = { x: 0, y: 0 }; p.done = false; p.step = step;
+  p.me = createBody("tutorial-you", step === 2 ? 1.5 : -1.5, 0, 0);
+  p.opponent = createBody("tutorial-coach", step === 2 ? 4.5 : 1.5, 0, Math.PI);
+  p.moved = 0; p.aimedDash = false; p.hitTarget = false; p.held = false; p.keys.clear(); p.touch = { x: 0, y: 0 }; p.done = false; p.step = step;
+  for (const id of [p.me.id, p.opponent.id]) { lastDashAt.delete(id); lastHitAt.delete(id); lastHit.delete(id); }
 }
 function vector(p: Practice) {
   let { x, y } = p.touch;
@@ -32,51 +38,99 @@ function release(p: Practice, cancel = false) {
   if (!held || cancel || p.step === 0 || p.done) return;
   const v = vector(p);
   p.me.inputX = v.x; p.me.inputY = v.y;
-  if (tryDash(p.me, p.time, DEFAULT_CONFIG) && performance.now() - p.heldAt >= 120) p.aimedDash = true;
+  if (tryDash(p.me, p.time, DEFAULT_CONFIG)) {
+    p.aimedDash = true;
+    practiceDash(p.me.id, p.me.x, p.me.y);
+  }
 }
 
-function Wrestler({ body, color }: { body: SimBody; color: string }) {
+function Wrestler({ body, color, p }: { body: SimBody; color: string; p: Practice }) {
   const parts = useSumoParts();
-  useFrame(() => {
-    if (!parts.root.current) return;
-    parts.root.current.position.set(body.x, 0, body.y);
-    parts.root.current.rotation.y = Math.atan2(Math.cos(body.angle), Math.sin(body.angle));
+  const fall = useRef(0);
+  useFrame(({ clock }, delta) => {
+    const root = parts.root.current, torso = parts.torso.current;
+    if (!root || !torso) return;
+    const dt = Math.min(delta, 0.05), now = performance.now();
+    const outside = Math.hypot(body.x, body.y) > DEFAULT_CONFIG.arenaRadius + DEFAULT_CONFIG.eliminationTolerance;
+    fall.current += ((outside ? 1 : 0) - fall.current) * (1 - Math.exp(-8 * dt));
+    root.position.set(body.x, -fall.current * 1.6, body.y);
+    root.rotation.y = lerpAngle(root.rotation.y, Math.atan2(Math.cos(body.angle), Math.sin(body.angle)), 1 - Math.exp(-18 * dt));
+    root.rotation.z = fall.current * 0.8;
+    const speed = Math.hypot(body.vx, body.vy);
+    const walking = Math.min(1, speed / 4);
+    const sinceDash = (now - (lastDashAt.get(body.id) ?? -1e9)) / 1000;
+    const sinceHit = (now - (lastHitAt.get(body.id) ?? -1e9)) / 1000;
+    const strength = Math.min(1, (lastHit.get(body.id)?.strength ?? 0) / 10);
+    const squash = sinceHit < 0.65 ? Math.exp(-6 * sinceHit) * Math.cos(sinceHit * 24) * strength * 0.4 : 0;
+    const dash = p.time < body.dashEndsAt;
+    const windup = sinceDash < 0.08 ? (1 - sinceDash / 0.08) * 0.2 : 0;
+    torso.scale.set(1 + squash + windup, 1 - squash * 0.65 - windup, dash ? 1.2 : 1);
+    const stunned = p.time < (body.stunnedUntil ?? 0);
+    torso.rotation.x = dash ? 0.28 : walking * 0.1;
+    torso.rotation.z = stunned ? Math.sin(clock.elapsedTime * 20) * 0.15 : 0;
+    torso.position.y = 0.3 + Math.abs(Math.sin(clock.elapsedTime * 14)) * walking * 0.06;
+    if (parts.armL.current) parts.armL.current.rotation.x = Math.sin(clock.elapsedTime * 14) * walking * 0.25 - (dash ? 0.5 : 0);
+    if (parts.armR.current) parts.armR.current.rotation.x = -Math.sin(clock.elapsedTime * 14) * walking * 0.25 - (dash ? 0.5 : 0);
   });
   return <SumoModel parts={parts} color={color} />;
 }
 
-function PracticeScene({ p, complete }: { p: Practice; complete: () => void }) {
-  const arrow = useRef<Group>(null);
-  useFrame((_, delta) => {
+function PracticeScene({ p, complete, feedback }: { p: Practice; complete: () => void; feedback: (text: string) => void }) {
+  const marker = useRef<Mesh>(null);
+  const lastImpact = useRef(-Infinity);
+  const lastTrail = useRef(0);
+  const lastReady = useRef(true);
+  useFrame(({ clock }, delta) => {
     if (document.hidden) return;
+    if (marker.current) marker.current.scale.setScalar(1 + Math.sin(clock.elapsedTime * 4) * 0.1);
+    if (performance.now() < hitStop.until) return;
     const dt = Math.min(delta, 1 / 30);
     const v = vector(p);
     p.me.inputX = p.done ? 0 : v.x; p.me.inputY = p.done ? 0 : v.y;
     const beforeX = p.me.x, beforeY = p.me.y;
-    p.time = stepPracticeBodies(p.me, p.step > 0 ? p.opponent : null, dt, p.time);
+    p.time = stepPracticeBodies(p.me, p.step > 0 ? p.opponent : null, dt, p.time, DEFAULT_CONFIG, (hit) => {
+      if (p.aimedDash && p.time < p.me.dashEndsAt + 100 && hit.strength > 2) p.hitTarget = true;
+      if (performance.now() - lastImpact.current < 180) return;
+      lastImpact.current = performance.now();
+      practiceImpact(hit, p.step === 1);
+      if (!p.done) feedback(p.step === 1 ? "Nice hit! That's how a dash lands." : "Good push! Keep the blue wrestler moving toward the rope.");
+    });
     p.moved += Math.hypot(p.me.x - beforeX, p.me.y - beforeY);
-    if (!p.done && ((p.step === 0 && p.moved >= 1.5) || (p.step === 1 && p.aimedDash) || (p.step === 2 && Math.hypot(p.opponent.x, p.opponent.y) > DEFAULT_CONFIG.arenaRadius + DEFAULT_CONFIG.eliminationTolerance))) {
-      p.done = true; p.held = false; complete();
+    const ready = p.time >= p.me.dashReadyAt;
+    if (ready && !lastReady.current) {
+      pulseBus.emit({ x: p.me.x, y: p.me.y, color: "#ffc52f", size: 1 });
+      if (!p.done) feedback("Dash is ready again. Hold to aim, then release!");
+    }
+    lastReady.current = ready;
+    if (p.time < p.me.dashEndsAt && p.time - lastTrail.current > 45) {
+      lastTrail.current = p.time;
+      dustBus.emit({ x: p.me.x, y: p.me.y, count: 3, speed: 0.8 });
+    }
+    const goal = p.step === 0 ? Math.hypot(p.me.x - 1, p.me.y - 1.5) < 0.85 : p.step === 1 ? p.hitTarget : Math.hypot(p.opponent.x, p.opponent.y) > DEFAULT_CONFIG.arenaRadius + DEFAULT_CONFIG.eliminationTolerance;
+    if (!p.done && goal) {
+      p.done = true; p.held = false;
+      practiceSuccess(p.step === 2 ? p.opponent.x : p.me.x, p.step === 2 ? p.opponent.y : p.me.y, p.step === 2);
+      complete();
     }
     if (!p.done && Math.hypot(p.me.x, p.me.y) > DEFAULT_CONFIG.arenaRadius + DEFAULT_CONFIG.eliminationTolerance) {
-      // A safe practice ring: falling out restarts this exercise without a fee or reward.
-      Object.assign(p.me, createBody("you", p.step === 2 ? 1.5 : -1.5, 0));
-      Object.assign(p.opponent, createBody("coach", p.step === 2 ? 4.5 : 2, 0, Math.PI));
-    }
-    if (arrow.current) {
-      arrow.current.visible = p.held && p.step > 0 && !p.done;
-      const len = Math.hypot(v.x, v.y);
-      const aim = len > 0.01 ? { x: v.x / len, y: v.y / len } : { x: Math.cos(p.me.angle), y: Math.sin(p.me.angle) };
-      arrow.current.position.set(p.me.x, 0.055, p.me.y);
-      arrow.current.rotation.y = Math.atan2(aim.x, aim.y);
-      arrow.current.scale.z = dashDistance(p.me, aim, DEFAULT_CONFIG);
+      Object.assign(p.me, createBody("tutorial-you", p.step === 2 ? 1.5 : -1.5, 0));
+      Object.assign(p.opponent, createBody("tutorial-coach", p.step === 2 ? 4.5 : 1.5, 0, Math.PI));
+      p.hitTarget = false; p.aimedDash = false;
+      feedback("Stay inside the straw rope! No penalty here — try again.");
     }
   });
   return <>
     <Arena theme={themeFor("training")} />
-    <Wrestler body={p.me} color="#E2443A" />
-    {p.step > 0 && <Wrestler body={p.opponent} color="#3D7FE0" />}
-    <DashArrow ref={arrow} />
+    {p.step === 0 && <mesh ref={marker} position={[1, 0.06, 1.5]} rotation-x={-Math.PI / 2}><ringGeometry args={[0.55, 0.72, 32]} /><meshBasicMaterial color="#ffb52e" transparent opacity={0.85} depthWrite={false} /></mesh>}
+    <Wrestler body={p.me} color="#E2443A" p={p} />
+    {p.step > 0 && <Wrestler body={p.opponent} color="#3D7FE0" p={p} />}
+    <Effects /><Callouts />
+    <DashLine sample={() => {
+      if (!p.held || p.done || p.step === 0) return null;
+      const v = vector(p), len = Math.hypot(v.x, v.y);
+      const aim = len > 0.01 ? { x: v.x / len, y: v.y / len } : { x: Math.cos(p.me.angle), y: Math.sin(p.me.angle) };
+      return { ...aim, px: p.me.x, py: p.me.y, distance: dashDistance(p.me, aim, DEFAULT_CONFIG), ready: p.time >= p.me.dashReadyAt && p.time >= (p.me.stunnedUntil ?? 0) && p.time >= p.me.dashEndsAt };
+    }} />
   </>;
 }
 
@@ -84,9 +138,10 @@ export function Tutorial() {
   const [step, setStep] = useState(0);
   const [done, setDone] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+  const [coachMessage, setCoachMessage] = useState("");
   const settings = useStore(settingsStore);
   const touch = touchControlsEnabled(settings.touchControls);
-  const p = useMemo<Practice>(() => ({ me: createBody("you", -1.5, 0), opponent: createBody("coach", 2, 0, Math.PI), keys: new Set(), touch: { x: 0, y: 0 }, held: false, heldAt: 0, time: 0, moved: 0, aimedDash: false, step: 0, done: false }), []);
+  const p = useMemo<Practice>(() => ({ me: createBody("tutorial-you", -1.5, 0), opponent: createBody("tutorial-coach", 1.5, 0, Math.PI), keys: new Set(), touch: { x: 0, y: 0 }, held: false, heldAt: 0, time: 0, moved: 0, aimedDash: false, hitTarget: false, step: 0, done: false }), []);
   const stick = useRef<number | null>(null);
   const dashPointer = useRef<number | null>(null);
   const [knob, setKnob] = useState({ x: 0, y: 0 });
@@ -94,8 +149,12 @@ export function Tutorial() {
     const timer = window.setInterval(() => setCooldown(Math.max(0, p.me.dashReadyAt - p.time)), 100);
     return () => window.clearInterval(timer);
   }, [p]);
+  useEffect(() => () => {
+    for (const id of [p.me.id, p.opponent.id]) { lastDashAt.delete(id); lastHitAt.delete(id); lastHit.delete(id); }
+    hitStop.until = 0;
+  }, [p]);
   const begin = () => { if (!p.held && !p.done && p.step > 0 && p.step < 3) { p.held = true; p.heldAt = performance.now(); } };
-  const changeStep = (next: number) => { reset(p, next); setDone(false); setStep(next); setKnob({ x: 0, y: 0 }); };
+  const changeStep = (next: number) => { reset(p, next); setCoachMessage(""); setDone(false); setStep(next); setKnob({ x: 0, y: 0 }); };
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLElement && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
@@ -114,19 +173,21 @@ export function Tutorial() {
     p.touch = { x, y }; setKnob({ x: x * 35, y: y * 35 });
   };
   const finish = (dashMode: "manual" | "auto") => settingsStore.update({ dashMode, tutorialCompleted: true });
-  const titles = ["Move your wrestler", "Aim your dash", "Push them out!", "Choose your dash style"];
-  const descriptions = [touch ? "Drag the joystick to move the red wrestler around the ring." : "Use WASD or the arrow keys to move the red wrestler.", touch ? "Hold DASH to see your direction and distance. Steer with the joystick, then release to dash." : "Hold Space to see your direction and distance. Aim with WASD or arrows, then release Space.", "Move toward the blue wrestler and push or dash them past the straw rope. Stay inside the ring yourself!", "How would you like to dash? You can change this anytime in Settings."];
+  const titles = ["Follow the golden marker", "Land your first dash", "Push them out!", "Choose your dash style"];
+  const descriptions = [touch ? "Hi! I'm your panda coach. Drag the joystick and bring the red wrestler to the golden circle!" : "Hi! I'm your panda coach. Use WASD or arrows to bring the red wrestler to the golden circle!", touch ? "Hold DASH to draw your path. Aim toward our blue partner with the joystick, then release and hit them!" : "Hold Space to draw your path. Aim toward our blue partner with WASD or arrows, then release and hit them!", "Now finish the move! Push or dash the blue wrestler past the straw rope. Stay inside yourself!", "Nice work! How would you like to dash? You can change this anytime in Settings."];
+  const pose = done || step === 3 ? "cheer" : step === 0 ? "welcome" : "aim";
+  const successMessage = ["Perfect footwork! Let's try a dash.", "Great hit! Feel that impact? Now let's win a bout.", "Ring out! You're ready for your first match."][step];
   return <section className="tutorial" aria-label="Learn to play Mini Sumo">
     {step < 3 && <div className="tutorial__arena">
       <Canvas camera={{ fov: 48, position: [0, 16, 15] }} onCreated={({ camera }) => camera.lookAt(0, 0, 0)} dpr={[1, 1.5]}>
         <color attach="background" args={["#90cce9"]} /><hemisphereLight args={["#fff5df", "#6d4c2f", 2]} /><directionalLight position={[4, 10, 5]} intensity={2} />
-        <PracticeScene key={step} p={p} complete={() => setDone(true)} />
+        <PracticeScene key={step} p={p} complete={() => setDone(true)} feedback={setCoachMessage} />
         <CameraRig orbit={false} />
       </Canvas>
     </div>}
     <div className={`tutorial__card${step === 3 ? " tutorial__card--choice" : ""}`}>
-      <img className="tutorial__coach" src={`${import.meta.env.BASE_URL}tutorial/coach.webp`} alt="Your sumo coach" />
-      <div className="tutorial__copy"><span className="tutorial__step">{step < 3 ? `PRACTICE ${step + 1} / 3` : "READY TO PLAY"}</span><h2>{titles[step]}</h2><p>{descriptions[step]}</p></div>
+      <div className="tutorial__guides"><img key={pose} className={`tutorial__panda tutorial__panda--${pose}`} src={`${import.meta.env.BASE_URL}tutorial/panda-${pose}.webp`} alt={`Panda coach: ${pose === "cheer" ? "celebrating" : pose === "aim" ? "pointing" : "welcoming"}`} /><img className="tutorial__partner" src={`${import.meta.env.BASE_URL}tutorial/coach.webp`} alt="Your sumo practice partner" /></div>
+      <div className="tutorial__copy"><span className="tutorial__step">{step < 3 ? `PANDA COACH · ${step + 1} / 3` : "READY TO PLAY"}</span><h2>{titles[step]}</h2><p aria-live="polite">{done ? successMessage : coachMessage || descriptions[step]}</p></div>
       {step === 3 && <div className="tutorial__choices">
         <button onClick={() => finish("auto")}><strong>Auto dash</strong><span>Dash toward the nearest opponent in range when charged. The dash drum only shows the timer.</span></button>
         <button onClick={() => finish("manual")}><strong>Manual dash</strong><span>You decide when. Hold to preview your path; release to dash.</span></button>

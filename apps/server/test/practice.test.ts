@@ -30,4 +30,13 @@ describe("tutorial collisions", () => {
     expect(stepPracticeBodies(me, null, 1 / 30, 0)).toBeCloseTo(1000 / 30);
     expect(me.x).toBeGreaterThan(0);
   });
+  it("reports real dash impacts so the tutorial can play the match effects", () => {
+    const me = createBody("you", -1.2, 0), opponent = createBody("coach", 1.2, 0, Math.PI);
+    const impact = vi.fn(); me.inputX = 1; tryDash(me, 0, DEFAULT_CONFIG);
+    let time = 0;
+    for (let i = 0; i < 8; i++) time = stepPracticeBodies(me, opponent, 1 / 30, time, DEFAULT_CONFIG, impact);
+    expect(impact).toHaveBeenCalled();
+    expect(impact.mock.calls[0]![0]).toMatchObject({ a: "you", b: "coach", stunned: "coach" });
+    expect(impact.mock.calls[0]![0].strength).toBeGreaterThan(4);
+  });
 });
