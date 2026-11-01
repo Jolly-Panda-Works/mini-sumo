@@ -505,16 +505,16 @@ function onHood(x: number, y: number, spin = 0, lift = 0) {
 
 const SIDES = [-1, 1] as const;
 
-/** The shared parts of a mask: fur hood, eyes, muzzle and nose. */
-const MASK_ART: Record<Exclude<MaskId, "none">, { fur: string; muzzle?: string; nose: string; eyeY?: number; lightEyes?: boolean }> = {
+/** The shared parts of a mask: fur hood, eyes, muzzle and nose. The body takes the fur colour; limbs may differ. */
+const MASK_ART: Record<Exclude<MaskId, "none">, { fur: string; muzzle?: string; nose: string; eyeY?: number; lightEyes?: boolean; limbs?: string }> = {
   lion: { fur: "#E3A63F", muzzle: "#F6DFAE", nose: "#7A3F2C" },
-  panda: { fur: "#F4F1EA", muzzle: "#FFFFFF", nose: "#23202B", lightEyes: true },
+  panda: { fur: "#F4F1EA", muzzle: "#FFFFFF", nose: "#23202B", lightEyes: true, limbs: "#23202B" },
   tiger: { fur: "#EE8A2C", muzzle: "#FBF3E4", nose: "#D9576A" },
   leopard: { fur: "#E8BE6A", muzzle: "#FBF3E4", nose: "#A85A4A" },
   monkey: { fur: "#7A5233", muzzle: "#F2C9A0", nose: "#5A3A28" },
   bear: { fur: "#8A5A36", muzzle: "#D9B58A", nose: "#2B2340" },
   dwarfbear: { fur: "#3D3030", muzzle: "#E3B874", nose: "#1E1820" },
-  redpanda: { fur: "#C8552A", muzzle: "#FBF3E4", nose: "#23202B" },
+  redpanda: { fur: "#C8552A", muzzle: "#FBF3E4", nose: "#23202B", limbs: "#4A2318" },
   elephant: { fur: "#9AA3B2", nose: "#9AA3B2" },
   rhino: { fur: "#7F8796", muzzle: "#A3AAB8", nose: "#59606E", eyeY: 0.16 },
 };
@@ -901,15 +901,30 @@ export function SumoModel({
   showRing?: boolean;
 }) {
   const skin = useMemo(() => SKIN.clone(), []);
+  const limbs = useMemo(() => SKIN.clone(), []);
   const dashColor = useMemo(() => new Color("#ef6553"), []);
-  useEffect(() => () => skin.dispose(), [skin]);
-  useFrame(() => skin.color.lerpColors(SKIN.color, dashColor, Math.min(1, parts.dashStrength.current) * 0.28));
+  useEffect(
+    () => () => {
+      skin.dispose();
+      limbs.dispose();
+    },
+    [skin, limbs],
+  );
   const hairStyle = HAIR_STYLES[appearance.hair]?.id ?? "topknot";
   const hairColor = HAIR_COLORS[appearance.hairColor]?.hex ?? HAIR_COLORS[0].hex;
   const face = FACES[appearance.face]?.id ?? "determined";
   const outfit = OUTFITS[appearance.outfit]?.id ?? "classic";
   const mask = MASKS[appearance.mask]?.id ?? "none";
   const fit = hairFit(mask, hairStyle);
+  // A mask dresses the whole wrestler: the body takes the animal's colours.
+  const art = mask === "none" ? null : MASK_ART[mask];
+  const bodyColor = useMemo(() => new Color(art?.fur ?? SKIN.color), [art]);
+  const limbColor = useMemo(() => new Color(art?.limbs ?? art?.fur ?? SKIN.color), [art]);
+  useFrame(() => {
+    const dash = Math.min(1, parts.dashStrength.current) * 0.28;
+    skin.color.lerpColors(bodyColor, dashColor, dash);
+    limbs.color.lerpColors(limbColor, dashColor, dash);
+  });
   const armband = outfit === "armbands" ? <mesh geometry={GEO.armband} material={colorMaterial(color)} position-y={-0.32} rotation-x={Math.PI / 2} /> : null;
 
   return (
@@ -917,19 +932,19 @@ export function SumoModel({
       {showRing && (
         <mesh ref={parts.ring} geometry={GEO.ring} material={ringMaterial(color)} rotation-x={-Math.PI / 2} position-y={0.03} renderOrder={1} />
       )}
-      <mesh ref={parts.legL} geometry={GEO.leg} material={skin} position={[-0.32, 0.17, 0]} castShadow />
-      <mesh ref={parts.legR} geometry={GEO.leg} material={skin} position={[0.32, 0.17, 0]} castShadow />
+      <mesh ref={parts.legL} geometry={GEO.leg} material={limbs} position={[-0.32, 0.17, 0]} castShadow />
+      <mesh ref={parts.legR} geometry={GEO.leg} material={limbs} position={[0.32, 0.17, 0]} castShadow />
 
       <group ref={parts.torso} position-y={0.3}>
         <mesh geometry={GEO.body} material={skin} position-y={0.42} scale={[1, 0.88, 0.92]} castShadow />
         <Outfit key={outfit} style={outfit} color={color} />
 
         <group ref={parts.armL} position={[-0.7, 0.62, 0.05]} rotation-z={0.7}>
-          <mesh geometry={GEO.arm} material={skin} position-y={-0.22} castShadow />
+          <mesh geometry={GEO.arm} material={limbs} position-y={-0.22} castShadow />
           {armband}
         </group>
         <group ref={parts.armR} position={[0.7, 0.62, 0.05]} rotation-z={-0.7}>
-          <mesh geometry={GEO.arm} material={skin} position-y={-0.22} castShadow />
+          <mesh geometry={GEO.arm} material={limbs} position-y={-0.22} castShadow />
           {armband}
         </group>
 
