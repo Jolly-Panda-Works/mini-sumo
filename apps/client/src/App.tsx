@@ -222,7 +222,7 @@ export function App() {
       <div className="stage">{inRoom ? <GameCanvas /> : <HomeBackground />}</div>
       <div className="ui">
         {screen}
-        {!inRoom && !needsName && !needsTutorial && <MenuOnboarding />}
+        {!needsName && !needsTutorial && <MenuOnboarding />}
         <Toasts />
         {ui.wardrobeOpen && !needsName && (!inRoom || game.phase === Phase.Waiting || game.phase === Phase.Lobby) && <Wardrobe />}
         {ui.friendsOpen && !inRoom && !needsName && <FriendsPanel />}

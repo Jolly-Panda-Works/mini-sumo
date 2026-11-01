@@ -55,6 +55,8 @@ export function allCosmeticItemIds(): { id: string; category: CosmeticCategory; 
  * Free items every player owns: three per category, including the first option so the
  * default look is always valid. Everything else is bought once and owned for good.
  */
+export const INTRO_OUTFIT_ID = "outfit.sakura";
+
 export const STARTER_ITEMS: readonly string[] = [
   "hair.topknot",
   "hair.bald",
@@ -249,6 +251,8 @@ export interface BazaarPurchaseResponse {
 }
 
 export interface ProfileResponse {
+  /** One-time guided bouts completed on this account. */
+  introRounds?: number[];
   accountId: string;
   /** Display name and when the name / look were last changed (ISO time; "" if never). */
   name?: string;

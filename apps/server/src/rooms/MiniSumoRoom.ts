@@ -42,6 +42,7 @@ export class MiniSumoRoom extends Room<MiniSumoState> {
   private matchmakingLocked = false;
   private arena: ArenaConfig | null = null;
   private arenaId = "training";
+  private introRound: 1 | 2 | undefined;
   /** sessionId -> accountId, kept after a player leaves (needed for settlement). */
   private readonly accounts = new Map<string, string>();
   /** In-game bots and the bot player each one plays as (name, look, level, account). */
@@ -104,7 +105,7 @@ export class MiniSumoRoom extends Room<MiniSumoState> {
   }
 
   private get paid(): boolean {
-    return (this.arena?.entryFee ?? 0) > 0;
+    return !this.introRound && (this.arena?.entryFee ?? 0) > 0;
   }
 
   private matchId(): string {
@@ -113,8 +114,9 @@ export class MiniSumoRoom extends Room<MiniSumoState> {
 
   override onCreate(options: JoinOptions = {}): void {
     MiniSumoRoom.live.set(this.roomId, this);
-    const isPrivate = sanitizeIsPrivate(options.private);
-    const arena = isPrivate ? null : getArena(options.arenaId ?? "training");
+    this.introRound = options.introRound === 1 || options.introRound === 2 ? options.introRound : undefined;
+    const isPrivate = !this.introRound && sanitizeIsPrivate(options.private);
+    const arena = isPrivate ? null : getArena(this.introRound ? "rookie" : (options.arenaId ?? "training"));
     if (!isPrivate && (!arena || !arena.enabled)) throw new ServerError(4004, "That arena is not available.");
     if (arena && arena.entryFee > 0 && !getEconomy()) throw new ServerError(4004, "Paid arenas are not available.");
     this.arena = arena;
@@ -122,11 +124,12 @@ export class MiniSumoRoom extends Room<MiniSumoState> {
     const maxPlayers = arena ? arena.maxPlayers : sanitizeMaxPlayers(options.maxPlayers);
 
     this.state = new MiniSumoState();
-    this.maxClients = maxPlayers;
+    this.maxClients = this.introRound ? 1 : maxPlayers;
     // Training: quick match with bot fill. Paid: humans only, automatic start. Private: host starts.
     this.session = new GameSession(DEFAULT_CONFIG, maxPlayers, {
       quickMatch: !isPrivate && !this.paid,
-      botLevel: sanitizeBotLevel(options.botLevel),
+      botLevel: this.introRound ? "easy" : sanitizeBotLevel(options.botLevel),
+      coached: this.introRound === 1,
       paidArena: this.paid ? { startDelayMs: ECONOMY.paidStartDelayMs, cancelAfterMs: ECONOMY.paidCancelAfterMs } : undefined,
     });
     this.state.maxPlayers = maxPlayers;
@@ -134,7 +137,7 @@ export class MiniSumoRoom extends Room<MiniSumoState> {
     this.state.arenaId = this.arenaId;
     this.state.botLevel = this.paid ? "" : this.session.botLevel;
     // Private rooms are excluded from joinOrCreate, but still joinable by id.
-    if (isPrivate) void this.setPrivate(true);
+    if (isPrivate || this.introRound) void this.setPrivate(true);
 
     this.setPatchRate(1000 / DEFAULT_CONFIG.tickRate);
 
@@ -150,10 +153,10 @@ export class MiniSumoRoom extends Room<MiniSumoState> {
       this.reply(client, this.session.requestStart(client.sessionId));
     });
     this.onMessage(ClientMessage.Rematch, (client) => {
-      this.reply(client, this.session.requestRematch(client.sessionId));
+      if (!this.introRound) this.reply(client, this.session.requestRematch(client.sessionId));
     });
     this.onMessage(ClientMessage.ReturnToLobby, (client) => {
-      this.reply(client, this.session.requestReturnToLobby(client.sessionId));
+      if (!this.introRound) this.reply(client, this.session.requestReturnToLobby(client.sessionId));
     });
     this.onMessage(ClientMessage.SetAppearance, (client, message: unknown) => {
       // Only owned cosmetics: the server replaces anything not owned with the default.
@@ -171,7 +174,8 @@ export class MiniSumoRoom extends Room<MiniSumoState> {
     });
 
     this.setSimulationInterval((deltaTime) => {
-      this.session.update(deltaTime);
+      if (!(this.introRound && this.session.phase === Phase.RoundOver)) this.session.update(deltaTime);
+      if (this.introRound && this.session.phase === Phase.Lobby && this.session.players.size === 4) this.session.requestStart(this.session.hostId);
       this.flushEvents();
       this.syncState();
     }, 1000 / DEFAULT_CONFIG.tickRate);
@@ -194,6 +198,7 @@ export class MiniSumoRoom extends Room<MiniSumoState> {
     if (accountId && [...this.accounts.entries()].some(([id, acc]) => acc === accountId && this.session.players.get(id)?.connected)) {
       throw new ServerError(4005, "You are already in this room on another screen.");
     }
+    if (this.introRound && (!economy || !accountId || !economy.canStartIntro(accountId, this.introRound))) throw new ServerError(4005, "This guided bout is already completed or not unlocked yet.");
     const check = this.session.canJoin();
     if (!check.ok) throw new ServerError(4003, check.error);
 
@@ -346,7 +351,10 @@ export class MiniSumoRoom extends Room<MiniSumoState> {
       .filter((p) => !p.isBot && this.accounts.has(p.id))
       .map((p) => ({ accountId: this.accounts.get(p.id)!, won: p.id === winnerId, placement: p.placement, completed: p.connected && p.elimReason !== "left" }));
     // Training is practice: bouts count for stats and XP, but pay no coins.
-    const { rewards, progress } = economy.recordMatchDetailed({
+    const introPlayer = this.introRound ? participants.find((p) => p.completed) : undefined;
+    const { rewards, progress } = this.introRound && introPlayer
+      ? economy.recordIntroBout(introPlayer.accountId, this.introRound, introPlayer.placement, durationMs)
+      : economy.recordMatchDetailed({
       matchId,
       durationMs,
       rewarded: false,

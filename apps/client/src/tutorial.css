@@ -85,3 +85,50 @@
 .dialog .segmented__opt { min-width: 0; overflow-wrap: anywhere; }
 @media (max-height: 500px) { .tutorial__card { left: 12px; top: 8px; transform: none; width: min(52vw, 480px); padding: 8px 12px; } .tutorial__coach { width: 55px; height: 65px; } .tutorial__copy p { font-size: 13px; } .tutorial__copy h2 { font-size: 20px; } .tutorial__card--choice { width: min(90vw, 650px); left: 50%; top: 50%; transform: translate(-50%, -50%); } }
 @media (max-width: 360px) { .tutorial__choices { grid-template-columns: 1fr; } .tutorial__coach { width: 60px; height: 80px; } }
+
+/* Six transparent poses share one sheet, with each cell framed independently. */
+.panda-coach { display: block; aspect-ratio: 1; background-size: 300% 200%; background-position: var(--panda-x) var(--panda-y); background-repeat: no-repeat; }
+.tutorial__panda.panda-coach { height: auto; align-self: center; }
+.tutorial-success__panda.panda-coach { height: auto; flex-shrink: 0; }
+.dlg-tutorial-dash-choice .tutorial-success__panda { width: min(64%, 250px); max-height: none; }
+.dlg-tutorial-dash-choice .sub-dialog__inner { top: 42%; height: 48%; }
+.dlg-tutorial-dash-choice .sub-dialog__body { gap: 8px; }
+.dlg-tutorial-dash-choice .hint { font-size: clamp(11px, 2.8cqw, 15px); }
+.menu-tour__card > .panda-coach { width: 105px; }
+.dlg-intro-lesson .sub-dialog__inner { top: 42%; height: 48%; }
+.dlg-intro-lesson .sub-dialog__body { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; }
+.dlg-intro-lesson .sub-dialog__foot { display: flex; justify-content: center; }
+.dlg-intro-lesson p { margin: 0; line-height: 1.4; }
+.intro-panda { width: min(58%, 220px); flex-shrink: 0; }
+.dlg-starter-reward .intro-panda { width: min(44%, 165px); }
+.intro-outfit__preview { width: 100%; height: 150px; flex-shrink: 0; }
+.dlg-intro-outfit .intro-panda { width: 95px; }
+.intro-panel-footer { display: flex; align-items: center; gap: 8px; width: 100%; text-align: center; color: #472b19; }
+.intro-panel-footer > .panda-coach { width: 85px; flex-shrink: 0; }
+.intro-panel-footer > div { flex: 1; min-width: 0; }
+.intro-panel-footer p { margin: 0 0 4px; font-size: 14px; line-height: 1.3; }
+.intro-panel-footer .green-art { width: min(100%, 180px); margin-inline: auto; }
+@media (max-height: 620px) { .dlg-tutorial-dash-choice .tutorial-success__panda { width: 58%; } .intro-panda { width: 100px; } .intro-panel-footer > .panda-coach { width: 55px; } .intro-panel-footer p { font-size: 12px; } }
+
+.intro-outfit__showcase { display: flex; align-items: center; gap: 8px; width: 100%; height: clamp(85px, 16vh, 150px); flex-shrink: 0; }
+.intro-outfit__showcase .intro-panda { width: 35%; }
+.intro-outfit__showcase .intro-outfit__preview { width: 65%; height: 100%; }
+.dlg-intro-outfit .sub-dialog__body { gap: 6px; }
+.dlg-intro-guided .dialog__body.wardrobe__body { grid-template-rows: minmax(70px, 16vh) auto minmax(55px, 1fr); gap: 5px; }
+.dlg-intro-guided .dialog__body.wardrobe__body--side-tabs { grid-template-rows: minmax(70px, 16vh) minmax(55px, 1fr); }
+.intro-panel-footer { gap: 6px; }
+.intro-panel-footer > .panda-coach { width: 60px; }
+.intro-panel-footer p { font-size: 12px; }
+.intro-panel-footer .green-art { width: min(100%, 150px); }
+
+.panda-coach--bow { clip-path: inset(0 0 0 8%); }
+.panda-coach--kick { clip-path: polygon(0 0, 100% 0, 100% 100%, 8% 100%, 8% 85%, 0 85%); }
+.dlg-intro-lesson .sub-dialog__inner { top: 40%; height: 51%; }
+.dlg-intro-lesson .intro-panda { width: min(44%, 170px); }
+.dlg-intro-lesson p { font-size: clamp(13px, 3.6cqw, 16px); line-height: 1.35; }
+.dlg-intro-outfit .intro-outfit__showcase .intro-panda { width: 35%; }
+@media (max-height: 620px) { .dlg-intro-lesson .intro-panda { width: 85px; } }
+.dlg-tutorial-dash-choice .tutorial-success__panda { width: min(56%, 220px); }
+.dlg-tutorial-dash-choice .sub-dialog__body { gap: 6px; }
+.dlg-tutorial-dash-choice .sub-dialog__foot { width: 100%; }
+.dlg-tutorial-dash-choice .hint { font-size: max(11px, 3cqw); }

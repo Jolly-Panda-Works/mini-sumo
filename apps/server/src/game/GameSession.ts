@@ -84,6 +84,8 @@ export interface PowerUpItem {
 }
 
 export interface SessionOptions {
+  /** First guided bout only: protect the sole human and let practice partners retreat. */
+  coached?: boolean;
   /**
    * Quick match room: a lone player waits up to cfg.quickMatchWaitMs for others, then the
    * room is filled with bots and the match starts automatically.
@@ -152,6 +154,7 @@ export class GameSession {
   ringRadius: number;
 
   readonly quickMatch: boolean;
+  readonly coached: boolean;
   readonly botLevel: BotLevel;
   readonly paidArena: { startDelayMs: number; cancelAfterMs: number } | null;
   /** Paid arena: simulation time at which the bout starts / the room is cancelled (-1 = none). */
@@ -175,6 +178,7 @@ export class GameSession {
 
   constructor(cfg: SimulationConfig = DEFAULT_CONFIG, maxPlayers: number = MAX_PLAYERS, options: SessionOptions = {}) {
     this.cfg = cfg;
+    this.coached = options.coached === true;
     this.paidArena = options.paidArena ?? null;
     this.quickMatch = options.quickMatch === true && !this.paidArena;
     this.botLevel = sanitizeBotLevel(options.botLevel);
@@ -491,6 +495,18 @@ export class GameSession {
     const cfg = this.ringRadius === this.cfg.arenaRadius ? this.cfg : { ...this.cfg, arenaRadius: this.ringRadius };
     this.tickPowerUps(bodies);
     this.driveBots(bodies, cfg);
+    if (this.coached) {
+      const elapsed = this.time - this.playStartedAt;
+      for (const bot of bodies.filter((p) => p.isBot)) {
+        bot.dashEndsAt = 0;
+        bot.dashReadyAt = this.time + 1000;
+        if (elapsed > 10000) {
+          const radius = Math.hypot(bot.x, bot.y) || 1;
+          bot.inputX = bot.x / radius;
+          bot.inputY = bot.y / radius;
+        } else { bot.inputX *= 0.2; bot.inputY *= 0.2; }
+      }
+    }
     for (const body of bodies) stepMovement(body, dt, cfg, this.time);
 
     for (const impact of resolveCollisions(bodies, this.cfg, this.time)) {
@@ -509,6 +525,23 @@ export class GameSession {
 
     this.recordContacts(bodies);
     this.collectItem(bodies);
+    if (this.coached) {
+      const human = bodies.find((p) => !p.isBot && p.connected);
+      if (human) {
+        const safe = Math.max(0.5, this.ringRadius - this.cfg.playerRadius - 0.25);
+        const radius = Math.hypot(human.x, human.y);
+        if (radius > safe) { human.x *= safe / radius; human.y *= safe / radius; human.vx = 0; human.vy = 0; }
+        // Partners yield one by one if the learner is idle, so the first win is guaranteed.
+        const elapsed = this.time - this.playStartedAt;
+        bodies.filter((p) => p.isBot).forEach((bot, i) => {
+          if (elapsed > 18000 + i * 2500) {
+            bot.x = this.ringRadius + this.cfg.eliminationTolerance + 1;
+            bot.y = 0;
+            bot.lastTouchBy = human.id; bot.lastTouchAt = this.time;
+          }
+        });
+      }
+    }
     for (const id of applyArenaEliminations(bodies, cfg, this.time)) {
       const player = this.players.get(id)!;
       player.elimReason = "ringOut";

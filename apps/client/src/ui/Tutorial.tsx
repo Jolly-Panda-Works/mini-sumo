@@ -15,6 +15,7 @@ import { practiceDash, practiceImpact, practiceSuccess } from "../game/practiceE
 import { useStore } from "../store";
 import { stepPracticeBodies } from "../game/practicePhysics";
 import { Dialog } from "./Dialog";
+import { PandaCoach } from "./PandaCoach";
 import { DashModeChoice } from "./DashModeChoice";
 import { dashFeel } from "../game/dashFeel";
 
@@ -201,17 +202,16 @@ export function Tutorial() {
       </Canvas>
     </div>}
     {step < 3 && <div className="tutorial__card">
-      <div className="tutorial__guides"><img key={pose} className={`tutorial__panda tutorial__panda--${pose}`} src={`${import.meta.env.BASE_URL}tutorial/panda-${pose}.webp`} alt={`Panda coach: ${pose === "cheer" ? "celebrating" : pose === "aim" ? "pointing" : "welcoming"}`} /></div>
+      <div className="tutorial__guides"><PandaCoach key={pose} className={`tutorial__panda tutorial__panda--${pose}`} pose={done ? "celebrate" : step === 0 ? "ready" : step === 1 ? "reach" : "kick"} /></div>
       <div className="tutorial__copy"><span className="tutorial__step">{step < 3 ? `PANDA COACH · ${step + 1} / 3` : "READY TO PLAY"}</span><h2>{titles[step]}</h2><p aria-live="polite">{done ? successMessage : coachMessage || descriptions[step]}</p></div>
     </div>}
     {completionOpen && <Dialog title="Training complete!" className="tutorial-success" variant="sub" hideClose dismissible={false} onClose={chooseOrFinish} footer={<button className="art art--great" autoFocus onClick={chooseOrFinish} aria-label="Great! Let's play"><img src={`${import.meta.env.BASE_URL}ui/btn-great.webp`} alt="" draggable={false} /></button>}>
-      <img className="tutorial-success__panda" src={`${import.meta.env.BASE_URL}tutorial/panda-cheer.webp`} alt="Panda coach celebrating" />
+      <PandaCoach className="tutorial-success__panda" pose="celebrate" />
       <p>You've mastered the basics! Step into the ring and put your skills to the test against real opponents.</p>
     </Dialog>}
-    {step === 3 && <Dialog title="Choose your dash" className="tutorial-dash-choice" variant="sub" hideClose dismissible={false} onClose={() => undefined}>
-      <img className="tutorial-success__panda" src={`${import.meta.env.BASE_URL}tutorial/panda-aim.webp`} alt="Panda coach explaining dash modes" />
+    {step === 3 && <Dialog title="Choose your dash" className="tutorial-dash-choice" variant="sub" hideClose dismissible={false} onClose={() => undefined} footer={<DashModeChoice value={settings.dashMode} onChange={finish} />}>
+      <PandaCoach className="tutorial-success__panda" pose="present" />
       <p>How would you like to dash? You can change this later in Settings.</p>
-      <DashModeChoice value={settings.dashMode} onChange={finish} />
       <p className="hint"><strong>Auto:</strong> dash toward nearby opponents when ready.<br /><strong>Manual:</strong> press the dash button or Space to dash.</p>
     </Dialog>}
     {step < 3 && <>
