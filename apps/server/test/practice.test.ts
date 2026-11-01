@@ -6,6 +6,11 @@ const practiceModule = "../../client/src/game/practicePhysics.ts";
 const { stepPracticeBodies } = await import(practiceModule);
 
 describe("tutorial collisions", () => {
+  it("the practice dash has no cooldown", () => {
+    const me = createBody("you", 0, 0);
+    expect(tryDash(me, 0, DEFAULT_CONFIG, 0)).toBe(true);
+    expect(tryDash(me, 0, DEFAULT_CONFIG, 0)).toBe(true);
+  });
   it.each([1 / 120, 1 / 30, 0.1])("a dash hits the visible opponent instead of passing through at dt=%s", (dt) => {
     const me = createBody("you", -1.2, 0);
     const opponent = createBody("coach", 1.2, 0, Math.PI);

@@ -84,9 +84,6 @@ export function MenuOnboarding() {
     <p>{stage === "first" ? "Let's play! Your first Rookie bout is a free one-on-one against a gentle bot. Your coach has your back — push your partner out!" : "Try your Sakura outfit in another free Rookie bout against easy bots. Use everything you've learned!"}</p>
     {error && <p role="alert">{error}</p>}
   </Dialog>;
-  if (stage === "firstRetry") return <Dialog title="You've got this!" className="intro-lesson" variant="sub" hideClose dismissible={false} onClose={() => undefined} footer={<GreenArtButton label="TRY AGAIN" disabled={busy} autoFocus onClick={() => void start(1)} />}>
-    <PandaCoach pose="reach" className="intro-panda" /><p>That's okay! Every wrestler needs practice. Take a breath and try again — your coach is cheering for you!</p>{error && <p role="alert">{error}</p>}
-  </Dialog>;
   if (stage === "firstWin") return <Dialog title="Your first victory!" className="intro-lesson" variant="sub" hideClose dismissible={false} onClose={() => undefined} footer={<GreenArtButton label="MY GIFT!" autoFocus onClick={() => nextStage("gift")} />}>
     <PandaCoach pose="celebrate" className="intro-panda" /><p>First place! Fantastic work in the ring. Your first win and XP are saved. Let's celebrate with a new outfit for your wrestler!</p>
   </Dialog>;

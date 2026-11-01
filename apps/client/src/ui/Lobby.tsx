@@ -30,16 +30,16 @@ export function Lobby() {
   const searching = !game.isPrivate && game.searchRemainingMs > 0;
   // Online paid arenas start on their own; everything else is started by the host.
   const autoStart = intro || paid && !offline;
-  // The button unlocks one second after the wait is over (and the bots have arrived).
+  // Quick match: the button unlocks as the wait ends. Private rooms: one second after the last change.
   const [armed, setArmed] = useState(false);
   useEffect(() => {
     if (searching || !canStart) {
       setArmed(false);
       return;
     }
-    const timer = window.setTimeout(() => setArmed(true), 1000);
+    const timer = window.setTimeout(() => setArmed(true), game.isPrivate ? 1000 : 0);
     return () => window.clearTimeout(timer);
-  }, [searching, canStart]);
+  }, [searching, canStart, game.isPrivate]);
   const searchSeconds = Math.ceil(game.searchRemainingMs / 1000);
   const slots = Array.from({ length: game.maxPlayers }, (_, i) => connected[i] ?? null);
   // The host may add bots in private rooms and in Training (not in paid arenas).

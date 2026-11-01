@@ -126,11 +126,11 @@ describe("quick match", () => {
     advance(s, cfg.quickMatchWaitMs - 500);
     expect(s.phase).toBe(Phase.Waiting);
     expect(s.searchRemainingMs).toBeGreaterThan(0);
-    advance(s, 600);
-    // Bots join one by one, each at its ring-side slot.
-    expect(s.bots).toHaveLength(1);
+    advance(s, 300);
+    // Bots join one by one, each at its ring-side slot, and all are seated when the wait ends.
+    expect(s.bots.length).toBeGreaterThan(0);
     expect(s.searchRemainingMs).toBeGreaterThan(0);
-    advance(s, cfg.botJoinIntervalMs * 2 + 100);
+    advance(s, 300);
     expect(s.bots).toHaveLength(3);
     expect(s.searchRemainingMs).toBe(0);
     for (const bot of s.bots) expect(Math.hypot(bot.x, bot.y)).toBeCloseTo(cfg.arenaRadius * cfg.lobbyRadiusFactor, 3);
@@ -142,6 +142,16 @@ describe("quick match", () => {
     expect(s.players.get("me")!.name).toBe("Usef");
     expect(s.players.get("me")!.colorIndex).toBe(0);
     expect(s.hostId).toBe("me");
+  });
+
+  it.each([2, 3, 4])("the search takes the full wait and no longer with %i seats", (seats) => {
+    const s = new GameSession(cfg, seats, { quickMatch: true, seed: 1, botLevel: "normal" });
+    s.addPlayer("me", "Me");
+    let elapsed = 0;
+    while (s.searchRemainingMs > 0) { advance(s, s.stepMs); elapsed += s.stepMs; }
+    expect(s.connectedPlayers).toHaveLength(seats);
+    expect(elapsed).toBeGreaterThanOrEqual(cfg.quickMatchWaitMs - cfg.botJoinIntervalMs);
+    expect(elapsed).toBeLessThanOrEqual(cfg.quickMatchWaitMs + s.stepMs);
   });
 
   it("a second player joining cancels the bot fill", () => {

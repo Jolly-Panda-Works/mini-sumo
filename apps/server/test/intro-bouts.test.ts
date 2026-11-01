@@ -63,6 +63,10 @@ describe("one-time guided progression", () => {
     const path = "../../client/src/network/LocalConnection.ts";
     const { LocalConnection } = await import(path);
     const room = new LocalConnection({ introRound: 1, name: "Learner", appearance: {}, isPrivate: false, maxPlayers: 4, botLevel: "hard", arenaId: "rookie" });
+    // No matchmaking: the duel is already starting, with no search and no lobby.
+    expect(room.state.players.size).toBe(2);
+    expect(room.state.searchRemainingMs).toBe(0);
+    expect(["waiting", "lobby"]).not.toContain(room.state.phase);
     vi.advanceTimersByTime(40000);
     expect(room.state.players.size).toBe(2);
     expect(room.state.maxPlayers).toBe(2);
@@ -105,7 +109,7 @@ describe("one-time guided progression", () => {
     expect(localEconomy.profile().owned).not.toContain(INTRO_OUTFIT_ID);
     const progressPath = "../../client/src/ui/introProgress.ts";
     const { afterIntroResult } = await import(progressPath);
-    expect(afterIntroResult("firstPlaying", false)).toBe("firstRetry");
+    expect(afterIntroResult("firstPlaying", false)).toBe("first");
     expect(afterIntroResult("firstPlaying", true)).toBe("firstWin");
     expect(afterIntroResult("secondPlaying", false)).toBe("profile");
   });

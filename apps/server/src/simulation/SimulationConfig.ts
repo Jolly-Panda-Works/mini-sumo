@@ -179,7 +179,7 @@ export const DEFAULT_CONFIG: Readonly<SimulationConfig> = Object.freeze({
   timeoutDrawEpsilon: 0.05,
 
   quickMatchWaitMs: QUICK_MATCH_WAIT_MS,
-  botJoinIntervalMs: 650,
+  botJoinIntervalMs: 200,
   ringOutCreditMs: 2500,
   botOpeningMs: 3_000,
   botRecoilMs: 700,

@@ -118,7 +118,7 @@ The look is four small indexes (`hair`, `hairColor`, `face`, `outfit`) defined i
 `apps/client/src/network/connection.ts` defines `GameConnection`, the small surface `RoomManager` uses (`send`, `onStateChange`, `onMessage`, `leave`, live `state`). Two implementations:
 
 - `wrapColyseusRoom(room)`: the online Colyseus room.
-- `LocalConnection`: a `GameSession` ticking at 30 Hz in the browser, mirroring `MiniSumoRoom.syncState` into a plain object with the `SyncedState` shape and emitting the same `impact`/`dash`/`eliminated`/`error` messages. Offline quick match uses a 4 s search before bots fill the ring.
+- `LocalConnection`: a `GameSession` ticking at 30 Hz in the browser, mirroring `MiniSumoRoom.syncState` into a plain object with the `SyncedState` shape and emitting the same `impact`/`dash`/`eliminated`/`error` messages. Offline quick match uses the same 3 s search as online; bots take their seats as it ends.
 
 `networkMode.ts` decides the mode (`VITE_NETWORK_MODE`, missing `VITE_SERVER_URL` in production, or a `/health` probe), and `RoomManager` falls back to a `LocalConnection` when joining fails because the server is unreachable.
 

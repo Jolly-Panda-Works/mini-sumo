@@ -14,10 +14,23 @@ describe("paid arena session", () => {
     s.addPlayer("a", "A");
     s.addPlayer("b", "B");
     expect(s.requestStart("a").ok).toBe(false);
-    advance(s, 4800);
+    advance(s, 4500);
     expect(s.phase).toBe(Phase.Lobby);
     expect(s.bots).toHaveLength(0);
-    advance(s, 400 + cfg.botJoinIntervalMs * 3 + 200);
+    advance(s, 700);
+    expect(s.bots).toHaveLength(2);
+    expect(s.phase).toBe(Phase.Countdown);
+  });
+
+  it("starts exactly when the wait ends, even if a second player joins late", () => {
+    const s = new GameSession(cfg, 4, { paidArena: { startDelayMs: 3000, cancelAfterMs: 3000 }, seed: 1 });
+    s.addPlayer("a", "A");
+    advance(s, 2000);
+    s.addPlayer("b", "B");
+    expect(s.searchRemainingMs).toBeCloseTo(1000, 3);
+    advance(s, 900);
+    expect(s.phase).toBe(Phase.Lobby);
+    advance(s, 200);
     expect(s.bots).toHaveLength(2);
     expect(s.phase).toBe(Phase.Countdown);
   });

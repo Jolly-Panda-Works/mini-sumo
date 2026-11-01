@@ -128,7 +128,7 @@ export class MiniSumoRoom extends Room<MiniSumoState> {
     this.maxClients = this.introRound ? 1 : maxPlayers;
     // Training: quick match with bot fill. Paid: humans only, automatic start. Private: host starts.
     this.session = new GameSession(createArenaConfig(this.arenaId), maxPlayers, {
-      quickMatch: !isPrivate && !this.paid,
+      quickMatch: !isPrivate && !this.paid && this.introRound !== 1,
       botLevel: this.introRound ? "easy" : sanitizeBotLevel(options.botLevel),
       coached: this.introRound === 1,
       paidArena: this.paid ? { startDelayMs: ECONOMY.paidStartDelayMs, cancelAfterMs: ECONOMY.paidCancelAfterMs } : undefined,
@@ -220,6 +220,11 @@ export class MiniSumoRoom extends Room<MiniSumoState> {
       throw new ServerError(4003, result.error);
     }
     if (accountId) this.accounts.set(client.sessionId, accountId);
+    // The first guided bout is a duel with no matchmaking: straight into the ring.
+    if (this.introRound === 1) {
+      this.session.addBot(client.sessionId);
+      this.session.requestStart(client.sessionId);
+    }
     this.flushEvents();
     this.syncState();
   }

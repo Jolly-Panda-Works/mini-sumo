@@ -163,6 +163,8 @@ export class GameSession {
   private cancelled = false;
   /** Paid arena: bots are filling the empty seats before the bout starts. */
   private paidFilling = false;
+  /** Paid arena: when the bots that are filling the seats finish and the bout starts. */
+  private paidStartAt = -1;
   private playStartedAt = 0;
   /** Simulation time when the quick-match wait started, -1 when not searching. */
   private searchStartedAt = -1;
@@ -203,14 +205,15 @@ export class GameSession {
   }
 
   /** Quick match: ms left before bots fill the room (0 when not searching). */
-  /** True while bots are joining one by one at the end of the wait. */
+  /** True while bots are joining one by one in the last moments of the wait. */
   get filling(): boolean {
-    return this.searchStartedAt >= 0 && this.time - this.searchStartedAt >= this.cfg.quickMatchWaitMs;
+    const lead = this.cfg.botJoinIntervalMs * Math.max(0, this.maxPlayers - this.humans.length - 1);
+    return this.searchStartedAt >= 0 && this.time - this.searchStartedAt >= this.cfg.quickMatchWaitMs - lead;
   }
 
   get searchRemainingMs(): number {
     if (this.paidArena) {
-      if (this.paidFilling) return 1; // bots are joining: the bout starts in a moment
+      if (this.paidFilling) return Math.max(1, this.paidStartAt - this.time); // bots are joining: the bout starts in a moment
       const at = this.autoStartAt >= 0 ? this.autoStartAt : this.cancelAt;
       return at >= 0 ? Math.max(0, at - this.time) : 0;
     }
@@ -766,9 +769,10 @@ export class GameSession {
     }
     if (this.paidFilling) return; // bots are filling the seats: the start is on its way
     if (humans >= 2) {
-      this.cancelAt = -1;
+      // The wait runs from the first player: someone joining late never extends it.
       if (humans >= this.maxPlayers) this.autoStartAt = this.time;
-      else if (this.autoStartAt < 0) this.autoStartAt = this.time + this.paidArena.startDelayMs;
+      else if (this.autoStartAt < 0) this.autoStartAt = Math.min(this.cancelAt >= 0 ? this.cancelAt : Infinity, this.time + this.paidArena.startDelayMs);
+      this.cancelAt = -1;
     } else {
       this.autoStartAt = -1;
       if (humans === 1 && this.cancelAt < 0) this.cancelAt = this.time + this.paidArena.cancelAfterMs;
@@ -777,13 +781,15 @@ export class GameSession {
   }
 
   /**
-   * Paid arenas: when the wait ends, bots fill the empty seats one by one (nobody else came,
-   * or not enough people), then the bout starts by itself. Players can't add bots here.
+   * Paid arenas: in the last moments of the wait, bots fill the empty seats one by one (nobody
+   * else came, or not enough people), so the bout starts on time. Players can't add bots here.
    */
   private tickPaidArena(): void {
-    const due = (this.autoStartAt >= 0 && this.time >= this.autoStartAt) || (this.cancelAt >= 0 && this.time >= this.cancelAt);
-    if (due && !this.paidFilling) {
+    const at = this.autoStartAt >= 0 ? this.autoStartAt : this.cancelAt;
+    const lead = this.cfg.botJoinIntervalMs * (this.maxPlayers - this.connectedPlayers.length);
+    if (at >= 0 && this.time >= at - lead && !this.paidFilling) {
       this.paidFilling = true;
+      this.paidStartAt = at;
       this.autoStartAt = -1;
       this.cancelAt = -1;
       this.nextBotAt = this.time;
@@ -823,11 +829,11 @@ export class GameSession {
   }
 
   /**
-   * Nobody joined in time: bots join one by one (each appears at its ring-side slot).
+   * Nobody joined: bots join one by one as the wait ends (each appears at its ring-side slot).
    * The search ends when the room is full; then the host starts the match.
    */
   private tickSearch(): void {
-    if (this.searchStartedAt < 0 || this.time - this.searchStartedAt < this.cfg.quickMatchWaitMs) return;
+    if (!this.filling) return;
     if (this.time < this.nextBotAt) return;
     if (this.connectedPlayers.length < this.maxPlayers) {
       this.createBot();

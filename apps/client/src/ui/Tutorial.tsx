@@ -10,7 +10,7 @@ import { themeFor } from "../game/arenaThemes";
 import { SumoModel, useSumoParts } from "../game/SumoModel";
 import { Effects } from "../game/Effects";
 import { Callouts } from "../game/Callouts";
-import { dustBus, hitStop, lastDashAt, lastHitAt, lastHit, pulseBus, slowMo, timeScale } from "../game/effectsBus";
+import { dustBus, hitStop, lastDashAt, lastHitAt, lastHit, slowMo, timeScale } from "../game/effectsBus";
 import { practiceDash, practiceImpact, practiceSuccess } from "../game/practiceEffects";
 import { useStore } from "../store";
 import { stepPracticeBodies } from "../game/practicePhysics";
@@ -40,7 +40,9 @@ function requestPracticeDash(p: Practice) {
   if (p.step === 0 || p.step >= 3 || p.done) return;
   const v = vector(p);
   p.me.inputX = v.x; p.me.inputY = v.y;
-  if (tryDash(p.me, p.time, DEFAULT_CONFIG)) {
+  // Practice dash: always available, never recharging (and never blocked by a stun).
+  p.me.stunnedUntil = 0;
+  if (tryDash(p.me, p.time, DEFAULT_CONFIG, 0)) {
     p.aimedDash = true;
     practiceDash(p.me.id, p.me.x, p.me.y);
   }
@@ -85,7 +87,6 @@ function PracticeScene({ p, complete, feedback }: { p: Practice; complete: () =>
   const marker = useRef<Mesh>(null);
   const lastImpact = useRef(-Infinity);
   const lastTrail = useRef(0);
-  const lastReady = useRef(true);
   useFrame(({ clock }, delta) => {
     if (document.hidden) return;
     if (marker.current) marker.current.scale.setScalar(1 + Math.sin(clock.elapsedTime * 4) * 0.1);
@@ -102,12 +103,6 @@ function PracticeScene({ p, complete, feedback }: { p: Practice; complete: () =>
       if (!p.done) feedback(p.step === 1 ? "Nice hit! That's how a dash lands." : "Good push! Keep the blue wrestler moving toward the rope.");
     });
     p.moved += Math.hypot(p.me.x - beforeX, p.me.y - beforeY);
-    const ready = p.time >= p.me.dashReadyAt;
-    if (ready && !lastReady.current) {
-      pulseBus.emit({ x: p.me.x, y: p.me.y, color: "#ffc52f", size: 1 });
-      if (!p.done) feedback("Dash is ready again. Press DASH or Space!");
-    }
-    lastReady.current = ready;
     if (p.time < p.me.dashEndsAt && p.time - lastTrail.current > 45) {
       lastTrail.current = p.time;
       dustBus.emit({ x: p.me.x, y: p.me.y, count: 3, speed: 0.8 });
@@ -137,7 +132,6 @@ function PracticeScene({ p, complete, feedback }: { p: Practice; complete: () =>
 export function Tutorial() {
   const [step, setStep] = useState(0);
   const [done, setDone] = useState(false);
-  const [cooldown, setCooldown] = useState(0);
   const [coachMessage, setCoachMessage] = useState("");
   const [completionOpen, setCompletionOpen] = useState(false);
   const settings = useStore(settingsStore);
@@ -146,10 +140,6 @@ export function Tutorial() {
   const stick = useRef<number | null>(null);
   const dashPointer = useRef<number | null>(null);
   const [knob, setKnob] = useState({ x: 0, y: 0 });
-  useEffect(() => {
-    const timer = window.setInterval(() => setCooldown(Math.max(0, p.me.dashReadyAt - p.time)), 100);
-    return () => window.clearInterval(timer);
-  }, [p]);
   useEffect(() => () => {
     for (const id of [p.me.id, p.opponent.id]) { lastDashAt.delete(id); lastHitAt.delete(id); lastHit.delete(id); }
     hitStop.until = 0;
@@ -227,12 +217,12 @@ export function Tutorial() {
         onPointerCancel={() => { stick.current = null; p.touch = { x: 0, y: 0 }; setKnob({ x: 0, y: 0 }); }}>
         <img src={`${import.meta.env.BASE_URL}hud/joy-knob.webp`} style={{ transform: `translate(${knob.x}px, ${knob.y}px)` }} alt="" draggable={false} />
       </div>}
-      {step > 0 && !done && <button className={`tutorial__dash${cooldown <= 0 ? " tutorial__dash--hint" : ""}`} aria-label="Press to dash"
+      {step > 0 && !done && <button className="tutorial__dash tutorial__dash--hint" aria-label="Press to dash"
         onPointerDown={(e) => { if (dashPointer.current !== null) return; dashPointer.current = e.pointerId; e.currentTarget.setPointerCapture(e.pointerId); begin(); }}
         onPointerUp={(e) => { if (e.pointerId !== dashPointer.current) return; dashPointer.current = null; }}
         onPointerCancel={() => { dashPointer.current = null; }}
         onLostPointerCapture={() => { dashPointer.current = null; }}
-        onKeyDown={(e) => { if (e.key === "Enter" && !e.repeat) begin(); }}><img src={`${import.meta.env.BASE_URL}hud/dash.webp`} alt="" draggable={false} /><span>{cooldown > 0 ? `RECHARGE ${(cooldown / 1000).toFixed(1)}s` : "DASH"}</span></button>}
+        onKeyDown={(e) => { if (e.key === "Enter" && !e.repeat) begin(); }}><img src={`${import.meta.env.BASE_URL}hud/dash.webp`} alt="" draggable={false} /><span>DASH</span></button>}
     </>}
   </section>;
 }
