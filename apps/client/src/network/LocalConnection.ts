@@ -8,7 +8,7 @@ import {
   type SyncedPlayer,
   type SyncedState,
 } from "@mini-sumo/shared";
-import { GameSession, createConfig, isDashing, isStunned, type ActionResult } from "@mini-sumo/sim";
+import { GameSession, createArenaConfig, isDashing, isStunned, type ActionResult } from "@mini-sumo/sim";
 import type { GameConnection } from "./connection";
 import { localEconomy, type LocalEntry } from "./localEconomy";
 
@@ -74,7 +74,7 @@ export class LocalConnection implements GameConnection {
     this.arenaId = options.isPrivate ? "private" : (options.arenaId ?? "training");
     // Every local arena bout (free or paid) goes through the local economy, except private rooms.
     this.entry = options.entry ?? (options.isPrivate ? null : { id: randomCode(), arenaId: this.arenaId, fee: 0, status: "paid" });
-    this.session = new GameSession(createConfig({ quickMatchWaitMs: OFFLINE_SEARCH_MS }), options.maxPlayers, {
+    this.session = new GameSession(createArenaConfig(this.arenaId, { quickMatchWaitMs: OFFLINE_SEARCH_MS }), options.maxPlayers, {
       quickMatch: !options.isPrivate,
       botLevel: options.introRound ? "easy" : sanitizeBotLevel(options.botLevel),
       coached: options.introRound === 1,

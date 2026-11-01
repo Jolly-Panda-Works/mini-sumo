@@ -212,3 +212,20 @@ export const DEFAULT_CONFIG: Readonly<SimulationConfig> = Object.freeze({
 export function createConfig(overrides: Partial<SimulationConfig> = {}): SimulationConfig {
   return { ...DEFAULT_CONFIG, ...overrides };
 }
+
+/** Higher arenas close sooner and leave a smaller final fighting space. */
+const ARENA_SHRINK: Readonly<Record<string, readonly [number, number]>> = {
+  rookie: [25_000, 0.68],
+  amateur: [30_000, 0.64],
+  pro: [35_000, 0.60],
+  veteran: [40_000, 0.56],
+  champion: [45_000, 0.52],
+  master: [50_000, 0.48],
+  legend: [55_000, 0.44],
+  godlike: [60_000, 0.40],
+};
+
+export function createArenaConfig(arenaId: string, overrides: Partial<SimulationConfig> = {}): SimulationConfig {
+  const [shrinkMs, shrinkTo] = ARENA_SHRINK[arenaId] ?? [DEFAULT_CONFIG.shrinkMs, DEFAULT_CONFIG.shrinkTo];
+  return createConfig({ shrinkMs, shrinkTo, ...overrides });
+}

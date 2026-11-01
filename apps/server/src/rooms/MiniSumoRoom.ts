@@ -15,7 +15,7 @@ import { presence } from "../social/presence.js";
 import { getEconomy } from "../economy/instance.js";
 import { GameSession, type ActionResult } from "../game/GameSession.js";
 import { isDashing, isStunned } from "../simulation/MovementSystem.js";
-import { DEFAULT_CONFIG } from "../simulation/SimulationConfig.js";
+import { DEFAULT_CONFIG, createArenaConfig } from "../simulation/SimulationConfig.js";
 import { sanitizeIsPrivate, sanitizeMaxPlayers } from "../validation/InputValidator.js";
 import { MiniSumoState, PlayerState } from "../state/MiniSumoState.js";
 
@@ -126,7 +126,7 @@ export class MiniSumoRoom extends Room<MiniSumoState> {
     this.state = new MiniSumoState();
     this.maxClients = this.introRound ? 1 : maxPlayers;
     // Training: quick match with bot fill. Paid: humans only, automatic start. Private: host starts.
-    this.session = new GameSession(DEFAULT_CONFIG, maxPlayers, {
+    this.session = new GameSession(createArenaConfig(this.arenaId), maxPlayers, {
       quickMatch: !isPrivate && !this.paid,
       botLevel: this.introRound ? "easy" : sanitizeBotLevel(options.botLevel),
       coached: this.introRound === 1,
