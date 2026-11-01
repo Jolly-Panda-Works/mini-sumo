@@ -1,4 +1,5 @@
 import { BAZAAR_PRODUCTS, packForBazaarProduct, type BazaarPurchaseRequest, type BazaarPurchaseResponse, type CoinPack } from "@mini-sumo/shared";
+import { notePayer } from "./ads";
 import { economyStore, refreshProfile, request } from "./economyClient";
 import { localEconomy } from "./localEconomy";
 import { networkStore } from "./networkMode";
@@ -109,7 +110,10 @@ async function finish(plugin: BazaarNative, purchase: Purchase): Promise<boolean
   } catch {
     // Credited already; consuming is retried on the next restore (crediting is once per token).
   }
-  if (credited) await refreshProfile();
+  if (credited) {
+    notePayer();
+    await refreshProfile();
+  }
   return credited;
 }
 

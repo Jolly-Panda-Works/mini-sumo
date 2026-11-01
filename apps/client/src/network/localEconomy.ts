@@ -1,4 +1,5 @@
 import {
+  AD_RULES,
   Currency,
   REWARDS,
   DAILY_GIFT_COINS,
@@ -53,6 +54,10 @@ interface LocalState {
   giftDay: string;
   /** Store purchases already credited (purchase tokens), so a purchase is never credited twice. */
   purchases: string[];
+  /** Rewarded ads paid on adDay, and when the last one was paid (ms). */
+  adDay: string;
+  adCount: number;
+  adAt: number;
 }
 
 export interface LocalEntry {
@@ -94,6 +99,9 @@ function fresh(): LocalState {
     bestStreak: 0,
     giftDay: "",
     purchases: [],
+    adDay: "",
+    adCount: 0,
+    adAt: 0,
   };
 }
 
@@ -205,6 +213,7 @@ export const localEconomy = {
         cap: REWARDS.dailyCap,
         firstMatchBonusAvailable: state.bonusDay !== day,
         giftAvailable: localEconomy.dailyGiftAvailable(),
+        ...localEconomy.adRewardStatus(),
       },
     };
   },
@@ -216,6 +225,25 @@ export const localEconomy = {
   /** The shop's free coins: once per (UTC) day. */
   dailyGiftAvailable(): boolean {
     return state.giftDay !== today();
+  },
+
+  /** Rewarded ads left today, and when the next one can be watched ("" = now). */
+  adRewardStatus(): { adRewardsLeft: number; nextAdAt: string } {
+    const adRewardsLeft = Math.max(0, AD_RULES.rewardedDailyLimit - (state.adDay === today() ? state.adCount : 0));
+    const ready = state.adAt + AD_RULES.rewardedCooldownMs;
+    return { adRewardsLeft, nextAdAt: adRewardsLeft > 0 && ready > Date.now() ? new Date(ready).toISOString() : "" };
+  },
+
+  /** Pays one watched rewarded ad; 0 when the daily limit or the cooldown says no. */
+  claimAdReward(): number {
+    const { adRewardsLeft, nextAdAt } = localEconomy.adRewardStatus();
+    if (adRewardsLeft <= 0 || nextAdAt) return 0;
+    state.adCount = state.adDay === today() ? state.adCount + 1 : 1;
+    state.adDay = today();
+    state.adAt = Date.now();
+    record(AD_RULES.rewardedCoins, "ad_reward", "Rewarded ad");
+    save();
+    return AD_RULES.rewardedCoins;
   },
 
   /**

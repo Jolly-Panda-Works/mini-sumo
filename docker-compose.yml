@@ -24,6 +24,8 @@ services:
       - "${WEB_PORT:-6803}:80"
     environment:
       ECONOMY_EVENT_LOG: ${ECONOMY_EVENT_LOG:-true}
+      # Rewarded ads pay coins online (off until an ad network is live). See docs/ADS.fa.md.
+      AD_REWARDS_ENABLED: ${AD_REWARDS_ENABLED:-false}
       # Cafe Bazaar purchase validation (empty = off): the app's Pishkhan API token, or the older
       # OAuth client (BAZAAR_CLIENT_ID / SECRET / REFRESH_TOKEN). All values: .env.docker.example
       BAZAAR_PISHKHAN_TOKEN: ${BAZAAR_PISHKHAN_TOKEN:-}

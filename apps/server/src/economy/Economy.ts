@@ -3,7 +3,7 @@ import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import {
-  DAILY_GIFT_COINS, APPEARANCE_LIMITS, NAME_MAX_LENGTH,
+  AD_RULES, DAILY_GIFT_COINS, APPEARANCE_LIMITS, NAME_MAX_LENGTH,
   Currency,
   STARTER_ITEMS,
   restrictToOwned,
@@ -296,6 +296,55 @@ export class Economy {
     return { granted: DAILY_GIFT_COINS, balance: result.balance };
   }
 
+  // ------------------------------------------------------------ rewarded ads
+
+  /** Rewarded ads paid today (UTC), and when the last one was paid. */
+  private adRewardsToday(accountId: string): { count: number; last: string } {
+    const found = row<{ n: number; last: string | null }>(
+      this.db
+        .prepare("SELECT COUNT(*) AS n, MAX(created_at) AS last FROM transactions WHERE account_id = ? AND category = 'ad_reward' AND created_at >= ?")
+        .get(accountId, `${utcDay(this.now())}T00:00:00.000Z`),
+    );
+    return { count: found?.n ?? 0, last: found?.last ?? "" };
+  }
+
+  /** Rewarded ads left today, and when the next one can be watched ("" = now). */
+  adRewardStatus(accountId: string): { left: number; nextAt: string } {
+    const { count, last } = this.adRewardsToday(accountId);
+    const left = Math.max(0, AD_RULES.rewardedDailyLimit - count);
+    const ready = last ? Date.parse(last) + AD_RULES.rewardedCooldownMs : 0;
+    return { left, nextAt: left > 0 && ready > this.now().getTime() ? new Date(ready).toISOString() : "" };
+  }
+
+  /**
+   * Pays one watched rewarded ad, once per adId, within the daily limit and cooldown. The limit
+   * is what bounds a forged claim until the ad network can confirm views to the server.
+   */
+  claimAdReward(accountId: string, adId: unknown): { credited: boolean; coins: number; balance: number; left: number } {
+    if (!this.flags.economy || !this.flags.adRewards) throw new EconomyError("disabled", "Rewarded ads are not available.");
+    if (typeof adId !== "string" || !/^[\w-]{8,64}$/.test(adId)) throw new EconomyError("bad_request", "Unknown ad.");
+    this.account(accountId);
+    const key = `ad:${accountId}:${adId}`;
+    return this.tx(() => {
+      if (row(this.db.prepare("SELECT id FROM transactions WHERE idempotency_key = ?").get(key))) {
+        return { credited: false, coins: AD_RULES.rewardedCoins, balance: this.balance(accountId), left: this.adRewardStatus(accountId).left };
+      }
+      const { left, nextAt } = this.adRewardStatus(accountId);
+      if (left <= 0) throw new EconomyError("bad_request", "No more rewarded ads today. Come back tomorrow.");
+      if (nextAt) throw new EconomyError("bad_request", "The next rewarded ad isn't ready yet.");
+      const result = this.apply({
+        accountId,
+        currency: Currency.Coins,
+        amount: AD_RULES.rewardedCoins,
+        category: "ad_reward",
+        reason: "Rewarded ad",
+        key,
+      });
+      this.emit("ad_reward", { accountId, amount: AD_RULES.rewardedCoins });
+      return { credited: true, coins: AD_RULES.rewardedCoins, balance: result.balance, left: left - 1 };
+    });
+  }
+
   introRounds(accountId: string): number[] {
     return [1, 2].filter((round) => Boolean(this.db.prepare("SELECT 1 FROM match_results WHERE match_id = ? AND account_id = ?").get(`intro:${accountId}:${round}`, accountId)));
   }
@@ -583,6 +632,7 @@ export class Economy {
     const account = this.account(accountId);
     const today = utcDay(this.now());
     const earned = account.reward_day === today ? account.reward_day_total : 0;
+    const ads = this.adRewardStatus(accountId);
     return {
       accountId,
       introRounds: this.introRounds(accountId),
@@ -598,6 +648,8 @@ export class Economy {
         cap: ECONOMY.rewards.dailyCap,
         firstMatchBonusAvailable: account.bonus_day !== today,
         giftAvailable: this.dailyGiftAvailable(accountId),
+        adRewardsLeft: ads.left,
+        nextAdAt: ads.nextAt,
       },
     };
   }

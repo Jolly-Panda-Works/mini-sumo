@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { COIN_PACKS, DAILY_GIFT_COINS, type CoinPack } from "@mini-sumo/shared";
+import { AD_RULES, COIN_PACKS, DAILY_GIFT_COINS, type CoinPack } from "@mini-sumo/shared";
+import { rewardedAdsAvailable, watchRewardedAd } from "../network/ads";
 import { bazaarBuyable, bazaarPrices, buyCoinPack, restoreBazaarPurchases } from "../network/bazaar";
 import { economyStore, refreshProfile, request } from "../network/economyClient";
 import { localEconomy } from "../network/localEconomy";
@@ -11,7 +12,7 @@ import { setShopOpen } from "../uiStore";
 import { Coins } from "./Coins";
 import { devSamples } from "./devSamples";
 import { Dialog } from "./Dialog";
-import { ComingSoonButton, PriceButton } from "./ArtButtons";
+import { ComingSoonButton, GreenArtButton, PriceButton } from "./ArtButtons";
 
 /** Coin shop: daily free coins and coin packs (bought through Cafe Bazaar in the Bazaar build). */
 export function CoinShop() {
@@ -92,6 +93,35 @@ export function CoinShop() {
     }
   };
 
+  // Rewarded ad: the build has ads, and today's limit and the wait between ads allow one.
+  const daily = local ? localEconomy.adRewardStatus() : { adRewardsLeft: economy.profile?.daily.adRewardsLeft ?? 0, nextAdAt: economy.profile?.daily.nextAdAt ?? "" };
+  const adOffered = rewardedAdsAvailable() && daily.adRewardsLeft > 0;
+  const [watching, setWatching] = useState(false);
+  const [adWaitOver, setAdWaitOver] = useState(0);
+  const adWait = daily.nextAdAt ? Date.parse(daily.nextAdAt) - Date.now() : 0;
+  const adReady = adOffered && adWait <= 0 && !watching;
+  // Re-render when the wait between ads ends, so the button comes back by itself.
+  useEffect(() => {
+    if (adWait <= 0) return;
+    const timer = window.setTimeout(() => setAdWaitOver((n) => n + 1), adWait + 100);
+    return () => window.clearTimeout(timer);
+  }, [daily.nextAdAt, adWaitOver]);
+
+  const watchAd = async () => {
+    setWatching(true);
+    try {
+      const coins = await watchRewardedAd();
+      if (coins > 0) {
+        audio.sample("purchase");
+        pushToast(`+${coins} Sumo Coins`, "info");
+      }
+    } catch (error) {
+      pushToast(error instanceof Error && error.message ? error.message : "No ad right now. Try again later.", "info");
+    } finally {
+      setWatching(false);
+    }
+  };
+
   return (
     <Dialog
       title="Coin shop"
@@ -117,6 +147,24 @@ export function CoinShop() {
             </button>
           </div>
         </li>
+        {adOffered && (
+          <li className="pack pack--daily pack--ad">
+            <img className="pack__art" src={`${base}coins/daily.webp`} alt="" width={360} height={486} loading="lazy" />
+            <div className="pack__info">
+              <p className="pack__name">Watch an ad ({daily.adRewardsLeft} left today)</p>
+              <p className="pack__coins">
+                <Coins amount={AD_RULES.rewardedCoins} />
+              </p>
+              <GreenArtButton
+                className="pack__watch"
+                label={adReady || watching ? "WATCH" : "SOON"}
+                disabled={!adReady}
+                sfx="none"
+                onClick={() => void watchAd()}
+              />
+            </div>
+          </li>
+        )}
         {COIN_PACKS.map((pack, i) => (
           <li key={pack.id} className={`pack${pack.tag ? " pack--tagged" : ""}${i === COIN_PACKS.length - 1 ? " pack--wide" : ""}`}>
             {pack.tag && (
