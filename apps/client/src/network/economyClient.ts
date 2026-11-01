@@ -108,10 +108,13 @@ export function cachedOwnedItems(): Set<string> {
   }
 }
 
-/** Items the player may wear right now: server ownership online, starter + cache offline. */
+/**
+ * Items the player may wear right now: server ownership online, starter + cache offline.
+ * Starter items count online too: an older server's list misses starters added since.
+ */
 export function ownedItems(): Set<string> {
   const profile = economyStore.get().profile;
-  return profile ? new Set(profile.owned) : cachedOwnedItems();
+  return profile ? new Set([...STARTER_ITEMS, ...profile.owned]) : cachedOwnedItems();
 }
 
 export class ApiError extends Error {

@@ -28,6 +28,7 @@ interface Props {
   hairColor: number;
   face: number;
   outfit: number;
+  mask: number;
 }
 
 /** Converts gameplay facing (atan2(y, x)) to a three.js yaw for a model facing +Z. */
@@ -39,8 +40,8 @@ function yawFromAngle(angle: number): number {
  * Renders one player. Positions come only from the authoritative Colyseus state and are
  * smoothed for display; nothing here influences gameplay.
  */
-export const NetSumo = memo(function NetSumo({ id, name, colorIndex, isYou, hair, hairColor, face, outfit }: Props) {
-  const appearance = useMemo<Appearance>(() => ({ hair, hairColor, face, outfit, avatar: 0 }), [hair, hairColor, face, outfit]);
+export const NetSumo = memo(function NetSumo({ id, name, colorIndex, isYou, hair, hairColor, face, outfit, mask }: Props) {
+  const appearance = useMemo<Appearance>(() => ({ hair, hairColor, face, outfit, mask, avatar: 0 }), [hair, hairColor, face, outfit, mask]);
   const color = PLAYER_COLORS[colorIndex % PLAYER_COLORS.length]!.hex;
   const parts = useSumoParts();
   const tagRef = useRef<Sprite>(null);

@@ -89,7 +89,7 @@ export interface JoinOptions {
   /** The player's level (offline rooms; online the server uses the account's level). */
   level?: number;
   /** Initial character look (see appearance.ts); validated by the server. */
-  appearance?: { hair: number; hairColor: number; face: number; outfit: number };
+  appearance?: { hair: number; hairColor: number; face: number; outfit: number; mask?: number };
   private?: boolean;
   maxPlayers?: number;
 }

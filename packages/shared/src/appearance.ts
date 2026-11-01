@@ -69,6 +69,21 @@ export const OUTFITS = [
   { id: "golden", label: "Golden" },
 ] as const;
 
+/** Animal masks, worn over the face. Index 0 is no mask, so older looks stay valid. */
+export const MASKS = [
+  { id: "none", label: "No mask" },
+  { id: "lion", label: "Lion" },
+  { id: "panda", label: "Panda" },
+  { id: "tiger", label: "Tiger" },
+  { id: "leopard", label: "Leopard" },
+  { id: "monkey", label: "Monkey" },
+  { id: "bear", label: "Bear" },
+  { id: "dwarfbear", label: "Dwarf bear" },
+  { id: "redpanda", label: "Red panda" },
+  { id: "elephant", label: "Elephant" },
+  { id: "rhino", label: "Rhino" },
+] as const;
+
 /** Profile pictures (public/avatars/<index>.webp). The first four are free. */
 export const AVATARS = Array.from({ length: 40 }, (_, i) => ({ id: String(i), label: `Avatar ${i + 1}` }));
 
@@ -77,17 +92,19 @@ export interface Appearance {
   hairColor: number;
   face: number;
   outfit: number;
+  mask: number;
   /** Profile picture, shown in the profile, on the home screen and in matches. */
   avatar: number;
 }
 
-export const DEFAULT_APPEARANCE: Readonly<Appearance> = Object.freeze({ hair: 0, hairColor: 0, face: 0, outfit: 0, avatar: 0 });
+export const DEFAULT_APPEARANCE: Readonly<Appearance> = Object.freeze({ hair: 0, hairColor: 0, face: 0, outfit: 0, mask: 0, avatar: 0 });
 
 export const APPEARANCE_LIMITS: Readonly<Record<keyof Appearance, number>> = Object.freeze({
   hair: HAIR_STYLES.length,
   hairColor: HAIR_COLORS.length,
   face: FACES.length,
   outfit: OUTFITS.length,
+  mask: MASKS.length,
   avatar: AVATARS.length,
 });
 
@@ -103,9 +120,13 @@ export function sanitizeAppearance(raw: unknown): Appearance {
     hairColor: pick(r.hairColor, APPEARANCE_LIMITS.hairColor, DEFAULT_APPEARANCE.hairColor),
     face: pick(r.face, APPEARANCE_LIMITS.face, DEFAULT_APPEARANCE.face),
     outfit: pick(r.outfit, APPEARANCE_LIMITS.outfit, DEFAULT_APPEARANCE.outfit),
+    mask: pick(r.mask, APPEARANCE_LIMITS.mask, DEFAULT_APPEARANCE.mask),
     avatar: pick(r.avatar, APPEARANCE_LIMITS.avatar, DEFAULT_APPEARANCE.avatar),
   };
 }
+
+/** Share of random looks (bots) that wear a mask; the rest keep their faces on show. */
+const RANDOM_MASK_CHANCE = 0.2;
 
 /** Random appearance from a [0, 1) random source. */
 export function randomAppearance(random: () => number = Math.random): Appearance {
@@ -116,5 +137,6 @@ export function randomAppearance(random: () => number = Math.random): Appearance
     face: r(APPEARANCE_LIMITS.face),
     outfit: r(APPEARANCE_LIMITS.outfit),
     avatar: r(APPEARANCE_LIMITS.avatar),
+    mask: random() < RANDOM_MASK_CHANCE ? 1 + r(APPEARANCE_LIMITS.mask - 1) : 0,
   };
 }
