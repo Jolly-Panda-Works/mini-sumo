@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import type { Group } from "three";
-import { createBody, DEFAULT_CONFIG, dashDistance, resolveCollisions, stepMovement, tryDash, type SimBody } from "@mini-sumo/sim";
+import { createBody, DEFAULT_CONFIG, dashDistance, tryDash, type SimBody } from "@mini-sumo/sim";
 import { settingsStore, touchControlsEnabled } from "../settings";
 import { DashArrow } from "../game/DashGuide";
 import { Arena } from "../game/Arena";
@@ -9,6 +9,7 @@ import { CameraRig } from "../game/CameraRig";
 import { themeFor } from "../game/arenaThemes";
 import { SumoModel, useSumoParts } from "../game/SumoModel";
 import { useStore } from "../store";
+import { stepPracticeBodies } from "../game/practicePhysics";
 
 const KEYS: Record<string, [number, number]> = { KeyW: [0, -1], ArrowUp: [0, -1], KeyS: [0, 1], ArrowDown: [0, 1], KeyA: [-1, 0], ArrowLeft: [-1, 0], KeyD: [1, 0], ArrowRight: [1, 0] };
 interface Practice {
@@ -52,12 +53,7 @@ function PracticeScene({ p, complete }: { p: Practice; complete: () => void }) {
     const v = vector(p);
     p.me.inputX = p.done ? 0 : v.x; p.me.inputY = p.done ? 0 : v.y;
     const beforeX = p.me.x, beforeY = p.me.y;
-    stepMovement(p.me, dt, DEFAULT_CONFIG, p.time);
-    if (p.step === 2) {
-      stepMovement(p.opponent, dt, DEFAULT_CONFIG, p.time);
-      resolveCollisions([p.me, p.opponent], DEFAULT_CONFIG, p.time);
-    }
-    p.time += dt * 1000;
+    p.time = stepPracticeBodies(p.me, p.step > 0 ? p.opponent : null, dt, p.time);
     p.moved += Math.hypot(p.me.x - beforeX, p.me.y - beforeY);
     if (!p.done && ((p.step === 0 && p.moved >= 1.5) || (p.step === 1 && p.aimedDash) || (p.step === 2 && Math.hypot(p.opponent.x, p.opponent.y) > DEFAULT_CONFIG.arenaRadius + DEFAULT_CONFIG.eliminationTolerance))) {
       p.done = true; p.held = false; complete();
@@ -138,10 +134,10 @@ export function Tutorial() {
     </div>
     {step < 3 && <>
       <div className="tutorial__actions" aria-live="polite">
-        {done ? <button className="tutorial__next" onClick={() => changeStep(step + 1)}>Great! Continue →</button> : <span>Try it in the ring</span>}
-        <button className="tutorial__skip" onClick={() => changeStep(3)}>Skip practice</button>
+        {done ? <button className="tutorial__art-button tutorial__next" aria-label="Great! Continue" onClick={() => changeStep(step + 1)}><img src={`${import.meta.env.BASE_URL}ui/btn-start-blank.webp`} alt="" draggable={false} /><span>CONTINUE</span></button> : <span>Try it in the ring</span>}
+        <button className="tutorial__art-button tutorial__skip" aria-label="Skip practice" onClick={() => changeStep(3)}><img src={`${import.meta.env.BASE_URL}ui/label-empty.webp`} alt="" draggable={false} /><span>SKIP PRACTICE</span></button>
       </div>
-      {touch && <div className="tutorial__stick" style={{ backgroundImage: `url(${import.meta.env.BASE_URL}hud/joy-base.webp)` }} role="application" aria-label="Practice joystick: drag to move"
+      {touch && !done && <div className="tutorial__stick" style={{ backgroundImage: `url(${import.meta.env.BASE_URL}hud/joy-base.webp)` }} role="application" aria-label="Practice joystick: drag to move"
         onPointerDown={(e) => { if (stick.current !== null) return; stick.current = e.pointerId; e.currentTarget.setPointerCapture(e.pointerId); moveStick(e); }}
         onPointerMove={(e) => { if (e.pointerId === stick.current) moveStick(e); }}
         onPointerUp={(e) => { if (e.pointerId !== stick.current) return; stick.current = null; p.touch = { x: 0, y: 0 }; setKnob({ x: 0, y: 0 }); }}
@@ -149,7 +145,7 @@ export function Tutorial() {
         onPointerCancel={() => { stick.current = null; p.touch = { x: 0, y: 0 }; setKnob({ x: 0, y: 0 }); }}>
         <img src={`${import.meta.env.BASE_URL}hud/joy-knob.webp`} style={{ transform: `translate(${knob.x}px, ${knob.y}px)` }} alt="" draggable={false} />
       </div>}
-      {step > 0 && <button className="tutorial__dash" aria-label="Hold to aim, release to dash"
+      {step > 0 && !done && <button className="tutorial__dash" aria-label="Hold to aim, release to dash"
         onPointerDown={(e) => { if (dashPointer.current !== null) return; dashPointer.current = e.pointerId; e.currentTarget.setPointerCapture(e.pointerId); begin(); }}
         onPointerUp={(e) => { if (e.pointerId !== dashPointer.current) return; dashPointer.current = null; release(p); }}
         onPointerCancel={() => { dashPointer.current = null; release(p, true); }}
