@@ -254,6 +254,7 @@ export class LocalConnection implements GameConnection {
       completed: true,
       durationMs,
       players: this.session.players.size,
+      placement: this.session.players.get(this.sessionId)?.placement ?? 0,
       ringOuts: this.ringOuts,
     });
     this.emit(ServerMessage.Economy, result);

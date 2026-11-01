@@ -6,5 +6,5 @@ export { GameSession, type ActionResult, type SessionEvent, type SessionOptions,
 export { DEFAULT_CONFIG, createConfig, type SimulationConfig } from "./simulation/SimulationConfig.js";
 export { isDashing, isStunned, stepMovement, tryDash } from "./simulation/MovementSystem.js";
 export { createBody, type SimBody } from "./simulation/SimBody.js";
-export { dashDistance, autoDashTarget, type DashCandidate } from "./simulation/DashGuide.js";
+export { dashDistance, dashProjection, autoDashTarget, type DashCandidate } from "./simulation/DashGuide.js";
 export { resolveCollisions } from "./simulation/CollisionSystem.js";

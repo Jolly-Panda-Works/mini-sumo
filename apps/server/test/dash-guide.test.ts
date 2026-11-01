@@ -1,13 +1,27 @@
 import { describe, expect, it } from "vitest";
 import { QUICK_MATCH_WAIT_MS } from "@mini-sumo/shared";
-import { autoDashTarget, dashDistance } from "../src/simulation/DashGuide.js";
+import { autoDashTarget, dashDistance, dashProjection } from "../src/simulation/DashGuide.js";
 import { ECONOMY } from "../src/economy/config.js";
-import { cfg, playingSession } from "./helpers.js";
+import { advance, cfg, playingSession } from "./helpers.js";
 
 const me = { id: "a", x: 0, y: 0, angle: 0, alive: true };
 const opponent = (id: string, x: number, y = 0, alive = true) => ({ id, x, y, angle: 0, alive });
 
 describe("dash targeting and range", () => {
+  it.each([{ x: 0, y: 0 }, { x: 0, y: 1 }])("predicts the authoritative dash endpoint with continuing steering %j", (steering) => {
+    const s = playingSession(["a", "b"], { dashDurationMs: 200 });
+    const p = s.players.get("a")!;
+    p.x = 0; p.y = 0; p.vx = 0; p.vy = 0; p.angle = 0;
+    const other = s.players.get("b")!; other.x = -5; other.y = -3;
+    const projection = dashProjection({ ...me }, { x: 1, y: 0 }, s.cfg, steering);
+    s.handleInput("a", steering); s.handleDash("a", { x: 1, y: 0 });
+    advance(s, 200);
+    // Floating-point session time can put the last drag sample on either side of
+    // the dash-duration boundary; the preview stays within 5 cm of the actual endpoint.
+    expect(Math.abs(p.x - projection.dx)).toBeLessThan(0.05);
+    expect(Math.abs(p.y - projection.dy)).toBeLessThan(0.05);
+    expect(Math.abs(Math.hypot(p.x, p.y) - projection.distance)).toBeLessThan(0.05);
+  });
   it("selects the nearest living opponent in reach, including behind the player", () => {
     const aim = autoDashTarget(me, [me, opponent("dead", 0.1, 0, false), opponent("far", 20), opponent("b", 3), opponent("c", -2)], cfg);
     expect(aim?.targetId).toBe("c");

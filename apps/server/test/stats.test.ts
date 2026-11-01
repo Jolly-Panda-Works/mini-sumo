@@ -11,8 +11,8 @@ describe("bout stats and XP", () => {
     const result = economy.recordMatchDetailed({
       matchId: "quick",
       durationMs: 6_000,
-      rewarded: true,
-      participants: [{ accountId, won: true, completed: true }],
+      rewarded: true, playerCount: 2,
+      participants: [{ accountId, won: true, completed: true, placement: 1 }],
       arenaId: "training",
     });
     const profile = economy.profile(accountId);
@@ -26,7 +26,7 @@ describe("bout stats and XP", () => {
   it("don't count a bout the player left", () => {
     const economy = new Economy(":memory:", FLAGS, silentEventSink, () => new Date("2026-10-18T10:00:00Z"));
     const { accountId } = economy.createGuest();
-    economy.recordMatchDetailed({ matchId: "left", durationMs: 40_000, rewarded: true, participants: [{ accountId, won: false, completed: false }] });
+    economy.recordMatchDetailed({ matchId: "left", durationMs: 40_000, rewarded: true, playerCount: 2, participants: [{ accountId, won: false, completed: false, placement: 2 }] });
     expect(economy.profile(accountId).stats.matches).toBe(0);
   });
 });

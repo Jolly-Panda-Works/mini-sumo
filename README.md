@@ -58,7 +58,7 @@ Party games are best when everyone understands them in five seconds. Mini Sumo h
 - **Play on Android** (and in the browser for testing), with touch or keyboard controls.
 - **Friends:** add friends with a friend code or straight from a bout's results, see who's online, in a lobby or in a match, and invite them into your room (private rooms also have an invite link). Tap anyone on the **leaderboard** to see their profile.
 - **Never wait long:** every arena finds an open room or creates one. After a 3-second search, computer-controlled wrestlers fill any remaining seats.
-- **Learn in the ring:** a free first-run tutorial teaches movement, aiming and ring-outs. Choose automatic or manual dash afterward, or change it and replay the tutorial from Settings. Manual dash: hold the button or Space to preview direction and distance, then release. Auto dash: approach an opponent in range; the drum shows recharge only. The floor guide estimates unobstructed travel; collisions and steering can change the landing point.
+- **Learn in the ring:** a free first-run tutorial teaches movement, aiming and ring-outs. Choose automatic or manual dash afterward, or change it and replay the tutorial from Settings. Manual dash: press the button or Space to dash immediately. Auto dash: approach an opponent in range; the drum shows recharge only.
 - **Bots with styles:** three levels (Easy, Normal, Hard); bots press, circle and charge in from a distance, each with its own temper. The host of a private room or Training can add random players with + in an empty seat.
 - **Power-ups:** every 8–12 s a nobori flag pops up on the ring; grab it for 12 s of *Iron Body* (鉄, twice as heavy), *Thunder Dash* (雷, dash recharges in 0.8 s), *Wind Feet* (風, 40 % faster) or *Giant* (巨, bigger and heavier). The flag then rides on your back until it runs out. Bots wait their turn before going for a flag (hard after 1.5 s, normal 3 s, easy 4.5 s), and no new flags appear in the final 30 seconds.
 - **Comeback balance:** in the last 30 seconds of a bout every player's dash recharges faster (down to about half the cooldown) and bots ease off a little, so endings stay exciting.
@@ -150,9 +150,9 @@ The home screen has its own night-stage backdrop with the title in the middle an
 | Legend | 10,000 | up to 36,000 | level 20 | ×5 |
 | Godlike | 25,000 | up to 90,000 | level 30 | ×6 |
 
-- New players get 200 coins (enough for a first Rookie bout) and level up with XP from every bout (up to level 1000); higher arenas unlock as you level up and give more XP. The *Profile* panel shows level, XP, stats and unlocks.
+- New players get 200 coins (enough for a first Rookie bout) and level up with XP from top-half finishes (up to level 1000); higher arenas unlock as you level up and give more XP. The *Profile* panel shows level, XP, stats and unlocks.
 - Online, coins, XP and items live on the server (and sync across devices); offline, the game keeps them on the device and syncs when it's back online.
-- Training is free practice: no coins, but every finished bout earns XP.
+- Training is free practice: no coins, but only top-half finishers earn XP (top two of four; first of two or three).
 - Prize = pool − 10 % economy fee (integer, `floor`). Draws and bouts that never start are refunded; leaving during a bout is a loss.
 - The **wardrobe is the shop**: priced options can be tried on and bought with coins. Looks never affect gameplay.
 - Everything (balances, prices, entries, prizes, ownership) is decided by the server and recorded in an append-only ledger with idempotency keys. *Settings* never stores coins.

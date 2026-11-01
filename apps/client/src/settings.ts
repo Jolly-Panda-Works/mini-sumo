@@ -19,6 +19,10 @@ export interface Settings {
   onboarded: boolean;
   tutorialCompleted: boolean;
   dashMode: "manual" | "auto";
+  /** Persisted separately: replaying training must not ask this question again. */
+  dashModeChosen: boolean;
+  starterRewardPresented: boolean;
+  menuTourCompleted: boolean;
   /** Bot difficulty for training and private rooms. */
   botLevel: BotLevel;
   /** Hair, face and outfit; sent when joining and when changed in the lobby. */
@@ -28,7 +32,7 @@ export interface Settings {
 const KEY = "mini-sumo:settings";
 
 function load(): Settings {
-  const defaults: Settings = { musicVolume: 0.5, sfxVolume: 0.8, touchControls: "auto", joystick: "floating", vibration: true, name: "", onboarded: false, tutorialCompleted: false, dashMode: "manual", botLevel: "normal", appearance: { ...DEFAULT_APPEARANCE } };
+  const defaults: Settings = { musicVolume: 0.5, sfxVolume: 0.8, touchControls: "auto", joystick: "floating", vibration: true, name: "", onboarded: false, tutorialCompleted: false, dashMode: "manual", dashModeChosen: false, starterRewardPresented: false, menuTourCompleted: false, botLevel: "normal", appearance: { ...DEFAULT_APPEARANCE } };
   try {
     const raw = window.localStorage.getItem(KEY);
     if (!raw) return defaults;
@@ -46,6 +50,9 @@ function load(): Settings {
       onboarded: typeof parsed.onboarded === "boolean" ? parsed.onboarded : Boolean(parsed.name?.trim()),
       tutorialCompleted: parsed.tutorialCompleted === true,
       dashMode: parsed.dashMode === "auto" ? "auto" : "manual",
+      dashModeChosen: typeof parsed.dashModeChosen === "boolean" ? parsed.dashModeChosen : parsed.tutorialCompleted === true,
+      starterRewardPresented: typeof parsed.starterRewardPresented === "boolean" ? parsed.starterRewardPresented : parsed.tutorialCompleted === true,
+      menuTourCompleted: typeof parsed.menuTourCompleted === "boolean" ? parsed.menuTourCompleted : parsed.tutorialCompleted === true,
       appearance: sanitizeAppearance(parsed.appearance),
       botLevel: sanitizeBotLevel(parsed.botLevel),
     };

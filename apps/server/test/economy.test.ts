@@ -252,21 +252,21 @@ describe("settlement", () => {
 });
 
 describe("free rewards", () => {
-  const participants = (ids: string[], winner?: string) => ids.map((id) => ({ accountId: id, won: id === winner, completed: true }));
+  const participants = (ids: string[], winner?: string) => ids.map((id) => ({ accountId: id, won: id === winner, completed: true, placement: 1 }));
 
   it("grants participation, win and the daily bonus once per match", () => {
     const { economy } = setup();
     const a = player(economy, 0);
     const b = player(economy, 0);
     const r = ECONOMY.rewards;
-    const first = economy.recordMatch({ matchId: "m1", durationMs: 30_000, rewarded: true, participants: participants([a.accountId, b.accountId], a.accountId) });
+    const first = economy.recordMatch({ matchId: "m1", durationMs: 30_000, rewarded: true, playerCount: 2, participants: participants([a.accountId, b.accountId], a.accountId) });
     expect(first.get(a.accountId)).toBe(r.participation + r.win + r.firstMatchOfDay);
     expect(first.get(b.accountId)).toBe(r.participation + r.firstMatchOfDay);
-    const repeat = economy.recordMatch({ matchId: "m1", durationMs: 30_000, rewarded: true, participants: participants([a.accountId], a.accountId) });
+    const repeat = economy.recordMatch({ matchId: "m1", durationMs: 30_000, rewarded: true, playerCount: 2, participants: participants([a.accountId], a.accountId) });
     expect(repeat.size).toBe(0);
     expect(economy.profile(a.accountId).stats).toMatchObject({ matches: 1, wins: 1 });
     expect(economy.profile(a.accountId).level.xp).toBe(50);
-    const second = economy.recordMatch({ matchId: "m2", durationMs: 30_000, rewarded: true, participants: participants([a.accountId]) });
+    const second = economy.recordMatch({ matchId: "m2", durationMs: 30_000, rewarded: true, playerCount: 2, participants: participants([a.accountId]) });
     expect(second.get(a.accountId)).toBe(r.participation);
   });
 
@@ -274,13 +274,13 @@ describe("free rewards", () => {
     const { economy } = setup();
     const a = player(economy, 0);
     const b = player(economy, 0);
-    const short = economy.recordMatch({ matchId: "s", durationMs: 5000, rewarded: true, participants: participants([a.accountId]) });
+    const short = economy.recordMatch({ matchId: "s", durationMs: 5000, rewarded: true, playerCount: 2, participants: participants([a.accountId]) });
     expect(short.size).toBe(0);
     const left = economy.recordMatch({
       matchId: "l",
       durationMs: 60_000,
-      rewarded: true,
-      participants: [{ accountId: b.accountId, won: false, completed: false }],
+      rewarded: true, playerCount: 2,
+      participants: [{ accountId: b.accountId, won: false, completed: false, placement: 2 }],
     });
     expect(left.size).toBe(0);
     expect(economy.profile(a.accountId).stats.matches).toBe(1);
@@ -292,11 +292,11 @@ describe("free rewards", () => {
     const a = player(economy, 0);
     let total = 0;
     for (let i = 0; i < 40; i++) {
-      total += economy.recordMatch({ matchId: `m${i}`, durationMs: 30_000, rewarded: true, participants: participants([a.accountId], a.accountId) }).get(a.accountId) ?? 0;
+      total += economy.recordMatch({ matchId: `m${i}`, durationMs: 30_000, rewarded: true, playerCount: 2, participants: participants([a.accountId], a.accountId) }).get(a.accountId) ?? 0;
     }
     expect(total).toBe(ECONOMY.rewards.dailyCap);
     advanceDays(1);
-    const next = economy.recordMatch({ matchId: "next", durationMs: 30_000, rewarded: true, participants: participants([a.accountId]) });
+    const next = economy.recordMatch({ matchId: "next", durationMs: 30_000, rewarded: true, playerCount: 2, participants: participants([a.accountId]) });
     expect(next.get(a.accountId)).toBe(ECONOMY.rewards.participation + ECONOMY.rewards.firstMatchOfDay);
   });
 });
@@ -382,7 +382,7 @@ describe("levels", () => {
     expect(economy.profile(a.accountId).level.level).toBe(1);
     expect(economy.canEnter(a.accountId, "pro").ok).toBe(false);
     for (let i = 0; i < 40; i++) {
-      economy.recordMatch({ matchId: `x${i}`, durationMs: 30_000, rewarded: false, arenaId: "rookie", participants: [{ accountId: a.accountId, won: true, completed: true }] });
+      economy.recordMatch({ matchId: `x${i}`, durationMs: 30_000, rewarded: false, playerCount: 2, arenaId: "rookie", participants: [{ accountId: a.accountId, won: true, completed: true, placement: 1 }] });
     }
     const profile = economy.profile(a.accountId);
     expect(profile.level.level).toBeGreaterThanOrEqual(5);

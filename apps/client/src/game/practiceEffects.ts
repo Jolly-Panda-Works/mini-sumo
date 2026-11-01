@@ -1,7 +1,7 @@
 import type { ImpactPayload } from "@mini-sumo/shared";
 import { audio } from "../audio/AudioManager";
 import { vibrate } from "../haptics";
-import { calloutBus, dustBus, hitStop, impactBus, lastDashAt, lastHit, lastHitAt, pulseBus, punchBus, shakeBus } from "./effectsBus";
+import { calloutBus, dustBus, focusBus, hitStop, impactBus, lastDashAt, lastHit, lastHitAt, pulseBus, punchBus, shakeBus, slowMo } from "./effectsBus";
 
 export function practiceDash(id: string, x: number, y: number) {
   lastDashAt.set(id, performance.now());
@@ -28,5 +28,10 @@ export function practiceSuccess(x: number, y: number, ringOut: boolean) {
   pulseBus.emit({ x, y, color: "#ffc52f", size: 1.8 });
   dustBus.emit({ x, y, count: 18, speed: 2 });
   calloutBus.emit({ text: ringOut ? "RING OUT!" : "GREAT!", x, y, color: "#ffd166", size: 1 });
-  if (ringOut) { audio.eliminated(); audio.crowdCheer(); } else audio.sample("thud", 1.1);
+  if (ringOut) {
+    const now = performance.now();
+    focusBus.emit({ x, y, ms: 2200, zoom: 0.28 });
+    slowMo.from = now; slowMo.until = now + 1300; slowMo.factor = 0.55;
+    audio.eliminated(); audio.crowdCheer();
+  } else audio.sample("thud", 1.1);
 }

@@ -11,6 +11,7 @@ import { DEFAULT_CONFIG as SIM, createBody, stepMovement, tryDash, type SimBody 
 import { createNameTagTexture } from "./nameTag";
 import { SumoModel, useSumoParts } from "./SumoModel";
 import { BackBanner } from "./PowerUpFlags";
+import { dashFeel } from "./dashFeel";
 
 const OUTER_FLOOR_Y = -1.4;
 /** Closer to the rope than this (m) the wrestler starts to teeter. */
@@ -219,7 +220,8 @@ export const NetSumo = memo(function NetSumo({ id, name, colorIndex, isYou, hair
       const moving = Math.min(1, s.speed / 4);
       const lean = p.dashing ? 0.38 : moving * 0.12;
       root.position.set(s.x, s.y, s.z);
-      root.rotation.set(lean, s.yaw, 0);
+      // The ground marker must not lean with the wrestler's body.
+      root.rotation.set(0, s.yaw, 0);
       const pop = Math.min(1, (t - s.bornAt) / 0.45);
       const c1 = 1.70158;
       const giant = (p as { powerUp?: string }).powerUp === "giant" ? 1.4 : 1;
@@ -229,7 +231,10 @@ export const NetSumo = memo(function NetSumo({ id, name, colorIndex, isYou, hair
       const bob = Math.sin(t * 3 + seed * 6) * 0.02;
       // A dash: a quick crouch first, then the stretch forward.
       const sinceDash = (performance.now() - (lastDashAt.get(id) ?? -1e9)) / 1000;
-      const windup = sinceDash < 0.09 ? Math.sin((sinceDash / 0.09) * Math.PI) * 0.24 : 0;
+      const feel = dashFeel(sinceDash);
+      parts.dashStrength.current = feel.tint;
+      torso.position.z = feel.offset;
+      const windup = sinceDash < 0.025 ? Math.sin((sinceDash / 0.025) * Math.PI) * 0.24 : 0;
       const stretch = p.dashing && windup === 0 ? 0.18 : 0;
       torso.scale.set(
         1 + hitSquash + stretch * 0.3 + windup * 0.6,
@@ -282,7 +287,7 @@ export const NetSumo = memo(function NetSumo({ id, name, colorIndex, isYou, hair
         tiltX += Math.sin(t * 9) * 0.12;
         tiltZ += Math.cos(t * 7) * 0.16;
       }
-      torso.rotation.set(tiltX, stunned ? Math.sin(t * 5) * 0.35 : 0, tiltZ);
+      torso.rotation.set(tiltX + lean + feel.lean, stunned ? Math.sin(t * 5) * 0.35 : 0, tiltZ);
 
       // Particles: a little dust at each footstep, a trail while dashing.
       const foot = Math.sin(s.walk) >= 0 ? 1 : -1;
@@ -310,8 +315,12 @@ export const NetSumo = memo(function NetSumo({ id, name, colorIndex, isYou, hair
       if (parts.legR.current) parts.legR.current.position.y = 0.17 + Math.max(0, -Math.sin(s.walk)) * 0.12 * moving + lift * 0.42;
       if (lift > 0) torso.rotation.z += lift * 0.22;
       if (parts.eyes.current) parts.eyes.current.scale.y = sinceHit < 0.3 || blink ? 0.2 : stunned ? 0.45 + Math.sin(t * 12) * 0.25 : 1;
-      if (parts.ring.current) parts.ring.current.visible = true;
+      if (parts.ring.current) {
+        parts.ring.current.visible = true;
+        parts.ring.current.position.y = (0.055 - s.y) / Math.max(0.01, root.scale.y);
+      }
     } else {
+      parts.dashStrength.current = 0;
       if (!s.falling) {
         // Launch outward from where they left the ring.
         // Harder the faster they were going, and spinning as they fly.

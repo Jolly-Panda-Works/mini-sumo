@@ -2,7 +2,7 @@ import { Phase } from "@mini-sumo/shared";
 import { gameStore, roomManager } from "../network/RoomManager";
 import { uiStore } from "../uiStore";
 import { settingsStore } from "../settings";
-import { autoDashTarget, dashDistance, DEFAULT_CONFIG, type DashCandidate } from "@mini-sumo/sim";
+import { autoDashTarget, DEFAULT_CONFIG, type DashCandidate } from "@mini-sumo/sim";
 
 const KEY_VECTORS: Record<string, [number, number]> = {
   KeyW: [0, -1],
@@ -31,37 +31,24 @@ class InputController {
   private last = { x: 0, y: 0 };
   private lastSentAt = 0;
   private lastDashAt = -Infinity;
-  private dashHeld = false;
-
-  get aiming(): boolean { return this.dashHeld; }
-
-  beginDashAim(): void {
-    if (settingsStore.get().dashMode === "manual" && !uiStore.get().settingsOpen && gameStore.get().phase === Phase.Playing) this.dashHeld = true;
-  }
-
-  endDashAim(cancel = false): void {
-    const held = this.dashHeld;
-    this.dashHeld = false;
-    if (held && !cancel && settingsStore.get().dashMode === "manual") this.requestDash();
-  }
-
   getDashAim() {
     const state = roomManager.state;
     const p = state?.players.get(roomManager.sessionId);
     if (!state || !p?.alive || state.phase !== Phase.Playing || uiStore.get().settingsOpen) return null;
     const me = { id: roomManager.sessionId, x: p.x, y: p.y, angle: p.angle, alive: p.alive, powerUp: p.powerUp };
     const cfg = { ...DEFAULT_CONFIG, arenaRadius: state.ringRadius };
+    const v = this.movementVector();
     if (settingsStore.get().dashMode === "auto") {
       const players: DashCandidate[] = [];
       state.players.forEach((other, id) => players.push({ id, x: other.x, y: other.y, angle: other.angle, alive: other.alive, powerUp: other.powerUp }));
-      const target = autoDashTarget(me, players, cfg);
-      // Show the facing range even when no opponent is within reach.
-      if (target) return { ...target, px: p.x, py: p.y, ready: p.dashCooldownMs <= 0 && !p.stunned && !p.dashing };
+      const target = autoDashTarget(me, players, cfg, v);
+      if (target) {
+        return { ...target, ready: p.dashCooldownMs <= 0 && !p.stunned && !p.dashing };
+      }
     }
-    const v = this.movementVector();
     const len = Math.hypot(v.x, v.y);
     const direction = len > 0.01 ? { x: v.x / len, y: v.y / len } : { x: Math.cos(p.angle), y: Math.sin(p.angle) };
-    return { ...direction, distance: dashDistance(me, direction, cfg), targetId: "", px: p.x, py: p.y, ready: p.dashCooldownMs <= 0 && !p.stunned && !p.dashing };
+    return { ...direction, targetId: "", ready: p.dashCooldownMs <= 0 && !p.stunned && !p.dashing };
   }
   private timer = 0;
   private running = false;
@@ -110,17 +97,15 @@ class InputController {
       event.preventDefault();
     } else if (event.code === "Space") {
       event.preventDefault();
-      if (!event.repeat) this.beginDashAim();
+      if (!event.repeat && settingsStore.get().dashMode === "manual") this.requestDash();
     }
   };
 
   private onKeyUp = (event: KeyboardEvent): void => {
     this.keys.delete(event.code);
-    if (event.code === "Space") this.endDashAim();
   };
 
   private clear = (): void => {
-    this.dashHeld = false;
     this.keys.clear();
     this.touch.x = 0;
     this.touch.y = 0;
@@ -142,9 +127,7 @@ class InputController {
     if (!roomManager.room) return;
     const phase = gameStore.get().phase;
     const active = (phase === Phase.Countdown || phase === Phase.Playing) && !uiStore.get().settingsOpen;
-    if (!active) this.dashHeld = false;
     if (active && settingsStore.get().dashMode === "auto") {
-      this.dashHeld = false;
       this.requestDash();
     }
 

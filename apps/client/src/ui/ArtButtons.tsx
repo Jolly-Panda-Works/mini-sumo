@@ -14,9 +14,10 @@ type Props = {
   ariaDisabled?: boolean;
   sfx?: "none";
   className?: string;
+  autoFocus?: boolean;
 };
 
-function ArtButton({ art, onClick, label, disabled, ariaDisabled, sfx, className = "", children }: Props & { art: string; children?: ReactNode }) {
+function ArtButton({ art, onClick, label, disabled, ariaDisabled, sfx, autoFocus, className = "", children }: Props & { art: string; children?: ReactNode }) {
   return (
     <button
       type="button"
@@ -26,11 +27,16 @@ function ArtButton({ art, onClick, label, disabled, ariaDisabled, sfx, className
       disabled={disabled}
       aria-disabled={ariaDisabled || undefined}
       data-sfx={sfx}
+      autoFocus={autoFocus}
     >
       <img src={`${BASE}ui/${art}.webp`} alt="" draggable={false} />
       {children}
     </button>
   );
+}
+
+export function GreenArtButton(props: Props) {
+  return <ArtButton art="btn-start-blank" {...props} className={`green-art ${props.className ?? ""}`}><span className="green-art__label">{props.label}</span></ArtButton>;
 }
 
 /** BUY with the price in its dark field. */

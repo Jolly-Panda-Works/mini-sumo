@@ -195,6 +195,7 @@ export interface MatchParticipant {
   won: boolean;
   /** Finished the round (didn't leave). */
   completed: boolean;
+  placement: number;
 }
 
 const sha256 = (value: string) => createHash("sha256").update(value).digest("hex");
@@ -939,13 +940,15 @@ export class Economy {
     durationMs: number;
     rewarded: boolean;
     participants: readonly MatchParticipant[];
+    /** Total roster, including bots and players who left. */
+    playerCount: number;
     arenaId?: string;
   }): Map<string, number> {
     return this.recordMatchDetailed(input).rewards;
   }
 
   /**
-   * Records a finished bout: stats and XP for everyone who finished it (any length),
+   * Records a finished bout: stats for everyone who finished it, XP for top-half finishers,
    * level-up coins, and the free training rewards (only for bouts of at least
    * minMatchDurationMs, so very short bouts can't farm coins). Returns the coins and the
    * XP / level change per account.
@@ -955,6 +958,8 @@ export class Economy {
     durationMs: number;
     rewarded: boolean;
     participants: readonly MatchParticipant[];
+    /** Total roster, including bots and players who left. */
+    playerCount: number;
     arenaId?: string;
   }): { rewards: Map<string, number>; progress: Map<string, { xp: number; levelBefore: number; levelAfter: number; levelCoins: number }> } {
     const granted = new Map<string, number>();
@@ -973,7 +978,7 @@ export class Economy {
 
         const counts = p.completed;
         if (counts) {
-          const xp = xpForMatch(input.arenaId ?? "training", p.won, true);
+          const xp = xpForMatch(input.arenaId ?? "training", p.won, true, p.placement, input.playerCount);
           const before = levelFromXp(account.xp).level;
           const after = levelFromXp(account.xp + xp).level;
           progress.set(p.accountId, { xp, levelBefore: before, levelAfter: after, levelCoins: levelUpCoins(before, after) });

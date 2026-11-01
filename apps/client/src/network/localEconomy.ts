@@ -327,7 +327,7 @@ export const localEconomy = {
    */
   finish(
     entry: LocalEntry,
-    result: { matchId: string; won: boolean; draw: boolean; completed: boolean; durationMs: number; players: number; ringOuts?: number },
+    result: { matchId: string; won: boolean; draw: boolean; completed: boolean; durationMs: number; players: number; placement: number; ringOuts?: number },
   ): EconomyResultMessage {
     const arena = arenaDef(entry.arenaId);
     const base: EconomyResultMessage = {
@@ -364,7 +364,7 @@ export const localEconomy = {
       }
     }
 
-    // Stats and XP for every bout you finish (the minimum bout length only guards coin rewards).
+    // Stats for every finished bout; XP only for top-half placements (the minimum bout length only guards coin rewards).
     const counts = result.completed;
     if (counts) {
       state.matches += 1;
@@ -376,7 +376,7 @@ export const localEconomy = {
       } else {
         state.streak = 0;
       }
-      const xp = xpForMatch(entry.arenaId, result.won, true);
+      const xp = xpForMatch(entry.arenaId, result.won, true, result.placement, result.players);
       state.xp += xp;
       base.xp = xp;
     }

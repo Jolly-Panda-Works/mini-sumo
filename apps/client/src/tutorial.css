@@ -1,27 +1,68 @@
 .tutorial { position: fixed; inset: 0; z-index: 12; pointer-events: auto; color: #472b19; font-family: "Baloo 2", sans-serif; background: #223952; }
 .tutorial__arena { position: absolute; inset: 0; }
 .tutorial__card { position: absolute; top: max(12px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); width: min(92vw, 650px); padding: 14px 18px; box-sizing: border-box; display: flex; gap: 12px; align-items: center; border: 5px solid #8b4e28; border-radius: 22px; background: #fff0cd; box-shadow: 0 5px 0 #402816, inset 0 0 0 3px #e8b750; }
-.tutorial__coach { width: 85px; height: 105px; object-fit: contain; flex-shrink: 0; }
 .tutorial__guides { position: relative; width: 112px; flex: 0 0 112px; align-self: stretch; display: grid; place-items: center; }
 .tutorial__panda { width: 112px; height: 130px; object-fit: contain; filter: drop-shadow(0 3px 0 #65401a33); animation: panda-enter 0.35s ease-out; }
 .tutorial__panda--aim { transform: rotate(-3deg); }
 .tutorial__panda--cheer { animation: panda-cheer 0.5s ease-out; }
-.tutorial__partner { position: absolute; width: 32px; height: 42px; object-fit: contain; bottom: -3px; right: -7px; filter: drop-shadow(0 1px 0 #553a25); }
 @keyframes panda-enter { from { opacity: 0; transform: translateY(10px) scale(0.94); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @keyframes panda-cheer { 0% { transform: translateY(8px) scale(0.9); } 55% { transform: translateY(-8px) scale(1.04); } 100% { transform: translateY(0) scale(1); } }
-@media (max-height: 500px), (max-width: 360px) { .tutorial__guides { width: 70px; flex-basis: 70px; } .tutorial__panda { width: 70px; height: 86px; } .tutorial__partner { width: 24px; height: 30px; } }
+@media (max-height: 500px), (max-width: 360px) { .tutorial__guides { width: 70px; flex-basis: 70px; } .tutorial__panda { width: 70px; height: 86px; } }
 @media (prefers-reduced-motion: reduce) { .tutorial__panda, .tutorial__panda--cheer { animation: none; } }
 .tutorial__copy h2 { font-size: clamp(20px, 4vw, 29px); line-height: 1.1; margin: 4px 0; }
 .tutorial__copy p { font-size: clamp(14px, 2.8vw, 18px); line-height: 1.3; margin: 5px 0; }
 .tutorial__step { font-weight: 800; font-size: 12px; letter-spacing: 1px; color: #a34922; }
 .tutorial__actions { position: absolute; bottom: max(22px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); display: grid; justify-items: center; gap: 6px; text-align: center; color: #fff7df; text-shadow: 0 2px 3px #332111; }
 .tutorial button { font: inherit; cursor: pointer; touch-action: none; }
-.tutorial__replay { border: 3px solid #583016; border-radius: 14px; background: #397e39; color: #fff8d5; font-weight: 800; padding: 10px 20px; box-shadow: 0 3px 0 #412613; }
 .tutorial__art-button { position: relative; display: block; border: 0; padding: 0; background: none; filter: drop-shadow(0 3px 0 #38201388); }
 .tutorial__art-button img { display: block; width: 100%; height: auto; pointer-events: none; }
 .tutorial__art-button span { position: absolute; inset: 20% 8%; display: grid; place-items: center; font-weight: 800; color: #ffe795; -webkit-text-stroke: 1.4px #5c2912; paint-order: stroke fill; text-shadow: 0 2px 0 #5c2912; white-space: nowrap; line-height: 1; }
 .tutorial__art-button:active { transform: translateY(2px); filter: brightness(1.08); }
 .tutorial__next { width: min(56vw, 220px); }
+.tutorial__next { animation: tutorial-continue-pulse 1.15s ease-in-out infinite; transform-origin: center; }
+@keyframes tutorial-continue-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); filter: drop-shadow(0 0 8px #ffd16699); } }
+.green-art { position: relative; width: min(100%, 300px); container-type: inline-size; }
+.green-art__label { position: absolute; inset: 30% 9% 28%; display: grid; place-items: center; font-family: "Baloo 2", sans-serif; font-size: 8cqw; font-weight: 800; line-height: 1; color: #ffe795; -webkit-text-stroke: 0.7px #5c2912; paint-order: stroke fill; text-shadow: 0 2px 0 #5c2912; white-space: nowrap; }
+.dash-mode-choice { width: 100%; gap: 8px; }
+.dash-mode-choice .art--choice { flex: 1; min-width: 0; width: 48%; }
+.dash-mode-choice img { width: 100%; height: auto; }
+.dlg-tutorial-success .sub-dialog__body, .dlg-tutorial-dash-choice .sub-dialog__body { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; }
+.tutorial-success__panda { width: min(32%, 125px); height: auto; object-fit: contain; }
+.dlg-tutorial-success .sub-dialog__inner, .dlg-starter-reward .sub-dialog__inner { top: 42%; height: 48%; padding-top: 2cqw; }
+.dlg-tutorial-success .sub-dialog__body, .dlg-starter-reward .sub-dialog__body { justify-content: center; }
+.dlg-tutorial-success .tutorial-success__panda, .dlg-starter-reward .tutorial-success__panda { width: min(56%, 200px); max-height: 26vh; }
+.dlg-tutorial-success .sub-dialog__foot, .dlg-starter-reward .sub-dialog__foot { display: flex; justify-content: center; padding-top: 10px; }
+.dlg-tutorial-success .art--great { width: min(75%, 220px); margin-inline: auto; }
+.dlg-tutorial-success .sub-dialog__body, .dlg-starter-reward .sub-dialog__body { justify-content: flex-start; gap: 8px; scrollbar-gutter: auto; }
+.dlg-tutorial-success .tutorial-success__panda { width: min(52%, 185px); flex-shrink: 0; }
+.dlg-starter-reward .tutorial-success__panda { width: min(45%, 160px); max-height: 18vh; flex-shrink: 0; }
+.dlg-starter-reward p { margin: 0; line-height: 1.3; }
+.dlg-starter-reward .sub-dialog__body { gap: 4px; }
+.dlg-starter-reward .tutorial-success__panda { width: min(40%, 150px); max-height: 15vh; }
+.starter-reward__coins { line-height: 1; }
+.starter-reward__footer { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; }
+.dlg-starter-reward .tutorial-success__panda { width: min(36%, 130px); max-height: 12vh; }
+@media (max-height: 500px) { .dlg-starter-reward .tutorial-success__panda { max-height: 48px; } }
+.tutorial__replay-art { align-self: center; margin-inline: auto; display: block; }
+.dlg-starter-reward .sub-dialog__body { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; }
+.starter-reward__coins { font-size: 26px; font-weight: 800; color: #a44c12; }
+.menu-tour { position: fixed; inset: 0; z-index: 100; pointer-events: auto; color: #472b19; }
+.menu-tour__blocker, .menu-tour__shade { position: absolute; inset: 0; }
+.menu-tour__shade { background: #0d1423bf; }
+.menu-tour__spotlight { position: absolute; box-sizing: border-box; border: 3px solid #ffd167; border-radius: 16px; box-shadow: 0 0 0 9999px #0d1423bd, 0 0 16px #ffd167; pointer-events: none; }
+.menu-tour__card { position: absolute; bottom: max(18px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); width: min(92vw, 480px); box-sizing: border-box; display: grid; grid-template-columns: 90px 1fr; align-items: center; gap: 10px; padding: 18px; border: 6px solid #93542a; border-radius: 22px; background: #fff0cd; box-shadow: inset 0 0 0 3px #e8b750, 0 5px 0 #402816; }
+.menu-tour__card--top { top: max(18px, env(safe-area-inset-top)); bottom: auto; }
+.menu-tour__card > img { width: 90px; height: 116px; object-fit: contain; }
+.menu-tour__card h2 { margin: 2px 0 5px; font-size: 23px; line-height: 1.1; }
+.menu-tour__card p { margin: 0; line-height: 1.35; font-size: 16px; }
+.menu-tour__card .green-art { grid-column: 1 / -1; justify-self: center; width: 200px; }
+.menu-tour__skip { position: relative; grid-column: 1 / -1; justify-self: center; width: 145px; }
+.menu-tour__skip span { position: absolute; inset: 0; display: grid; place-items: center; font-weight: 800; color: #ffe795; text-shadow: 0 1px #3a1d05; }
+@media (max-height: 500px) { .menu-tour__card { width: min(90vw, 520px); padding: 10px 16px; gap: 5px 12px; } .menu-tour__card > img { width: 65px; height: 78px; } .menu-tour__card .green-art { grid-column: 2; width: 160px; } .menu-tour__skip { grid-column: 1; grid-row: 2; width: 100px; font-size: 11px; } }
+.dlg-tutorial-success p, .dlg-tutorial-dash-choice p { margin: 0; line-height: 1.4; }
+.art--great:focus, .art--great:focus-visible { outline: none; box-shadow: none; }
+.art--great:focus-visible img { filter: drop-shadow(0 0 5px #ffcf4c); }
+@media (prefers-reduced-motion: reduce) { .tutorial__next { animation: none; } }
 .tutorial__next span { inset: 30% 9% 28%; font-size: clamp(17px, 4.5vw, 24px); }
 .tutorial__skip { width: min(48vw, 180px); }
 .tutorial__skip span { font-size: clamp(12px, 3.2vw, 16px); }

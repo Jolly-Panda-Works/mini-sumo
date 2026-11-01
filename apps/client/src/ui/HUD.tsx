@@ -56,7 +56,7 @@ export function HUD({ touch }: { touch: boolean }) {
       {!touch && you?.alive !== false && (
         <div className="hud__bottom">
           {/* Keyboard: the dash drum, its recharge bar and the key */}
-          <div className={`kb-dash${dashReady ? " kb-dash--ready" : ""}`} role="status" aria-label={automatic ? "Auto dash recharge" : dashReady ? "Hold Space to aim, release to dash" : "Dash recharging"}>
+          <div className={`kb-dash${dashReady ? " kb-dash--ready" : ""}`} role="status" aria-label={automatic ? "Auto dash recharge" : dashReady ? "Press Space to dash" : "Dash recharging"}>
             <img className="kb-dash__icon" src={`${BASE}hud/dash.webp`} alt="" width={256} height={256} draggable={false} />
             <span className="kb-dash__bar">
               <span className="kb-dash__fill" style={{ transform: `scaleX(${dashProgress})` }} />
@@ -72,7 +72,7 @@ export function HUD({ touch }: { touch: boolean }) {
               <KeyCap>D</KeyCap> or arrows: move
             </span>
             <span>
-              {automatic ? "Auto dash: approach an opponent" : <><KeyCap>Space</KeyCap> hold to aim · release to dash</>}
+              {automatic ? "Auto dash: approach an opponent" : <><KeyCap>Space</KeyCap> dash</>}
             </span>
             <span>
               <KeyCap>Esc</KeyCap> settings

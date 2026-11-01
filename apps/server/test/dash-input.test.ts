@@ -16,9 +16,9 @@ vi.mock("../../client/src/network/RoomManager", () => ({
 
 describe("manual and automatic dash input", () => {
   let controller: {
-    start(): void; stop(): void; aiming: boolean;
+    start(): void; stop(): void;
     setTouchVector(x: number, y: number): void;
-    beginDashAim(): void; endDashAim(cancel?: boolean): void;
+    requestDash(): void;
     getDashAim(): { x: number; y: number } | null;
   };
   let windowTarget: EventTarget;
@@ -37,18 +37,24 @@ describe("manual and automatic dash input", () => {
     controller.start();
   });
   afterEach(() => { controller.stop(); vi.useRealTimers(); vi.unstubAllGlobals(); });
-  it("previews while held and sends exactly one directed dash on release", () => {
-    controller.setTouchVector(0, -1); controller.beginDashAim();
-    expect(controller.aiming).toBe(true);
-    expect(mock.dash).not.toHaveBeenCalled();
-    expect(controller.getDashAim()?.y).toBe(-1);
-    controller.endDashAim(); controller.endDashAim();
+  const key = (type: string, repeat = false) => windowTarget.dispatchEvent(Object.assign(new Event(type, { cancelable: true }), { code: "Space", repeat }));
+  it("fires on Space down, without waiting for release or repeating while held", () => {
+    controller.setTouchVector(0, -1);
+    key("keydown");
     expect(mock.dash).toHaveBeenCalledExactlyOnceWith({ x: 0, y: -1 });
+    vi.advanceTimersByTime(500);
+    key("keydown", true);
+    key("keyup");
+    expect(mock.dash).toHaveBeenCalledTimes(1);
   });
-  it("cancels on pointer cancellation or loss of focus", () => {
-    controller.beginDashAim(); controller.endDashAim(true);
-    controller.beginDashAim(); windowTarget.dispatchEvent(new Event("blur")); controller.endDashAim();
-    expect(mock.dash).not.toHaveBeenCalled(); expect(controller.aiming).toBe(false);
+  it("fires a directed touch dash immediately and clears steering on loss of focus", () => {
+    controller.setTouchVector(0, -1);
+    controller.requestDash();
+    expect(mock.dash).toHaveBeenCalledExactlyOnceWith({ x: 0, y: -1 });
+    windowTarget.dispatchEvent(new Event("blur"));
+    expect(controller.getDashAim()?.x).toBe(1);
+    key("keyup");
+    expect(mock.dash).toHaveBeenCalledTimes(1);
   });
   it("auto dashes while idle when an opponent enters range, without button presses", () => {
     mock.settings.dashMode = "auto"; mock.opponent.x = 20;
@@ -57,7 +63,8 @@ describe("manual and automatic dash input", () => {
     vi.advanceTimersByTime(40); expect(mock.dash).toHaveBeenCalledExactlyOnceWith({ x: 1, y: 0 });
     mock.me.dashCooldownMs = 3000;
     vi.advanceTimersByTime(1000); expect(mock.dash).toHaveBeenCalledTimes(1);
-    controller.beginDashAim(); expect(controller.aiming).toBe(false);
+    key("keydown"); key("keyup");
+    expect(mock.dash).toHaveBeenCalledTimes(1);
   });
   it("never auto dashes while stunned, eliminated, in settings or outside a bout", () => {
     mock.settings.dashMode = "auto";

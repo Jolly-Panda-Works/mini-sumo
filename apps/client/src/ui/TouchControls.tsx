@@ -32,7 +32,7 @@ export function TouchControls() {
   const game = useStore(gameStore);
   const { joystick, dashMode } = useStore(settingsStore);
   const dashPointer = useRef<number | null>(null);
-  useEffect(() => () => { inputController.endDashAim(true); inputController.setTouchVector(0, 0); }, []);
+  useEffect(() => () => { inputController.setTouchVector(0, 0); }, []);
   const you = game.players.find((p) => p.isYou);
   const zoneRef = useRef<HTMLDivElement>(null);
   const pointerId = useRef<number | null>(null);
@@ -130,19 +130,17 @@ export function TouchControls() {
           dashPointer.current = e.pointerId;
           e.currentTarget.setPointerCapture(e.pointerId);
           if (ready) vibrate(18);
-          inputController.beginDashAim();
+          inputController.requestDash();
         }}
         onPointerUp={(e) => {
           if (dashPointer.current !== e.pointerId) return;
           dashPointer.current = null;
-          inputController.endDashAim();
         }}
-        onPointerCancel={() => { dashPointer.current = null; inputController.endDashAim(true); }}
-        onLostPointerCapture={() => { dashPointer.current = null; inputController.endDashAim(true); }}
-        onKeyDown={(e) => { if (e.key === "Enter" && !e.repeat) inputController.beginDashAim(); }}
-        onKeyUp={(e) => { if (e.key === "Enter") inputController.endDashAim(); }}
+        onPointerCancel={() => { dashPointer.current = null; }}
+        onLostPointerCapture={() => { dashPointer.current = null; }}
+        onKeyDown={(e) => { if (e.key === "Enter" && !e.repeat && dashMode === "manual") inputController.requestDash(); }}
         aria-disabled={dashMode === "auto"}
-        aria-label={dashMode === "auto" ? (ready ? "Auto dash ready" : "Auto dash recharging") : ready ? "Hold to aim, release to dash" : "Dash recharging"}
+        aria-label={dashMode === "auto" ? (ready ? "Auto dash ready" : "Auto dash recharging") : ready ? "Press to dash" : "Dash recharging"}
       >
         {/* The DASH art; while recharging, a dark sweep shows what's left, with the seconds */}
         {!ready && <span className="dash-btn__cool" aria-hidden="true" />}

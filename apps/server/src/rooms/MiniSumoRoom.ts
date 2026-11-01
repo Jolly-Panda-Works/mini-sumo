@@ -344,13 +344,14 @@ export class MiniSumoRoom extends Room<MiniSumoState> {
       : null;
     const participants = [...this.session.players.values()]
       .filter((p) => !p.isBot && this.accounts.has(p.id))
-      .map((p) => ({ accountId: this.accounts.get(p.id)!, won: p.id === winnerId, completed: p.connected && p.elimReason !== "left" }));
+      .map((p) => ({ accountId: this.accounts.get(p.id)!, won: p.id === winnerId, placement: p.placement, completed: p.connected && p.elimReason !== "left" }));
     // Training is practice: bouts count for stats and XP, but pay no coins.
     const { rewards, progress } = economy.recordMatchDetailed({
       matchId,
       durationMs,
       rewarded: false,
       participants,
+      playerCount: this.session.players.size,
       arenaId: this.arenaId === PRIVATE_ARENA_ID ? "training" : this.arenaId,
     });
 

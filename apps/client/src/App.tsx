@@ -41,6 +41,7 @@ import { Toasts } from "./ui/Toasts";
 import { TouchControls } from "./ui/TouchControls";
 import { OutActions } from "./ui/OutActions";
 import { Tutorial } from "./ui/Tutorial";
+import { MenuOnboarding } from "./ui/MenuOnboarding";
 
 /** How long the finish plays before the results board comes up (ms). */
 const RESULTS_DELAY_MS = 1600;
@@ -221,6 +222,7 @@ export function App() {
       <div className="stage">{inRoom ? <GameCanvas /> : <HomeBackground />}</div>
       <div className="ui">
         {screen}
+        {!inRoom && !needsName && !needsTutorial && <MenuOnboarding />}
         <Toasts />
         {ui.wardrobeOpen && !needsName && (!inRoom || game.phase === Phase.Waiting || game.phase === Phase.Lobby) && <Wardrobe />}
         {ui.friendsOpen && !inRoom && !needsName && <FriendsPanel />}
@@ -236,7 +238,7 @@ export function App() {
         {!inRoom && !needsName && <DevButton />}
         <NoticePopup />
         <ServerWait />
-        {!needsName && !needsTutorial && <InviteWatcher />}
+        {!needsName && !needsTutorial && settings.menuTourCompleted && <InviteWatcher />}
         {emailLink && economyStatus === "ready" && (
           <EmailSavePopup initial={emailLink} onClose={() => setEmailLink(null)} />
         )}
