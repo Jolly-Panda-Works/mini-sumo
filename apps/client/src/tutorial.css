@@ -132,3 +132,14 @@
 .dlg-tutorial-dash-choice .sub-dialog__body { gap: 6px; }
 .dlg-tutorial-dash-choice .sub-dialog__foot { width: 100%; }
 .dlg-tutorial-dash-choice .hint { font-size: max(11px, 3cqw); }
+
+/* These short onboarding panels keep touch scrolling without a visible track. */
+:is(.dlg-tutorial-success, .dlg-tutorial-dash-choice, .dlg-starter-reward) .sub-dialog__body {
+  scrollbar-width: none;
+  scrollbar-gutter: auto;
+}
+:is(.dlg-tutorial-success, .dlg-tutorial-dash-choice, .dlg-starter-reward) .sub-dialog__body::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
