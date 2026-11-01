@@ -474,6 +474,7 @@ export class MiniSumoRoom extends Room<MiniSumoState> {
       ps.hairColor = p.appearance.hairColor;
       ps.face = p.appearance.face;
       ps.outfit = p.appearance.outfit;
+      ps.mask = p.appearance.mask;
       ps.avatar = p.appearance.avatar;
       ps.accountId = this.accounts.get(id) || this.botAccounts.get(id) || "";
       ps.level = p.level;

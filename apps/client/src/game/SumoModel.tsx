@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, type RefObject } from "react";
 import { useFrame } from "@react-three/fiber";
 import {
+  BackSide,
   BoxGeometry,
   Color,
   CapsuleGeometry,
@@ -17,7 +18,7 @@ import {
   type Group,
   type Mesh,
 } from "three";
-import { DEFAULT_APPEARANCE, FACES, HAIR_COLORS, HAIR_STYLES, OUTFITS, type Appearance } from "@mini-sumo/shared";
+import { DEFAULT_APPEARANCE, FACES, HAIR_COLORS, HAIR_STYLES, MASKS, OUTFITS, type Appearance } from "@mini-sumo/shared";
 
 /** Shared geometry: created once, reused by every sumo (no per-player allocations). */
 const GEO = {
@@ -33,6 +34,8 @@ const GEO = {
   // Hats
   helmet: new SphereGeometry(0.6, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.55),
   neckGuard: new CylinderGeometry(0.62, 0.78, 0.3, 12, 1, true),
+  // Over a mask: a shallower dome with no neck guard, so the animal's face shows
+  helmetCap: new SphereGeometry(0.6, 12, 6, 0, Math.PI * 2, 0, Math.PI * 0.4),
   horn: new BoxGeometry(0.07, 0.42, 0.04),
   crest: new CylinderGeometry(0.09, 0.09, 0.03, 10),
   kasa: new ConeGeometry(0.95, 0.42, 14),
@@ -77,6 +80,21 @@ const GEO = {
   sagari: new CylinderGeometry(0.025, 0.025, 0.3, 5),
   cape: new BoxGeometry(1.05, 0.95, 0.04),
   armband: new TorusGeometry(0.16, 0.045, 6, 16),
+  // Animal masks
+  hood: new IcosahedronGeometry(0.6, 2),
+  muzzle: new IcosahedronGeometry(0.26, 1),
+  animalNose: new IcosahedronGeometry(0.075, 0),
+  patch: new IcosahedronGeometry(0.15, 1),
+  roundEar: new CylinderGeometry(0.19, 0.19, 0.08, 8),
+  innerEar: new CylinderGeometry(0.11, 0.11, 0.09, 8),
+  pointEar: new ConeGeometry(0.17, 0.34, 4),
+  bigEar: new IcosahedronGeometry(0.4, 1),
+  mane: new ConeGeometry(0.2, 0.36, 5),
+  furStripe: new BoxGeometry(0.05, 0.2, 0.03),
+  furSpot: new IcosahedronGeometry(0.05, 0),
+  trunk: new CylinderGeometry(0.1, 0.12, 0.2, 7),
+  tusk: new ConeGeometry(0.05, 0.28, 6),
+  animalHorn: new ConeGeometry(0.12, 0.42, 6),
   leg: new CylinderGeometry(0.2, 0.23, 0.34, 8),
   ring: new RingGeometry(0.86, 1.02, 32),
 };
@@ -85,6 +103,7 @@ const SKIN = new MeshStandardMaterial({ color: "#FFD3B0", roughness: 0.8, flatSh
 const INK = new MeshStandardMaterial({ color: "#2B2340", roughness: 0.6, flatShading: true });
 const WHITE = new MeshStandardMaterial({ color: "#FBF8F2", roughness: 0.7, flatShading: true });
 const GOLD = new MeshStandardMaterial({ color: "#F2C14E", roughness: 0.4, metalness: 0.3, flatShading: true });
+const GOLD_INSIDE = new MeshStandardMaterial({ color: "#F2C14E", roughness: 0.4, metalness: 0.3, flatShading: true, side: BackSide });
 const CHEEK = new MeshBasicMaterial({ color: "#FF8FA3", transparent: true, opacity: 0.75 });
 const BAND = new MeshStandardMaterial({ color: "#E2443A", roughness: 0.6, flatShading: true });
 const SAKURA = new MeshStandardMaterial({ color: "#FF9EC4", roughness: 0.6, flatShading: true });
@@ -148,7 +167,7 @@ export function useSumoParts(): SumoParts {
 
 // ---------------------------------------------------------------- hair
 
-function Hair({ style, color }: { style: string; color: string }) {
+function Hair({ style, color, masked = false }: { style: string; color: string; masked?: boolean }) {
   const mat = colorMaterial(color, 0.6);
   switch (style) {
     case "bald":
@@ -213,8 +232,8 @@ function Hair({ style, color }: { style: string; color: string }) {
       // Samurai helmet: iron dome, flared neck guard, gold horns and crest
       return (
         <group>
-          <mesh geometry={GEO.helmet} material={IRON} position-y={0.02} castShadow />
-          <mesh geometry={GEO.neckGuard} material={IRON} position={[0, 0.02, -0.04]} castShadow />
+          <mesh geometry={masked ? GEO.helmetCap : GEO.helmet} material={IRON} position-y={0.02} castShadow />
+          {!masked && <mesh geometry={GEO.neckGuard} material={IRON} position={[0, 0.02, -0.04]} castShadow />}
           <mesh geometry={GEO.horn} material={GOLD} position={[-0.16, 0.6, 0.38]} rotation={[0.25, 0, 0.45]} />
           <mesh geometry={GEO.horn} material={GOLD} position={[0.16, 0.6, 0.38]} rotation={[0.25, 0, -0.45]} />
           <mesh geometry={GEO.crest} material={GOLD} position={[0, 0.42, 0.45]} rotation-x={Math.PI / 2 - 0.5} />
@@ -225,6 +244,7 @@ function Hair({ style, color }: { style: string; color: string }) {
       return (
         <group position-y={0.48}>
           <mesh geometry={GEO.crownBand} material={GOLD} castShadow />
+          <mesh geometry={GEO.crownBand} material={GOLD_INSIDE} />
           {Array.from({ length: 6 }, (_, i) => {
             const a = (i / 6) * Math.PI * 2;
             return (
@@ -465,6 +485,280 @@ function Face({ style, eyesRef }: { style: string; eyesRef: RefObject<Group | nu
   }
 }
 
+// ---------------------------------------------------------------- animal masks
+
+type MaskId = (typeof MASKS)[number]["id"];
+type HairId = (typeof HAIR_STYLES)[number]["id"];
+
+/** Radius of the mask's hood, which covers the whole head. */
+const HOOD = 0.6;
+
+/** Position and turn of something lying on the hood at (x, y) on its front; spin turns it in place. */
+function onHood(x: number, y: number, spin = 0, lift = 0) {
+  const r = HOOD + lift;
+  const z = Math.sqrt(Math.max(0, r * r - x * x - y * y));
+  return {
+    position: [x, y, z] as [number, number, number],
+    rotation: [-Math.asin(y / r), Math.atan2(x, z), spin, "YXZ"] as [number, number, number, "YXZ"],
+  };
+}
+
+const SIDES = [-1, 1] as const;
+
+/** The shared parts of a mask: fur hood, eyes, muzzle and nose. */
+const MASK_ART: Record<Exclude<MaskId, "none">, { fur: string; muzzle?: string; nose: string; eyeY?: number; lightEyes?: boolean }> = {
+  lion: { fur: "#E3A63F", muzzle: "#F6DFAE", nose: "#7A3F2C" },
+  panda: { fur: "#F4F1EA", muzzle: "#FFFFFF", nose: "#23202B", lightEyes: true },
+  tiger: { fur: "#EE8A2C", muzzle: "#FBF3E4", nose: "#D9576A" },
+  leopard: { fur: "#E8BE6A", muzzle: "#FBF3E4", nose: "#A85A4A" },
+  monkey: { fur: "#7A5233", muzzle: "#F2C9A0", nose: "#5A3A28" },
+  bear: { fur: "#8A5A36", muzzle: "#D9B58A", nose: "#2B2340" },
+  dwarfbear: { fur: "#3D3030", muzzle: "#E3B874", nose: "#1E1820" },
+  redpanda: { fur: "#C8552A", muzzle: "#FBF3E4", nose: "#23202B" },
+  elephant: { fur: "#9AA3B2", nose: "#9AA3B2" },
+  rhino: { fur: "#7F8796", muzzle: "#A3AAB8", nose: "#59606E", eyeY: 0.16 },
+};
+
+/** Round ears, standing on the hood's upper sides. */
+function RoundEars({ fur, inner, size = 1, spread = 0 }: { fur: string; inner: string; size?: number; spread?: number }) {
+  return SIDES.map((side) => (
+    <group key={side} position={[side * (0.44 + spread), 0.42, 0.06]} rotation={[Math.PI / 2 - 0.1, 0, 0]} scale={size}>
+      <group rotation-y={side * 0.7}>
+        <mesh geometry={GEO.roundEar} material={colorMaterial(fur)} castShadow />
+        <mesh geometry={GEO.innerEar} material={colorMaterial(inner)} position-y={0.005} />
+      </group>
+    </group>
+  ));
+}
+
+function PointEars({ fur, inner, size = 1 }: { fur: string; inner: string; size?: number }) {
+  return SIDES.map((side) => (
+    <group key={side} position={[side * 0.42, 0.46, 0.04]} rotation-z={-side * 0.5} scale={size}>
+      <mesh geometry={GEO.pointEar} material={colorMaterial(fur)} castShadow />
+      <mesh geometry={GEO.pointEar} material={colorMaterial(inner)} position={[0, -0.04, 0.05]} scale={[0.58, 0.72, 0.72]} />
+    </group>
+  ));
+}
+
+function MaskExtras({ style, ears, eyeY }: { style: Exclude<MaskId, "none">; ears: boolean; eyeY: number }) {
+  const fur = MASK_ART[style].fur;
+  switch (style) {
+    case "lion": {
+      const mane = colorMaterial("#A85A22");
+      // A ring round the face, open at the top so the hair has room; under a hat only its lower half
+      const from = ears ? 0.72 : 1;
+      const span = 2 * (1.5 - from);
+      return (
+        <>
+          {Array.from({ length: 11 }, (_, i) => {
+            const a = Math.PI * (from + (i / 10) * span);
+            return <mesh key={i} geometry={GEO.mane} material={mane} position={[Math.cos(a) * 0.6, Math.sin(a) * 0.6, 0.02]} rotation-z={a - Math.PI / 2} castShadow />;
+          })}
+          {Array.from({ length: 8 }, (_, i) => {
+            const a = Math.PI * (from + (i / 7) * span);
+            return <mesh key={i} geometry={GEO.mane} material={mane} position={[Math.cos(a) * 0.5, Math.sin(a) * 0.5, -0.32]} rotation-z={a - Math.PI / 2} />;
+          })}
+          {ears && <RoundEars fur={fur} inner="#A85A22" size={0.72} spread={-0.02} />}
+        </>
+      );
+    }
+    case "panda":
+      return (
+        <>
+          {SIDES.map((side) => (
+            <mesh key={side} geometry={GEO.patch} material={INK} {...onHood(side * 0.21, eyeY - 0.02, side * -0.5, -0.05)} scale={[1, 1.3, 0.5]} />
+          ))}
+          {ears && <RoundEars fur="#23202B" inner="#23202B" />}
+        </>
+      );
+    case "tiger":
+      return (
+        <>
+          {SIDES.map((side) => (
+            <group key={side}>
+              <mesh geometry={GEO.patch} material={colorMaterial("#FBF3E4")} {...onHood(side * 0.2, eyeY + 0.09, 0, -0.03)} scale={[1, 0.5, 0.4]} />
+              {[
+                [0.12, 0.38, 0.1],
+                [0.25, 0.32, 0.45],
+                [0.47, 0.12, 1.2],
+                [0.48, -0.06, 1.5],
+                [0.42, -0.24, 1.9],
+              ].map(([x, y, spin], i) => (
+                <mesh key={i} geometry={GEO.furStripe} material={INK} {...onHood(side * x!, y!, side * spin!)} />
+              ))}
+            </group>
+          ))}
+          <mesh geometry={GEO.furStripe} material={INK} {...onHood(0, 0.42)} />
+          {ears && <RoundEars fur={fur} inner="#FBF3E4" size={0.8} />}
+        </>
+      );
+    case "leopard": {
+      const spot = colorMaterial("#4A2E20");
+      return (
+        <>
+          {[
+            [0, 0.4],
+            [0.14, 0.34],
+            [0.3, 0.3],
+            [0.08, 0.5],
+            [0.25, 0.46],
+            [0.42, 0.2],
+            [0.48, 0.04],
+            [0.5, -0.14],
+            [0.4, -0.3],
+            [0.34, 0.1],
+          ].flatMap(([x, y], i) =>
+            SIDES.map((side) => <mesh key={`${i}${side}`} geometry={GEO.furSpot} material={spot} {...onHood(side * x!, y!, i)} scale={[1, 1, 0.5]} />),
+          )}
+          {ears && <RoundEars fur={fur} inner="#4A2E20" size={0.72} />}
+        </>
+      );
+    }
+    case "monkey": {
+      const skin = colorMaterial("#F2C9A0");
+      return (
+        <>
+          {SIDES.map((side) => (
+            <group key={side}>
+              <mesh geometry={GEO.patch} material={skin} {...onHood(side * 0.17, eyeY + 0.03, 0, -0.04)} scale={[1.25, 1.2, 0.5]} />
+              {/* Ears on the sides, level with the eyes */}
+              <group position={[side * 0.62, 0.04, 0]} rotation-z={Math.PI / 2}>
+                <mesh geometry={GEO.roundEar} material={colorMaterial(fur)} castShadow />
+                <mesh geometry={GEO.innerEar} material={skin} position-z={0.03} rotation-x={-0.5} />
+              </group>
+            </group>
+          ))}
+        </>
+      );
+    }
+    case "bear":
+      return ears ? <RoundEars fur={fur} inner="#D9B58A" size={0.85} /> : null;
+    case "dwarfbear":
+      // A sun bear cub: dark fur, tiny ears and pale rings that keep the eyes readable
+      return (
+        <>
+          {SIDES.map((side) => (
+            <mesh key={side} geometry={GEO.patch} material={colorMaterial("#E3B874")} {...onHood(side * 0.2, eyeY, 0, -0.04)} scale={[0.8, 0.8, 0.45]} />
+          ))}
+          {ears && <RoundEars fur={fur} inner="#E3B874" size={0.58} spread={-0.05} />}
+        </>
+      );
+    case "redpanda": {
+      const white = colorMaterial("#FBF3E4");
+      const dark = colorMaterial("#4A2318");
+      return (
+        <>
+          {SIDES.map((side) => (
+            <group key={side}>
+              <mesh geometry={GEO.patch} material={white} {...onHood(side * 0.21, eyeY + 0.11, side * 0.2, -0.03)} scale={[0.8, 0.5, 0.4]} />
+              <mesh geometry={GEO.patch} material={white} {...onHood(side * 0.38, -0.14, 0, -0.04)} scale={[1, 1, 0.45]} />
+              <mesh geometry={GEO.furStripe} material={dark} {...onHood(side * 0.22, -0.07, side * 0.12)} scale={[1.1, 0.7, 1]} />
+            </group>
+          ))}
+          {ears && <PointEars fur={fur} inner="#FBF3E4" />}
+        </>
+      );
+    }
+    case "elephant": {
+      const skin = colorMaterial(fur);
+      return (
+        <>
+          {SIDES.map((side) => (
+            <group key={side}>
+              <group position={[side * 0.78, -0.02, -0.12]} rotation={[0, side * 0.42, side * 0.12]}>
+                <mesh geometry={GEO.bigEar} material={skin} scale={[1, 1.12, 0.2]} castShadow />
+                <mesh geometry={GEO.bigEar} material={colorMaterial("#E6A9B4")} position-z={0.03} scale={[0.68, 0.8, 0.16]} />
+              </group>
+              <mesh geometry={GEO.tusk} material={MASK_WHITE} position={[side * 0.2, -0.3, 0.6]} rotation-x={Math.PI - 0.55} castShadow />
+            </group>
+          ))}
+          {/* The trunk swings out over the belly, tip turned up */}
+          {[
+            [-0.06, 0.66, 0.2, 1.1],
+            [-0.22, 0.73, 0.1, 0.98],
+            [-0.38, 0.78, 0.25, 0.86],
+            [-0.52, 0.87, 0.85, 0.76],
+          ].map(([y, z, rx, size], i) => (
+            <mesh key={i} geometry={GEO.trunk} material={skin} position={[0, y!, z!]} rotation-x={rx!} scale={size!} castShadow />
+          ))}
+        </>
+      );
+    }
+    case "rhino": {
+      const horn = colorMaterial("#D8CDB6");
+      return (
+        <>
+          <mesh geometry={GEO.animalHorn} material={horn} position={[0, 0.08, 0.76]} rotation-x={0.42} castShadow />
+          <mesh geometry={GEO.animalHorn} material={horn} position={[0, 0.3, 0.57]} rotation-x={0.3} scale={0.5} />
+          {ears && <PointEars fur={fur} inner="#C7A5A5" size={0.9} />}
+        </>
+      );
+    }
+  }
+}
+
+/** A full animal head worn over the wrestler's own: faces hide under it. */
+function AnimalMask({ style, eyesRef, ears }: { style: Exclude<MaskId, "none">; eyesRef: RefObject<Group | null>; ears: boolean }) {
+  const art = MASK_ART[style];
+  const eyeY = art.eyeY ?? 0.1;
+  return (
+    <>
+      <mesh geometry={GEO.hood} material={colorMaterial(art.fur)} castShadow />
+      <group ref={eyesRef} position={[0, eyeY, 0.56]}>
+        {SIDES.map((side) => (
+          <mesh key={side} geometry={GEO.eye} material={art.lightEyes ? WHITE : INK} position-x={side * 0.2} scale={art.lightEyes ? 0.8 : 1} />
+        ))}
+      </group>
+      {art.muzzle && (
+        <>
+          <mesh geometry={GEO.muzzle} material={colorMaterial(art.muzzle)} position={[0, -0.16, 0.44]} scale={style === "rhino" ? [1.15, 1, 1.25] : [1, 0.82, 0.9]} castShadow />
+          <mesh geometry={GEO.animalNose} material={colorMaterial(art.nose)} position={[0, -0.08, 0.68]} scale={[1, 0.7, 0.7]} />
+        </>
+      )}
+      <MaskExtras style={style} ears={ears} eyeY={eyeY} />
+    </>
+  );
+}
+
+/** How a hair style sits on a mask: moved, scaled or hidden, and whether the ears still fit. */
+interface HairFit {
+  scale?: number;
+  y?: number;
+  z?: number;
+  hide?: boolean;
+  /** Ears (and a lion's upper mane) off: hats and hair they would otherwise pierce. */
+  noEars?: boolean;
+}
+
+const NO_MASK_FIT: HairFit = { scale: 1 };
+
+/** Every style on the larger hood, before any changes for one animal. */
+const HOOD_FIT: Record<HairId, HairFit> = {
+  topknot: { scale: 1.15 },
+  bald: {},
+  spiky: { scale: 1.15 },
+  bowl: { scale: 1.2, noEars: true },
+  mohawk: { scale: 1.15 },
+  ponytail: { scale: 1.15 },
+  afro: { scale: 0.98, y: 0.06, z: -0.06, noEars: true },
+  buns: { scale: 1.15, z: -0.18 },
+  samurai: { scale: 0.98, y: 0.15 },
+  kasa: { scale: 1.15, y: 0.14, noEars: true },
+  kabuto: { scale: 1.15, noEars: true },
+  crown: { scale: 0.85, y: 0.08 },
+};
+
+/** Changes for one animal. Side ears, the trunk and the horns clear every style as they are. */
+const MASK_FIT: Partial<Record<MaskId, Partial<Record<HairId, HairFit>>>> = {
+  // Big enough to stand clear of both, and a panda needs its ears
+  panda: { bowl: { noEars: false }, afro: { noEars: false } },
+};
+
+function hairFit(mask: MaskId, hair: HairId): HairFit {
+  if (mask === "none") return NO_MASK_FIT;
+  return { ...HOOD_FIT[hair], ...MASK_FIT[mask]?.[hair] };
+}
+
 // ---------------------------------------------------------------- outfit
 
 function Outfit({ style, color }: { style: string; color: string }) {
@@ -592,7 +886,7 @@ function Outfit({ style, color }: { style: string; color: string }) {
 
 /**
  * A compact toy sumo: big head, round body, short limbs and a mawashi belt in the player's
- * slot colour. Hair, face and outfit come from the appearance. Origin is between the feet;
+ * slot colour. Hair, face, mask and outfit come from the appearance. Origin is between the feet;
  * the model faces +Z.
  */
 export function SumoModel({
@@ -614,6 +908,8 @@ export function SumoModel({
   const hairColor = HAIR_COLORS[appearance.hairColor]?.hex ?? HAIR_COLORS[0].hex;
   const face = FACES[appearance.face]?.id ?? "determined";
   const outfit = OUTFITS[appearance.outfit]?.id ?? "classic";
+  const mask = MASKS[appearance.mask]?.id ?? "none";
+  const fit = hairFit(mask, hairStyle);
   const armband = outfit === "armbands" ? <mesh geometry={GEO.armband} material={colorMaterial(color)} position-y={-0.32} rotation-x={Math.PI / 2} /> : null;
 
   return (
@@ -639,11 +935,19 @@ export function SumoModel({
 
         <group ref={parts.head} position-y={1.12}>
           <mesh geometry={GEO.head} material={skin} castShadow />
-          <Hair key={hairStyle} style={hairStyle} color={hairColor} />
+          {!fit.hide && (
+            <group position={[0, fit.y ?? 0, fit.z ?? 0]} scale={fit.scale ?? 1}>
+              <Hair key={hairStyle} style={hairStyle} color={hairColor} masked={mask !== "none"} />
+            </group>
+          )}
           {/* key: switching faces rebuilds them. Reusing the old meshes kept stale props: a
               removed position-x was reset to 0 after the new position, so an eye could land
               in the middle of the face. Same for hair and outfits. */}
-          <Face key={face} style={face} eyesRef={parts.eyes} />
+          {mask === "none" ? (
+            <Face key={face} style={face} eyesRef={parts.eyes} />
+          ) : (
+            <AnimalMask key={mask} style={mask} eyesRef={parts.eyes} ears={!fit.noEars} />
+          )}
         </group>
       </group>
     </group>

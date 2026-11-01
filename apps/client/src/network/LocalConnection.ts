@@ -326,6 +326,7 @@ export class LocalConnection implements GameConnection {
       ps.hairColor = p.appearance.hairColor;
       ps.face = p.appearance.face;
       ps.outfit = p.appearance.outfit;
+      ps.mask = p.appearance.mask;
       ps.avatar = p.appearance.avatar;
       ps.accountId = "";
       ps.level = p.level;

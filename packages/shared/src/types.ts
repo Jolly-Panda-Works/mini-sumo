@@ -34,6 +34,8 @@ export interface SyncedPlayer {
   hairColor: number;
   face: number;
   outfit: number;
+  /** Missing when the server is older than masks. */
+  mask?: number;
 }
 
 /** Minimal read-only view of a Colyseus MapSchema. */

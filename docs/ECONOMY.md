@@ -13,7 +13,7 @@ A server-authoritative virtual-currency economy: earn **Sumo Coins** by playing,
 | Identity | None. A player was a per-connection Colyseus session id. |
 | Persistence | None on the server. The client kept settings (name, look) in `localStorage`. |
 | Currency, inventory, rewards | None. |
-| Customisation | `packages/shared/src/appearance.ts`: 4 indexes (hair, hair colour, face, outfit), all free. |
+| Customisation | `packages/shared/src/appearance.ts`: 5 indexes (hair, hair colour, face, outfit, mask), all free. |
 | Matches | `GameSession` (authoritative, framework-free) inside `MiniSumoRoom`; quick match with bot fill; private rooms. |
 | Offline mode | The client runs `GameSession` locally when no server is reachable. |
 
@@ -144,7 +144,7 @@ Tables: `accounts`, `wallets`, `transactions`, `ownership`, `arena_entries`, `se
 
 ## Cosmetic shop
 
-The shop **is** the existing wardrobe, organised in tabs (hair, colour, face, outfit; 36 items). Each appearance option has a stable item id (`hair.mohawk`, `hairColor.blue`, …). Three items per category are free starter items owned by everyone, also offline; every other item has a price in `COSMETIC_PRICES` (`packages/shared/src/economy.ts`), the single table the server charges from. Bought items are owned for good and listed first in their tab.
+The shop **is** the existing wardrobe, organised in tabs (hair, colour, face, mask, outfit). Each appearance option has a stable item id (`hair.mohawk`, `hairColor.blue`, …). Three items per category (for masks, just "No mask") are free starter items owned by everyone, also offline; every other item has a price in `COSMETIC_PRICES` (`packages/shared/src/economy.ts`), the single table the server charges from. Bought items are owned for good and listed first in their tab.
 
 - Locked options show their price; picking one previews it on your wrestler (try before you buy).
 - *Buy* calls `POST /api/shop/purchase` with the item id and a UUID idempotency key. The server takes the price from its own catalog, debits and grants ownership in one transaction. Buying something you own never charges again.

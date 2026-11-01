@@ -1,4 +1,4 @@
-import { AVATARS, FACES, HAIR_COLORS, HAIR_STYLES, OUTFITS, type Appearance } from "./appearance.js";
+import { AVATARS, FACES, HAIR_COLORS, HAIR_STYLES, MASKS, OUTFITS, type Appearance } from "./appearance.js";
 
 /**
  * Client-facing economy contract. Authoritative prices, fees and rewards live on the server
@@ -21,6 +21,7 @@ const OPTIONS: Record<CosmeticCategory, readonly { label: string; id?: string }[
   hairColor: HAIR_COLORS,
   face: FACES,
   outfit: OUTFITS,
+  mask: MASKS,
   avatar: AVATARS,
 };
 
@@ -71,6 +72,7 @@ export const STARTER_ITEMS: readonly string[] = [
   "outfit.classic",
   "outfit.striped",
   "outfit.polka",
+  "mask.none",
   "avatar.0",
   "avatar.1",
   "avatar.2",
@@ -122,6 +124,16 @@ export const COSMETIC_PRICES: Readonly<Record<string, number>> = Object.freeze({
   "outfit.dragon": 1200,
   "outfit.kesho": 2200,
   "outfit.golden": 3000,
+  "mask.monkey": 600,
+  "mask.dwarfbear": 700,
+  "mask.bear": 800,
+  "mask.panda": 1000,
+  "mask.redpanda": 1100,
+  "mask.leopard": 1200,
+  "mask.tiger": 1200,
+  "mask.elephant": 1400,
+  "mask.rhino": 1400,
+  "mask.lion": 1600,
 });
 
 /**
@@ -164,7 +176,7 @@ export function cosmeticPrice(itemId: string): number {
 /** Replaces any option the player doesn't own with the default (index 0). */
 export function restrictToOwned(appearance: Appearance, owned: ReadonlySet<string>): Appearance {
   const keep = (category: CosmeticCategory) => (owned.has(cosmeticItemId(category, appearance[category])) ? appearance[category] : 0);
-  return { hair: keep("hair"), hairColor: keep("hairColor"), face: keep("face"), outfit: keep("outfit"), avatar: keep("avatar") };
+  return { hair: keep("hair"), hairColor: keep("hairColor"), face: keep("face"), outfit: keep("outfit"), mask: keep("mask"), avatar: keep("avatar") };
 }
 
 // ---------------------------------------------------------------- API shapes

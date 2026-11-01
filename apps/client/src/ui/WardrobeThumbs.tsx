@@ -6,7 +6,7 @@ import { SumoModel, useSumoParts } from "../game/SumoModel";
 
 /**
  * Thumbnails for the wardrobe slots: each item drawn on your own wrestler (close-up of the
- * head for hair, colour and face; the belt for outfits). One small hidden canvas renders
+ * head for hair, colour, face and mask; the belt for outfits). One small hidden canvas renders
  * them one after another; the pictures are cached for the session.
  */
 interface Job {
@@ -21,7 +21,7 @@ const queue: Job[] = [];
 const queued = new Set<string>();
 
 export function thumbKey(category: CosmeticCategory, appearance: Appearance, color: string): string {
-  return `${category}:${appearance.hair}.${appearance.hairColor}.${appearance.face}.${appearance.outfit}:${color}`;
+  return `${category}:${appearance.hair}.${appearance.hairColor}.${appearance.face}.${appearance.outfit}.${appearance.mask}:${color}`;
 }
 
 /** Asks for a thumbnail (once); `useThumb` returns it when ready. */
@@ -40,6 +40,8 @@ const SHOTS: Record<CosmeticCategory | "avatar", { position: [number, number, nu
   // Colours: a close-up of the hair from slightly above, so the colour fills the picture.
   hairColor: { position: [0.35, 2.35, 1.55], target: [0, 1.82, 0] },
   face: { position: [0.25, 1.55, 2.1], target: [0, 1.42, 0] },
+  // Masks: further back, so a trunk or an elephant's ears still fit.
+  mask: { position: [0.3, 1.6, 3], target: [0, 1.36, 0] },
   outfit: { position: [0.6, 1.0, 3.1], target: [0, 0.65, 0] },
   avatar: { position: [0, 1.25, 4.6], target: [0, 1, 0] },
 };

@@ -35,6 +35,8 @@ export class PlayerState extends Schema {
   /** The player's account (lets friends see who is already in the room); "" for bots. */
   @type("string") accountId = "";
   @type("uint16") level = 1;
+  /** Last, so the fields before it keep their places for older clients. */
+  @type("uint8") mask = 0;
 }
 
 export class MiniSumoState extends Schema {

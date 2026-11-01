@@ -58,6 +58,7 @@ export function GameCanvas() {
               hairColor={p.appearance.hairColor}
               face={p.appearance.face}
               outfit={p.appearance.outfit}
+              mask={p.appearance.mask}
             />
           ))
         : <MenuSumos />}
