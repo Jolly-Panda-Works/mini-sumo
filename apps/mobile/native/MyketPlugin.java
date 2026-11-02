@@ -221,7 +221,7 @@ public class MyketPlugin extends Plugin {
 
     @Override
     protected void handleOnDestroy() {
-        if (helper != null) helper.disposeWhenFinished();
+        if (helper != null) helper.dispose();
         helper = null;
         connected = false;
     }
