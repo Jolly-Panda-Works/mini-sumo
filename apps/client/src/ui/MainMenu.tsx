@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { compactCoins } from "./Coins";
 import { GAME_TITLE } from "../config";
+import { inviteStore } from "../network/deepLink";
 import { economyStore } from "../network/economyClient";
 import { networkStore } from "../network/networkMode";
 import { roomManager, sessionStore } from "../network/RoomManager";
@@ -18,22 +19,13 @@ const shownErrors = new Set<string>();
 /** Bout results already announced (so the toast shows once). */
 const toastedResults = new WeakSet<object>();
 
-// A private room's invite link (?room=…): joined once the server is reachable, then the
-// address is cleaned up.
-const inviteCode = new URLSearchParams(window.location.search).get("room") ?? "";
-let inviteHandled = false;
-if (inviteCode) {
-  const url = new URL(window.location.href);
-  url.searchParams.delete("room");
-  window.history.replaceState(null, "", url);
-}
-
 /** Home: the hub with an arena carousel on phones; buttons, title and an arena row on wide screens. */
 export function MainMenu() {
   const session = useStore(sessionStore);
   const economy = useStore(economyStore);
   const settings = useStore(settingsStore);
   const { mode } = useStore(networkStore);
+  const inviteCode = useStore(inviteStore).code;
   const online = mode === "online";
   const balance = economy.profile?.balances.coins;
   const last = economy.lastResult;
@@ -48,12 +40,13 @@ export function MainMenu() {
     else if (last.note) pushToast(last.note, "info", 3000);
   }, [last]);
 
+  // A private room's invite: joined once the server is reachable.
   useEffect(() => {
-    if (inviteCode && online && !inviteHandled) {
-      inviteHandled = true;
+    if (inviteCode && online) {
+      inviteStore.update({ code: "" });
       void roomManager.joinByCode(inviteCode, settingsStore.get().name);
     }
-  }, [online]);
+  }, [inviteCode, online]);
 
   // Connection errors: an error popup (once per error) instead of a note in the layout.
   useEffect(() => {

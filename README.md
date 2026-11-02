@@ -4,7 +4,7 @@
 
 <h1 align="center">Mini Sumo</h1>
 
-<p align="center"><b>Push your friends out of the ring.</b> A cute 3D multiplayer party game for 2 to 4 players, right in the browser, on your desktop or on Android.</p>
+<p align="center"><b>Push your friends out of the ring.</b> A cute 3D multiplayer party game for 2 to 4 players on Android.</p>
 
 <p align="center">Created by <a href="https://www.useffarahmand.com"><b>Usef Farahmand</b></a></p>
 
@@ -13,7 +13,7 @@
   <a href="https://github.com/Jolly-Panda-Works/mini-sumo-3d/releases/latest"><img src="https://img.shields.io/github/v/release/Jolly-Panda-Works/mini-sumo-3d?display_name=tag&color=FF5D73" alt="Latest release" /></a>
   <a href="https://github.com/Jolly-Panda-Works/mini-sumo-3d/releases"><img src="https://img.shields.io/github/downloads/Jolly-Panda-Works/mini-sumo-3d/total?color=FF5D73" alt="Downloads" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>
-  <img src="https://img.shields.io/badge/platform-Android%20%7C%20Web-lightgrey" alt="Platforms" />
+  <img src="https://img.shields.io/badge/platform-Android-lightgrey" alt="Platforms" />
 </p>
 
 <p align="center">
@@ -24,7 +24,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/bout.png" alt="Three sumo wrestlers colliding in the ring" width="900" />
+  <img src="docs/screenshots/bout.png" alt="A dash hit between sumo wrestlers in the ring" width="900" />
 </p>
 
 > **Server status:** the public game server is not online yet. Until it is, every build runs in **offline practice mode**: rooms are created on your device and you play against bots. Online play switches on by itself once a server is configured (see [Offline mode](#offline-mode)).
@@ -55,7 +55,7 @@ Party games are best when everyone understands them in five seconds. Mini Sumo h
 
 - **Real 3D** with React Three Fiber: squash-and-stretch wrestlers, ring-out falls, dust and shockwaves.
 - **Fair multiplayer:** the Colyseus server decides every push, ring-out and winner. Clients only send input.
-- **Play on Android** (and in the browser for testing), with touch or keyboard controls.
+- **Play on Android**, with touch controls (the browser is for development only).
 - **Friends:** add friends with a friend code or straight from a bout's results, see who's online, in a lobby or in a match, and invite them into your room (private rooms also have an invite link). Tap anyone on the **leaderboard** to see their profile.
 - **Never wait long:** every arena finds an open room or creates one. After a 3-second search, computer-controlled wrestlers fill any remaining seats.
 - **Learn in the ring:** the panda coach teaches movement, dashes and ring-outs with animated control hints, then invites you straight into a free one-on-one Rookie bout with an easy bot and a guaranteed first win. A lost first attempt gets encouragement and a retry, without claiming the victory gift. Collect a Sakura outfit, explore customisation, play another easy bot bout and see your real stats in Profile. Friends, the leaderboard and the shop are introduced at the end. Progress and gifts are saved once. Choose automatic or manual dash after practice, or change it and replay practice from Settings. Manual dash fires immediately on the button or Space; auto dash targets nearby opponents when ready. The dash control pulses whenever it is ready.
@@ -113,7 +113,7 @@ Tuning lives in `apps/server/src/simulation/SimulationConfig.ts` (acceleration 2
 | **Customise your wrestler** | **Countdown** |
 | <img src="docs/screenshots/wardrobe.png" alt="Customise: hair, colour, face and outfit with rarity frames" width="440" /> | <img src="docs/screenshots/countdown.png" alt="Countdown" width="440" /> |
 | **Bout** | **Results** |
-| <img src="docs/screenshots/bout.png" alt="Three wrestlers colliding in the ring" width="440" /> | <img src="docs/screenshots/results.png" alt="Results screen" width="440" /> |
+| <img src="docs/screenshots/bout.png" alt="A dash hit in the ring" width="440" /> | <img src="docs/screenshots/results.png" alt="Results screen" width="440" /> |
 
 **On a phone**
 
@@ -176,13 +176,11 @@ Offline, *Play now* searches for a few seconds and fills the ring with bots; *Cr
 ## Download and install
 
 - **Android:** open the [**latest release**](https://github.com/Jolly-Panda-Works/mini-sumo-3d/releases/latest) and install `MiniSumo-<version>-Android.apk` (signed; the `.aab` is for Google Play). Release downloads contain Android files only.
-- **Web:** play at [sumo.ryujin.fans](https://sumo.ryujin.fans/), or download `mini-sumo-web` from the build run's Artifacts to host it yourself. Unzip `MiniSumo-X.Y.Z-Web.zip` onto any HTTPS web host; `HOSTING.txt` inside explains caching and gives an nginx example. GitHub Pages is disabled.
+The game ships only as the Android app. [sumo.ryujin.fans](https://sumo.ryujin.fans/) is the landing page (`apps/landing`) with the store links; it isn't playable in a browser.
 
-- **Desktop:** download the `mini-sumo-desktop-*` Artifacts from a build run for Windows (installer and portable) or Linux (AppImage and deb). They aren't code-signed, so Windows asks once ("More info" → "Run anyway"). The desktop app plays with the keyboard (WASD or arrows, Space to dash, Esc for settings, H for Home, Enter for Rematch).
+**Game server:** `https://sumo.ryujin.fans` (landing page, API and websockets on one address). Android and Cafe Bazaar builds connect to `wss://sumo.ryujin.fans` by default; the repository variables `VITE_SERVER_URL` / `VITE_PUBLIC_URL` override it. `npm run dev` still uses a local server.
 
-**Game server:** `https://sumo.ryujin.fans` (web game, API and websockets on one address). Android, Cafe Bazaar and web builds connect to `wss://sumo.ryujin.fans` by default; the repository variables `VITE_SERVER_URL` / `VITE_PUBLIC_URL` override it. `npm run dev` still uses a local server.
-
-**Self-hosting (Docker):** `docker compose up -d --build` runs the game server and the web game on one port; it builds in Iran through registry and npm mirrors. See [docker/README.md](docker/README.md).
+**Self-hosting (Docker):** `docker compose up -d --build` runs the game server and the landing page on one port; it builds in Iran through registry and npm mirrors. See [docker/README.md](docker/README.md).
 
 **Cafe Bazaar:** the `bazaar` branch builds the Bazaar version (coin packs through Bazaar in-app billing, no Google Play Games) and publishes `bazaar-vX.Y.Z` releases; it signs in with Bazaar, checks for updates through Bazaar and, with `BAZAAR_PISHKHAN_TOKEN`, sends each build to Cafe Bazaar for review automatically. See [docs/BAZAAR.fa.md](docs/BAZAAR.fa.md).
 
@@ -266,7 +264,7 @@ Configure under *Settings → Secrets and variables → Actions*:
 | Name | Kind | Purpose |
 | --- | --- | --- |
 | `VITE_SERVER_URL` | variable | Public server, e.g. `wss://sumo-api.example.com`. Android requires `wss://`. Until it's set, releases carry a "server not live" warning. |
-| `VITE_PUBLIC_URL` | variable | Web address used in invite links from the apps. Defaults to `https://sumo.ryujin.fans/`. |
+| `VITE_PUBLIC_URL` | variable | Landing page address used in invite links from the apps; the page opens the app with `minisumo://join?room=…`. Defaults to `https://sumo.ryujin.fans/`. |
 | `ANDROID_KEYSTORE_BASE64` | secret | `base64 -w0 release.keystore`, for a signed APK/AAB |
 | `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` | secrets | Keystore credentials |
 
@@ -274,7 +272,7 @@ Configure under *Settings → Secrets and variables → Actions*:
 
 ## Releases and versions
 
-Releases are automatic: **every push to `main` that changes the game becomes a GitHub Release** containing Android APK/AAB files only. Web and desktop builds still run and are kept as workflow Artifacts; GitHub Pages deployment is disabled. The version comes from the commit messages since the last release ([Conventional Commits](https://www.conventionalcommits.org/)):
+Releases are automatic: **every push to `main` that changes the game becomes a GitHub Release** containing Android APK/AAB files only. The version comes from the commit messages since the last release ([Conventional Commits](https://www.conventionalcommits.org/)):
 
 | Commit messages since the last release | Next version (from 1.4.2) |
 | --- | --- |

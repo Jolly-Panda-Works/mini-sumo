@@ -41,6 +41,7 @@ import { Toasts } from "./ui/Toasts";
 import { TouchControls } from "./ui/TouchControls";
 import { OutActions } from "./ui/OutActions";
 import { Tutorial } from "./ui/Tutorial";
+import { StoryCutscene } from "./ui/StoryCutscene";
 import { MenuOnboarding } from "./ui/MenuOnboarding";
 
 /** How long the finish plays before the results board comes up (ms). */
@@ -191,11 +192,14 @@ export function App() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const needsName = !inRoom && !settings.onboarded;
+  const needsStory = !inRoom && !settings.storySeen;
+  const needsName = !inRoom && (needsStory || !settings.onboarded);
   const needsTutorial = !inRoom && !needsName && !settings.tutorialCompleted;
 
   let screen: ReactNode;
-  if (needsName) {
+  if (needsStory) {
+    screen = <StoryCutscene />;
+  } else if (needsName) {
     // First launch: only the name prompt, nothing behind it.
     screen = <NameGate />;
   } else if (needsTutorial) {

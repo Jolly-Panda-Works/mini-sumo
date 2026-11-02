@@ -1,9 +1,9 @@
 {
   "name": "mini-sumo",
-  "version": "1.43.2",
+  "version": "1.44.0",
   "private": true,
   "type": "module",
-  "description": "Mini Sumo: a browser-based 3D multiplayer party game built with React Three Fiber and Colyseus.",
+  "description": "Mini Sumo: a 3D multiplayer party game for Android built with React Three Fiber and Colyseus.",
   "author": {
     "name": "Usef Farahmand",
     "url": "https://www.useffarahmand.com"
@@ -23,6 +23,7 @@
     "dev:shared": "npm run dev -w @mini-sumo/shared",
     "dev:server": "npm run dev -w @mini-sumo/server",
     "dev:client": "npm run dev -w @mini-sumo/client",
+    "dev:landing": "npx vite apps/landing --port 5177 --strictPort",
     "build": "npm run build:shared && npm run build -w @mini-sumo/server && npm run build -w @mini-sumo/client",
     "start": "npm run start -w @mini-sumo/server",
     "preview": "npm run preview -w @mini-sumo/client",

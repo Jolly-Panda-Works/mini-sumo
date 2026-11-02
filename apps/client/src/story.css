@@ -1,0 +1,137 @@
+/* The opening comic: a dark page, panels with ink borders that pop in one by one. */
+.story {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: calc(var(--safe-top) + 14px) calc(var(--safe-right) + 14px) calc(var(--safe-bottom) + 10px) calc(var(--safe-left) + 14px);
+  color: #2b2340;
+  font-family: "Baloo 2", sans-serif;
+  pointer-events: auto;
+  user-select: none;
+  cursor: pointer;
+  background: #17122b;
+}
+
+.story__page {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  max-width: 560px;
+  min-height: 0;
+  margin: 0 auto;
+}
+
+.story__panel {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
+  margin: 0;
+  overflow: hidden;
+  visibility: hidden;
+  background: #2b2340;
+  border: 4px solid #fff4dc;
+  border-radius: 6px;
+  box-shadow: 5px 6px 0 #000;
+}
+
+.story__panel:nth-child(odd) {
+  rotate: -0.8deg;
+}
+
+.story__panel:nth-child(even) {
+  rotate: 0.8deg;
+}
+
+.story__panel--on {
+  visibility: visible;
+  animation: story-pop 0.35s cubic-bezier(0.2, 1.3, 0.5, 1);
+}
+
+@keyframes story-pop {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.92);
+  }
+}
+
+.story__panel img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.story__panel figcaption {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  max-width: calc(100% - 16px);
+  padding: 3px 11px 2px;
+  font-size: clamp(0.95rem, 4.2vw, 1.15rem);
+  font-weight: 700;
+  line-height: 1.25;
+  background: #fff4dc;
+  border: 3px solid #2b2340;
+  border-radius: 4px;
+}
+
+.story__panel figcaption.story__caption--top {
+  top: 8px;
+  bottom: auto;
+}
+
+.story__skip {
+  align-self: flex-end;
+  padding: 2px 14px;
+  font: inherit;
+  font-weight: 700;
+  color: #fff4dc;
+  cursor: pointer;
+  background: none;
+  border: 2px solid #fff4dc;
+  border-radius: 10px;
+}
+
+.story__foot {
+  display: grid;
+  place-items: center;
+  height: 64px;
+  flex: none;
+}
+
+.story__foot .green-art,
+.story__foot button {
+  width: min(62vw, 240px);
+}
+
+.story__hint {
+  font-weight: 700;
+  color: #ffc23c;
+  animation: story-hint 1s ease-in-out infinite alternate;
+}
+
+@keyframes story-hint {
+  to {
+    opacity: 0.45;
+  }
+}
+
+/* Wide windows: the panels stand side by side. */
+@media (min-aspect-ratio: 1/1) {
+  .story__page {
+    flex-direction: row;
+    max-width: 1100px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .story__panel--on,
+  .story__hint {
+    animation: none;
+  }
+}
