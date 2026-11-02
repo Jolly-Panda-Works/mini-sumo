@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="fa" dir="rtl" data-lang="fa">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mini Sumo | مینی سومو</title>
+    <meta name="description" content="Mini Sumo: a cute 3D multiplayer party game for Android. Start in the training yard and fight your way to the ring above the clouds." />
+    <meta name="author" content="Usef Farahmand" />
+    <meta name="theme-color" content="#17122b" />
+    <link rel="icon" href="/favicon.png" type="image/png" sizes="64x64" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://sumo.ryujin.fans/" />
+    <meta property="og:title" content="Mini Sumo" />
+    <meta property="og:description" content="Push your friends out of the ring. A cute 3D multiplayer party game for Android." />
+    <meta property="og:image" content="https://sumo.ryujin.fans/social/mini-sumo-social-v1.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="https://sumo.ryujin.fans/social/mini-sumo-social-v1.jpg" />
+    <link rel="preload" href="/fonts/lalezar.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="/landing.css" />
+    <script>document.documentElement.classList.add("js");</script>
+  </head>
+  <body>
+
+    <div class="loader" id="loader" aria-hidden="true">
+      <div class="loader__panda">
+        <img src="/assets/panda-broom.webp" alt="" width="200" height="200" />
+      </div>
+      <p class="fa">پاندا دارد رینگ را جارو می‌کند…</p>
+      <p class="en">The panda is sweeping the ring…</p>
+      <i class="loader__bar"></i>
+    </div>
+
+    <nav class="nav" id="nav">
+      <a class="nav__logo" href="#top" aria-label="Mini Sumo"><img src="/assets/logo.webp" alt="" width="44" height="44" /></a>
+      <div class="nav__links">
+        <a href="#story"><span class="fa">داستان</span><span class="en">Story</span></a>
+        <a href="#rule"><span class="fa">بازی</span><span class="en">Gameplay</span></a>
+        <a href="#arenas"><span class="fa">آرناها</span><span class="en">Arenas</span></a>
+        <a href="#powers"><span class="fa">پرچم‌ها</span><span class="en">Flags</span></a>
+        <a href="#wrestlers"><span class="fa">کشتی‌گیرها</span><span class="en">Wrestlers</span></a>
+      </div>
+      <button class="nav__lang" id="lang" type="button">English</button>
+    </nav>
+
+    <!-- Shown by landing.js for invite links (?room=…) and email links (?code=…). -->
+    <aside class="notice" id="invite" hidden>
+      <button class="notice__close" type="button" aria-label="Close"><img src="/assets/ui/close.webp" alt="" width="40" height="43" /></button>
+      <img src="/assets/panda-welcome.webp" alt="" width="96" height="98" />
+      <div class="frame"><div class="frame__in">
+        <h2 class="fa">به اتاق دعوت شده‌ای!</h2>
+        <h2 class="en">You're invited to a room!</h2>
+        <p class="fa">اگر بازی را نصب کرده‌ای وارد اتاق شو. وگرنه اول نصبش کن و دوباره لینک را باز کن.</p>
+        <p class="en">If the game is installed, join now. If not, install it first and open the link again.</p>
+        <a class="btn btn--notice" id="invite-open" href="#">
+          <span class="fa">باز کردن در بازی</span>
+          <span class="en">Open in the game</span>
+        </a>
+      </div></div>
+    </aside>
+    <aside class="notice" id="email" hidden>
+      <button class="notice__close" type="button" aria-label="Close"><img src="/assets/ui/close.webp" alt="" width="40" height="43" /></button>
+      <img src="/assets/panda-welcome.webp" alt="" width="96" height="98" />
+      <div class="frame"><div class="frame__in">
+        <h2 class="fa">کد ذخیره پیشرفت</h2>
+        <h2 class="en">Your save code</h2>
+        <p class="fa">این کد را در بازی وارد کن: پروفایل، بخش ذخیره پیشرفت.</p>
+        <p class="en">Enter this code in the game: Profile, Save your progress.</p>
+        <p class="notice__code" id="email-code" dir="ltr"></p>
+      </div></div>
+    </aside>
+
+    <header class="hero" id="top">
+      <div class="hero__stage">
+        <img class="layer" data-depth="0.012" src="/assets/art/valley.webp" alt="" width="2000" height="1116" />
+        <div class="layer hero__panda" data-depth="0.03"><img src="/assets/panda-aim.webp" alt="" width="509" height="512" /></div>
+      </div>
+      <i class="hero__shade"></i>
+
+      <div class="hero__text">
+        <img class="hero__title" src="/assets/title.webp" alt="Mini Sumo" width="620" height="338" />
+        <h1 class="fa">هل بده. خیز بردار. برنده شو!</h1>
+        <h1 class="en">Push. Dash. Win.</h1>
+      </div>
+
+      <a class="hero__arrow" href="#story" aria-label="Scroll down">
+        <svg viewBox="0 0 48 48" width="56" height="56" aria-hidden="true">
+          <path d="M10 18 24 32 38 18" fill="none" stroke="#2b2340" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M10 18 24 32 38 18" fill="none" stroke="#ffc23c" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </a>
+    </header>
+
+    <main>
+      <section class="section section--ink" id="story">
+        <div class="prologue">
+          <img src="/assets/art/ring.webp" alt="" width="1920" height="1491" loading="lazy" />
+        <img class="corner" src="/assets/art/leaves.webp" alt="" width="900" height="900" loading="lazy" />
+        <img class="corner corner--right" src="/assets/art/leaves.webp" alt="" width="900" height="900" loading="lazy" />
+          <header class="section__head reveal">
+          <h2 class="fa">راه رینگ بالای ابرها</h2>
+          <h2 class="en">The road above the clouds</h2>
+          <p class="fa">می‌گویند بالای ابرها رینگی هست که فقط بهترین کشتی‌گیرها پا به آن می‌گذارند. تو هنوز یک کشتی‌گیر کوچولوی گرد و قلمبه‌ای. اما پاندای مربی چیزی در تو دیده است.</p>
+          <p class="en">They say there is a ring above the clouds, where only the very best ever set foot. You're still a small, round wrestler. But the panda coach has seen something in you.</p>
+          </header>
+        </div>
+
+        <ol class="trail">
+          <li class="chapter reveal">
+            <img class="sticker" src="/assets/art/chapter-1.webp" alt="" width="1000" height="558" loading="lazy" />
+            <div class="frame"><div class="frame__in">
+              <small class="fa">فصل ۱ · حیاط تمرین</small>
+              <small class="en">Chapter 1 · The training yard</small>
+              <h3 class="fa">طومار پاندا</h3>
+              <h3 class="en">The panda's scroll</h3>
+              <p class="fa">پاندا طوماری به دستت می‌دهد که فقط یک قانون رویش نوشته: «داخل رینگ بمان.» حرکت، ضربه و بیرون انداختن حریف را همین‌جا یاد می‌گیری.</p>
+              <p class="en">The panda hands you a scroll with a single rule on it: "Stay in the ring." Here you learn to move, dash and push a rival out.</p>
+            </div></div>
+          </li>
+          <li class="chapter reveal">
+            <img class="sticker" src="/assets/art/chapter-2.webp" alt="" width="1000" height="558" loading="lazy" />
+            <div class="frame"><div class="frame__in">
+              <small class="fa">فصل ۲ · تازه‌کارها و آماتورها</small>
+              <small class="en">Chapter 2 · Rookies and amateurs</small>
+              <h3 class="fa">اولین تعظیم</h3>
+              <h3 class="en">The first bow</h3>
+              <p class="fa">اولین بار جلوی تماشاگرها می‌ایستی. هر برد سکه سومو می‌آورد و هر سکه تو را یک آرنا به قله نزدیک‌تر می‌کند.</p>
+              <p class="en">You face a real crowd for the first time. Every win brings Sumo Coins, and every coin brings the next arena closer.</p>
+            </div></div>
+          </li>
+          <li class="chapter reveal">
+            <img class="sticker" src="/assets/art/chapter-3.webp" alt="" width="1000" height="558" loading="lazy" />
+            <div class="frame"><div class="frame__in">
+              <small class="fa">فصل ۳ · کهنه‌کارها</small>
+              <small class="en">Chapter 3 · The veterans</small>
+              <h3 class="fa">طبل‌های تایکو</h3>
+              <h3 class="en">The taiko drums</h3>
+              <p class="fa">صدای طبل‌ها زمین را می‌لرزاند. حریف‌ها حالا زور بیشتری دارند و فقط با فکر و ضربه به‌موقع از پسشان برمی‌آیی.</p>
+              <p class="en">The drums shake the ground. Rivals hit harder now, and only a well-timed dash will move them.</p>
+            </div></div>
+          </li>
+          <li class="chapter reveal">
+            <img class="sticker" src="/assets/art/chapter-4.webp" alt="" width="1000" height="558" loading="lazy" />
+            <div class="frame"><div class="frame__in">
+              <small class="fa">فصل ۴ · قصر استادان</small>
+              <small class="en">Chapter 4 · The masters' palace</small>
+              <h3 class="fa">رینگ قصر</h3>
+              <h3 class="en">The palace ring</h3>
+              <p class="fa">درهای قصر فقط به روی برنده‌های واقعی باز می‌شوند. اینجا اسمت را روی پرچم‌ها می‌بینی و افسانه‌ات شروع می‌شود.</p>
+              <p class="en">The palace gates open only for true winners. Here your name reaches the banners and your legend begins.</p>
+            </div></div>
+          </li>
+          <li class="chapter reveal">
+            <img class="sticker" src="/assets/art/chapter-5.webp" alt="" width="1000" height="558" loading="lazy" />
+            <div class="frame"><div class="frame__in">
+              <small class="fa">فصل ۵ · آرنای خدایی</small>
+              <small class="en">Chapter 5 · Godlike</small>
+              <h3 class="fa">بالای ابرها</h3>
+              <h3 class="en">Above the clouds</h3>
+              <p class="fa">رسیدی. زیر پایت ابر است و روبه‌رویت آخرین حریف. قانون همان است که پاندا روز اول گفت: داخل رینگ بمان.</p>
+              <p class="en">You made it. Clouds below, one last rival ahead. The rule is the one the panda gave you on day one: stay in the ring.</p>
+            </div></div>
+          </li>
+        </ol>
+      </section>
+
+      <section class="interlude" aria-label="The panda coach">
+        <img src="/assets/art/panda-night.webp" alt="" width="1920" height="1071" loading="lazy" />
+      </section>
+
+      <section class="section section--clay" id="rule">
+        <header class="section__head reveal">
+          <h2 class="fa">یک قانون، یک دقیقه</h2>
+          <h2 class="en">One rule, one minute</h2>
+          <p class="fa">۲ تا ۴ کشتی‌گیر، یک رینگ کوچک. هر مسابقه حدود یک دقیقه طول می‌کشد و آخرین نفر روی رینگ برنده است.</p>
+          <p class="en">2 to 4 wrestlers, one little ring. A bout takes about a minute and the last one standing wins.</p>
+        </header>
+        <div class="phones">
+          <figure class="reveal">
+            <img src="/assets/dash.webp" alt="" width="270" height="600" loading="lazy" />
+            <figcaption class="fa">با ضربه خیز حریف را هل بده</figcaption>
+            <figcaption class="en">Dash into your rival</figcaption>
+          </figure>
+          <figure class="reveal">
+            <img src="/assets/ring-out.webp" alt="" width="270" height="600" loading="lazy" />
+            <figcaption class="fa">از رینگ بیرونش بینداز</figcaption>
+            <figcaption class="en">Knock them out of the ring</figcaption>
+          </figure>
+          <figure class="reveal">
+            <img src="/assets/friends.webp" alt="" width="270" height="600" loading="lazy" />
+            <figcaption class="fa">دوستانت را به اتاق دعوت کن</figcaption>
+            <figcaption class="en">Invite friends to your room</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section section--ink" id="arenas">
+        <header class="section__head reveal">
+          <h2 class="fa">۱۰ آرنا برای فتح کردن</h2>
+          <h2 class="en">10 arenas to conquer</h2>
+          <p class="fa">هر آرنا ورودی، جایزه و تجربه بیشتری دارد. آرنای تمرین رایگان است.</p>
+          <p class="en">Each arena raises the entry fee, the prize and the XP. Training is free.</p>
+        </header>
+        <div class="rail"><div class="rail__track" id="rail">
+          <img src="/assets/arenas/private.webp" alt="Private room" width="640" height="358" loading="lazy" />
+          <img src="/assets/arenas/training.webp" alt="Training" width="640" height="358" loading="lazy" />
+          <img src="/assets/arenas/rookie.webp" alt="Rookie" width="640" height="358" loading="lazy" />
+          <img src="/assets/arenas/amateur.webp" alt="Amateur" width="640" height="358" loading="lazy" />
+          <img src="/assets/arenas/pro.webp" alt="Pro" width="640" height="358" loading="lazy" />
+          <img src="/assets/arenas/veteran.webp" alt="Veteran" width="640" height="358" loading="lazy" />
+          <img src="/assets/arenas/champion.webp" alt="Champion" width="640" height="358" loading="lazy" />
+          <img src="/assets/arenas/master.webp" alt="Master" width="640" height="358" loading="lazy" />
+          <img src="/assets/arenas/legend.webp" alt="Legend" width="640" height="358" loading="lazy" />
+          <img src="/assets/arenas/godlike.webp" alt="Godlike" width="640" height="358" loading="lazy" />
+        </div></div>
+      </section>
+
+      <section class="section section--indigo" id="powers">
+        <header class="section__head reveal">
+          <h2 class="fa">پرچم‌های قدرت</h2>
+          <h2 class="en">Flags of power</h2>
+          <p class="fa">وسط مسابقه پرچم‌های نوبوری روی رینگ سبز می‌شوند. زودتر از بقیه برش دار و ۱۲ ثانیه قدرت بگیر.</p>
+          <p class="en">Nobori flags pop up on the ring during a bout. Grab one first for 12 seconds of power.</p>
+        </header>
+        <div class="cards">
+          <article class="card reveal">
+            <img src="/assets/coins/iron.webp" alt="" width="110" height="110" loading="lazy" />
+            <div>
+              <h3 class="fa">تن آهنین</h3><h3 class="en">Iron Body</h3>
+              <p class="fa">دو برابر سنگین‌تر.</p><p class="en">Twice as heavy.</p>
+            </div>
+          </article>
+          <article class="card reveal">
+            <img src="/assets/coins/thunder.webp" alt="" width="110" height="110" loading="lazy" />
+            <div>
+              <h3 class="fa">خیز تندری</h3><h3 class="en">Thunder Dash</h3>
+              <p class="fa">شارژ خیز در ۰٫۸ ثانیه.</p><p class="en">Dash recharges in 0.8 s.</p>
+            </div>
+          </article>
+          <article class="card reveal">
+            <img src="/assets/coins/wind.webp" alt="" width="110" height="110" loading="lazy" />
+            <div>
+              <h3 class="fa">پای باد</h3><h3 class="en">Wind Feet</h3>
+              <p class="fa">۴۰٪ سریع‌تر.</p><p class="en">40% faster.</p>
+            </div>
+          </article>
+          <article class="card reveal">
+            <img src="/assets/coins/giant.webp" alt="" width="110" height="110" loading="lazy" />
+            <div>
+              <h3 class="fa">غول</h3><h3 class="en">Giant</h3>
+              <p class="fa">بزرگ‌تر و سنگین‌تر.</p><p class="en">Bigger and heavier.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section section--ink" id="wrestlers">
+        <header class="section__head reveal">
+          <h2 class="fa">کشتی‌گیر خودت را بساز</h2>
+          <h2 class="en">Make your own wrestler</h2>
+          <p class="fa">مو و کلاه، رنگ مو، چهره و ماسک، لباس و ۴۰ عکس پروفایل، در چهار درجه کمیابی.</p>
+          <p class="en">Hair and hats, hair colours, faces and masks, outfits and 40 profile pictures, in four rarity tiers.</p>
+        </header>
+        <img class="crew reveal" src="/assets/art/crew.webp" alt="" width="1400" height="781" loading="lazy" />
+      </section>
+
+      <section class="finale" id="download">
+        <div class="finale__stage">
+          <img src="/assets/art/hilltop.webp" alt="" width="2000" height="1116" loading="lazy" />
+          <img class="finale__panda" src="/assets/panda-cheer.webp" alt="" width="360" height="362" loading="lazy" />
+        </div>
+        <img class="corner" src="/assets/art/leaves.webp" alt="" width="900" height="900" loading="lazy" />
+        <img class="corner corner--right" src="/assets/art/leaves.webp" alt="" width="900" height="900" loading="lazy" />
+        <div class="finale__body reveal">
+          <h2 class="fa">طومار پاندا منتظر توست</h2>
+          <h2 class="en">The panda's scroll is waiting</h2>
+          <p class="fa">مینی سومو روی اندروید اجرا می‌شود. برای دریافت بازی به صفحه رسمی آن سر بزن.</p>
+          <p class="en">Mini Sumo runs on Android. Visit its official page to get the game.</p>
+          <nav class="stores" aria-label="Download">
+            <a class="btn btn--red" href="https://www.useffarahmand.com/en/projects/mini-sumo">
+              <span class="fa">صفحه رسمی بازی</span><span class="en">Official game page</span>
+            </a>
+          </nav>
+        </div>
+              </section>
+    </main>
+
+    <footer class="footer">
+      <a class="footer__studio" href="https://cafebazaar.ir/developer/jollypanda_studio">
+        <img src="/assets/studio-logo.webp" alt="" width="36" height="36" />
+        <span class="fa">استودیو Jolly Panda</span>
+        <span class="en">Jolly Panda Studio</span>
+      </a>
+      <a href="https://www.useffarahmand.com/en/projects/mini-sumo"><span class="fa">صفحه رسمی بازی</span><span class="en">Official game page</span></a>
+      <a href="https://github.com/Jolly-Panda-Works/mini-sumo-3d/blob/main/PRIVACY.md"><span class="fa">حریم خصوصی</span><span class="en">Privacy</span></a>
+    </footer>
+
+    <script src="/landing.js"></script>
+  </body>
+</html>

@@ -1,0 +1,918 @@
+/* The game's "toy sticker" look at night: ink outlines and hard shadows, warm clay and sun. */
+@font-face {
+  font-family: "Lalezar";
+  src: url("/fonts/lalezar.woff2") format("woff2");
+  font-display: swap;
+}
+@font-face {
+  font-family: "Vazirmatn";
+  font-weight: 500;
+  src: url("/fonts/vazirmatn-500.woff2") format("woff2");
+  font-display: swap;
+}
+@font-face {
+  font-family: "Vazirmatn";
+  font-weight: 700;
+  src: url("/fonts/vazirmatn-700.woff2") format("woff2");
+  font-display: swap;
+}
+@font-face {
+  font-family: "Baloo 2";
+  font-weight: 500;
+  src: url("/fonts/baloo-2-latin-500-normal.woff2") format("woff2");
+  font-display: swap;
+}
+@font-face {
+  font-family: "Baloo 2";
+  font-weight: 800;
+  src: url("/fonts/baloo-2-latin-800-normal.woff2") format("woff2");
+  font-display: swap;
+}
+
+:root {
+  --ink: #2b2340;
+  --night: #17122b;
+  --indigo: #2a1f55;
+  --tile: #1b2b55;
+  --wood: #4a2a14;
+  --paper: #fff8ec;
+  --clay: #e7c996;
+  --sun: #ffc23c;
+  --coral: #ff5d73;
+  --text: #d8cfee;
+  --font: "Baloo 2", "Vazirmatn", ui-rounded, "Segoe UI", Tahoma, sans-serif;
+  --display: "Baloo 2", "Lalezar", ui-rounded, "Segoe UI", Tahoma, sans-serif;
+  --tear: 40px;
+  --torn-top: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 70' preserveAspectRatio='none'%3E%3Cg%3E%3Cpath d='M0 70V34l46-12 38 16 62-26 44 20 70-18 34 22 66-30 52 26 48-14 60 20 42-28 70 24 46-16 58 22 40-24 72 18 50-20 44 24 64-30 42 22 76-16 58 18 62-22 56 16l72-18 68 14V70z'/%3E%3C/g%3E%3C/svg%3E");
+  --torn-bottom: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 70' preserveAspectRatio='none'%3E%3Cg transform='matrix(1 0 0 -1 0 70)'%3E%3Cpath d='M0 70V34l46-12 38 16 62-26 44 20 70-18 34 22 66-30 52 26 48-14 60 20 42-28 70 24 46-16 58 22 40-24 72 18 50-20 44 24 64-30 42 22 76-16 58 18 62-22 56 16l72-18 68 14V70z'/%3E%3C/g%3E%3C/svg%3E");
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 72px;
+}
+
+html[data-lang="fa"] .en,
+html[data-lang="en"] .fa {
+  display: none;
+}
+
+body {
+  margin: 0;
+  overflow-x: hidden;
+  font-family: var(--font);
+  font-weight: 500;
+  font-size: 18px;
+  line-height: 1.8;
+  color: var(--text);
+  background: var(--night);
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+h1,
+h2,
+h3,
+p,
+ol,
+figure {
+  margin: 0;
+  padding: 0;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--display);
+  font-weight: 800;
+  line-height: 1.25;
+  color: var(--paper);
+}
+
+html[data-lang="fa"] h1,
+html[data-lang="fa"] h2,
+html[data-lang="fa"] h3 {
+  font-weight: 400;
+}
+
+a {
+  color: inherit;
+}
+
+/* ---------------------------------------------------------------- buttons */
+.btn {
+  display: inline-grid;
+  place-items: center;
+  width: clamp(230px, 24vw, 290px);
+  aspect-ratio: 720 / 247;
+  padding: 0 0 4px;
+  font-family: var(--display);
+  font-size: 21px;
+  font-weight: 800;
+  line-height: 1;
+  color: #ffe795;
+  text-decoration: none;
+  white-space: nowrap;
+  background: url("/assets/ui/btn-start-blank.webp") center / 100% 100% no-repeat;
+  -webkit-text-stroke: 3px #1f5c14;
+  paint-order: stroke fill;
+  filter: drop-shadow(0 4px 0 rgba(0, 0, 0, 0.35));
+  transition: transform 0.12s, filter 0.12s;
+}
+
+html[data-lang="fa"] .btn {
+  font-weight: 400;
+}
+
+.btn:hover {
+  filter: brightness(1.08) drop-shadow(0 2px 0 rgba(0, 0, 0, 0.35));
+  transform: translateY(2px);
+}
+
+.btn--red {
+  width: 250px;
+  aspect-ratio: 240 / 67;
+  padding: 0;
+  font-size: 19px;
+  background-image: url("/assets/ui/label-empty.webp");
+  -webkit-text-stroke-color: #5a1010;
+}
+
+.btn--notice {
+  width: 190px;
+  font-size: 17px;
+  -webkit-text-stroke-width: 2px;
+}
+
+/* ---------------------------------------------------------------- loader */
+.loader {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: none;
+  place-content: center;
+  justify-items: center;
+  gap: 14px;
+  padding: 16px;
+  text-align: center;
+  background: var(--night);
+  transition: opacity 0.45s, visibility 0.45s;
+}
+
+.js .loader {
+  display: grid;
+}
+
+.loader.is-done {
+  visibility: hidden;
+  opacity: 0;
+}
+
+.loader__panda img {
+  display: block;
+  animation: bob 0.9s ease-in-out infinite alternate;
+}
+
+.loader__bar {
+  width: 180px;
+  height: 6px;
+  background: linear-gradient(90deg, var(--sun) 40%, transparent 40%) 0 0 / 200% 100%;
+  border-radius: 3px;
+  animation: sweep 1s linear infinite;
+}
+
+@keyframes bob {
+  to {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes sweep {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* ---------------------------------------------------------------- nav */
+.nav {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px clamp(16px, 4vw, 40px);
+  transition: background 0.25s;
+}
+
+.nav.is-solid {
+  background: rgba(23, 18, 43, 0.92);
+}
+
+.nav__logo {
+  display: block;
+  line-height: 0;
+}
+
+.nav__logo img {
+  border: 2px solid var(--paper);
+  border-radius: 12px;
+}
+
+.nav__links {
+  display: flex;
+  gap: 24px;
+  margin-inline: auto;
+  font-weight: 800;
+  color: var(--paper);
+}
+
+.nav__links a {
+  text-decoration: none;
+}
+
+.nav__links a:hover {
+  color: var(--sun);
+}
+
+.nav__lang {
+  padding: 2px 10px;
+  font: inherit;
+  font-size: 15px;
+  color: var(--paper);
+  cursor: pointer;
+  background: none;
+  border: 2px solid var(--paper);
+  border-radius: 10px;
+}
+
+/* ---------------------------------------------------------------- hero */
+.hero {
+  position: relative;
+  /* The next section's torn edge laps over this extra height, below the first view. */
+  height: calc(100vh + var(--tear));
+  height: calc(100svh + var(--tear));
+  min-height: 660px;
+  overflow: hidden;
+  background: var(--night);
+}
+
+/* The picture covers the hero; the panda stands on its cliff, in the picture's own proportions. */
+.hero__stage {
+  --shift: 0%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: max(106%, 190vh);
+  aspect-ratio: 2000 / 1116;
+  transform: translate(calc(-50% + var(--shift)), -50%);
+}
+
+.layer {
+  display: block;
+  width: 100%;
+  height: auto;
+  will-change: transform;
+}
+
+.hero__panda {
+  position: absolute;
+  top: 19%;
+  left: 77%;
+  width: 15%;
+}
+
+.hero__panda img {
+  display: block;
+  width: 100%;
+  /* Faces left, pointing at the moon. */
+  transform: scaleX(-1);
+}
+
+.hero__shade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(rgba(10, 12, 40, 0.55), transparent 22%);
+}
+
+.hero__text {
+  position: absolute;
+  inset: 23% 16px auto;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.hero__title {
+  width: min(82vw, 66vh, 640px);
+  filter: drop-shadow(0 6px 0 rgba(10, 12, 40, 0.6));
+}
+
+.hero h1 {
+  max-width: 720px;
+  margin-top: 4vh;
+  font-size: clamp(24px, 3.2vw, 42px);
+  text-shadow: 0 3px 0 var(--night);
+}
+
+/* Points the way down from the foot of the picture. */
+.hero__arrow {
+  position: absolute;
+  bottom: calc(var(--tear) + clamp(24px, 4vh, 44px));
+  left: 50%;
+  margin-left: -28px;
+  line-height: 0;
+  animation: bob 0.9s ease-in-out infinite alternate;
+}
+
+/* ---------------------------------------------------------------- sections */
+.section {
+  position: relative;
+  padding: 112px clamp(16px, 5vw, 56px) 96px;
+}
+
+/* Every section's own top edge is torn and laps over the one before, so the cut always has
+   the colours of the picture or pattern it belongs to. */
+.section,
+.interlude,
+.finale,
+.footer {
+  margin-top: calc(-1 * var(--tear));
+  -webkit-mask: var(--torn-top) top / 100% var(--tear) no-repeat, linear-gradient(#000 0 0) bottom / 100% calc(100% - var(--tear) + 1px) no-repeat;
+  mask: var(--torn-top) top / 100% var(--tear) no-repeat, linear-gradient(#000 0 0) bottom / 100% calc(100% - var(--tear) + 1px) no-repeat;
+}
+
+.section--ink {
+  background: var(--tile) url("/assets/ui/bg-tile.webp") center top / 512px;
+}
+
+.section--indigo {
+  background: var(--indigo);
+}
+
+.section--clay {
+  color: var(--wood);
+  background: var(--clay);
+}.section__head {
+  max-width: 720px;
+  margin: 0 auto 48px;
+  text-align: center;
+}
+
+.section__head h2 {
+  margin-bottom: 10px;
+  font-size: clamp(32px, 5vw, 50px);
+  color: #ffd766;
+  -webkit-text-stroke: 5px var(--ink);
+  paint-order: stroke fill;
+}
+
+.section--clay .section__head h2 {
+  color: var(--paper);
+}
+
+/* The story opens on the panda, with the title in the night sky above. */
+#story {
+  padding-top: 0;
+}
+
+.prologue {
+  position: relative;
+  /* The picture's full height, sky included. */
+  min-height: 77.7vw;
+  margin: 0 calc(-1 * clamp(16px, 5vw, 56px)) 72px;
+  padding-inline: 16px;
+  overflow: hidden;
+  background: #96d0e2;
+  /* Its foot is torn too: the story's pattern shows through the cut. */
+  -webkit-mask: var(--torn-bottom) bottom / 100% var(--tear) no-repeat, linear-gradient(#000 0 0) top / 100% calc(100% - var(--tear) + 1px) no-repeat;
+  mask: var(--torn-bottom) bottom / 100% var(--tear) no-repeat, linear-gradient(#000 0 0) top / 100% calc(100% - var(--tear) + 1px) no-repeat;
+}
+
+.prologue > img:first-child {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center bottom;
+}
+
+.prologue .section__head {
+  position: relative;
+  max-width: 640px;
+  padding-top: 80px;
+  margin-bottom: 0;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.interlude {
+  position: relative;
+  overflow: hidden;
+  background: #16143f;
+}
+
+/* Shown whole, so the building is never cropped. */
+.interlude > img:first-child {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Foliage in the top corners; the art grows from the top left. */
+.corner {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  left: 0;
+  width: clamp(120px, 22vw, 340px);
+  pointer-events: none;
+}
+
+.corner--right {
+  right: 0;
+  left: auto;
+  transform: scaleX(-1);
+}
+
+.reveal {
+  transition: opacity 0.6s, transform 0.6s;
+}
+
+.js .reveal:not(.is-in) {
+  opacity: 0;
+  transform: translateY(28px);
+}
+
+/* The road: chapters left and right of a dashed trail. */
+.trail {
+  position: relative;
+  display: grid;
+  gap: 56px;
+  max-width: 1040px;
+  margin: 0 auto;
+  list-style: none;
+}
+
+.trail::before {
+  content: "";
+  position: absolute;
+  inset: 0 50% 0 auto;
+  border-inline-start: 4px dashed rgba(255, 194, 60, 0.45);
+}
+
+.chapter {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 64px;
+}
+
+.chapter:nth-child(even) .sticker {
+  order: 2;
+}
+
+/* The game's wooden frame, sliced like its dialogs: to the panel's width, so only its height
+   stretches and the rope and corners keep their shape. */
+.frame {
+  container-type: inline-size;
+  min-width: 0;
+}
+
+.frame__in {
+  position: relative;
+  isolation: isolate;
+  min-height: 56cqw;
+  padding: 30cqw 14cqw 16cqw;
+  color: var(--wood);
+}
+
+.frame__in::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  border: 1px solid transparent;
+  border-image: url("/assets/ui/frame.webp") 260 230 300 230 fill / 23.8cqw 21cqw 27.4cqw 21cqw stretch;
+}
+
+.chapter .frame {
+  width: 100%;
+  max-width: 460px;
+  justify-self: center;
+  line-height: 1.7;
+}
+
+.notice .frame {
+  flex: 1;
+}
+
+.chapter small {
+  display: block;
+  font-size: 15px;
+  font-weight: 800;
+  color: #b1361e;
+}
+
+.chapter h3 {
+  margin-bottom: 6px;
+  font-size: clamp(26px, 3.4vw, 34px);
+  color: var(--wood);
+}
+
+.sticker {
+  display: block;
+  width: 100%;
+  border: 4px solid var(--ink);
+  border-radius: 20px;
+  outline: 3px solid rgba(255, 194, 60, 0.6);
+  box-shadow: 0 8px 0 #000;
+}
+
+.chapter:nth-child(odd) .sticker {
+  transform: rotate(-1.5deg);
+}
+
+.chapter:nth-child(even) .sticker {
+  transform: rotate(1.5deg);
+}
+
+.phones {
+  display: flex;
+  justify-content: center;
+  gap: clamp(16px, 4vw, 48px);
+}
+
+.phones figure {
+  width: 270px;
+  min-width: 0;
+  font-weight: 800;
+  text-align: center;
+}
+
+.phones img {
+  display: block;
+  margin-bottom: 12px;
+  border: 4px solid var(--ink);
+  border-radius: 24px;
+  box-shadow: 0 8px 0 var(--ink);
+}
+
+.phones figure:nth-child(2) {
+  margin-top: 36px;
+}
+
+/* The arenas drift past on their own, with nothing to scroll or drag. */
+.rail {
+  margin-inline: calc(-1 * clamp(16px, 5vw, 56px));
+  padding-block: 6px 18px;
+  overflow: hidden;
+  direction: ltr;
+}
+
+.rail__track {
+  display: flex;
+  gap: 20px;
+  width: max-content;
+  padding-inline-end: 20px;
+  animation: drift-arenas 70s linear infinite;
+}
+
+@keyframes drift-arenas {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.rail img {
+  flex: none;
+  width: min(78vw, 420px);
+  border: 4px solid var(--ink);
+  border-radius: 18px;
+  box-shadow: 0 6px 0 #000;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px 24px;
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+/* The game's friend card: the power's medal in the round window, its name on the plank. */
+.card {
+  position: relative;
+  container-type: inline-size;
+  aspect-ratio: 961 / 285;
+  color: var(--wood);
+  text-align: center;
+  background: url("/assets/ui/friend-card.webp") center / 100% 100% no-repeat;
+}
+
+.card img {
+  position: absolute;
+  /* Centred on the card's round window, measured from the art. */
+  top: 49%;
+  left: 19.4%;
+  width: 19.5%;
+  height: auto;
+  transform: translate(-50%, -50%);
+}
+
+.card > div {
+  position: absolute;
+  inset: 16% 7% 16% 29%;
+  display: grid;
+  place-content: center;
+  line-height: 1.3;
+}
+
+.card h3 {
+  font-size: clamp(17px, 5.2cqw, 25px);
+  color: var(--wood);
+}
+
+.card p {
+  font-size: clamp(13px, 3.6cqw, 17px);
+}
+
+.crew {
+  display: block;
+  width: min(100%, 980px);
+  margin: 0 auto;
+}
+
+/* ---------------------------------------------------------------- finale */
+.finale {
+  position: relative;
+  min-height: max(56vw, 820px);
+  padding: 112px 16px 0;
+  overflow: hidden;
+  text-align: center;
+  background: #2a2a7c;
+}
+
+/* The picture sits on the section's foot; the panda stands on its hill. */
+.finale__stage {
+  --shift: 0%;
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: max(100%, 1470px);
+  aspect-ratio: 2000 / 1116;
+  transform: translateX(calc(-50% + var(--shift)));
+}
+
+.finale__stage > img:first-child {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.finale__body {
+  position: relative;
+  z-index: 2;
+  max-width: 680px;
+  margin: 0 auto;
+  color: var(--paper);
+}
+
+.finale h2 {
+  font-size: clamp(32px, 5.4vw, 54px);
+  -webkit-text-stroke: 5px var(--ink);
+  paint-order: stroke fill;
+}
+
+.stores {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.finale__panda {
+  position: absolute;
+  bottom: 17%;
+  left: 50%;
+  width: 16%;
+  transform: translateX(-50%);
+}
+
+.footer {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  align-items: center;
+  justify-content: center;
+  padding: 58px 16px 18px;
+  font-size: 16px;
+  background: var(--night);
+}
+
+.footer a {
+  text-decoration: none;
+}
+
+.footer a:hover {
+  color: var(--sun);
+}
+
+/* The studio's black and white logo as supplied, on its white ground. */
+.footer__studio img {
+  box-sizing: content-box;
+  padding: 5px;
+  background: #fff;
+  border-radius: 12px;
+}
+
+.footer__studio {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-weight: 800;
+  color: var(--paper);
+}
+
+/* ---------------------------------------------------------------- link notices */
+.notice {
+  position: fixed;
+  inset: auto 16px 16px;
+  z-index: 30;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  max-width: 540px;
+  margin-inline: auto;
+  line-height: 1.6;
+  color: var(--wood);
+}
+
+.notice[hidden] {
+  display: none;
+}
+
+.notice h2 {
+  font-size: 22px;
+  color: var(--wood);
+}
+
+.notice p {
+  margin-bottom: 8px;
+  font-size: 16px;
+}
+
+.notice > img {
+  flex: none;
+}
+
+.notice__close {
+  position: absolute;
+  top: -14px;
+  inset-inline-end: -12px;
+  padding: 0;
+  line-height: 0;
+  cursor: pointer;
+  background: none;
+  border: 0;
+}
+
+.notice__code {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 6px;
+}
+
+/* ---------------------------------------------------------------- smaller screens */
+@media (max-width: 960px) {
+  .nav__links {
+    display: none;
+  }
+
+  .nav__lang {
+    margin-inline-start: auto;
+  }
+
+  .trail::before {
+    display: none;
+  }
+
+  .chapter {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    max-width: 560px;
+    margin: 0 auto;
+    text-align: center;
+  }
+
+  .chapter:nth-child(even) .sticker {
+    order: 0;
+  }
+
+  /* Narrow screens: the cliff and the panda above, the title at the foot of the picture. */
+  .hero__stage {
+    --shift: -30%;
+  }
+
+  .hero__shade {
+    background: linear-gradient(transparent 36%, rgba(10, 12, 40, 0.8) 78%);
+  }
+
+  .hero__text {
+    inset: auto 16px 164px;
+  }
+
+  .prologue {
+    min-height: 860px;
+  }
+
+  /* Keeps the panda and the far ring on screen, with the text above the ring. */
+  .finale {
+    min-height: 960px;
+  }
+
+  .finale__stage {
+    --shift: calc(85px - 50vw);
+    width: 1500px;
+  }
+
+  .finale__panda {
+    width: 11%;
+  }
+}
+
+@media (max-width: 640px) {
+  .cards {
+    grid-template-columns: 1fr;
+  }
+
+  body {
+    font-size: 17px;
+  }
+
+  .section {
+    padding-block: 96px 80px;
+  }
+
+  /* Phones become a sideways strip. */
+  .phones {
+    justify-content: flex-start;
+    margin-inline: -16px;
+    padding: 0 16px 12px;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+  }
+
+  .phones figure {
+    flex: none;
+    width: 62vw;
+    scroll-snap-align: center;
+  }
+
+  .phones figure:nth-child(2) {
+    margin-top: 0;
+  }
+
+  .notice > img {
+    display: none;
+  }
+
+  .chapter small {
+    font-size: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  /* No drift: the strip can be scrolled by hand instead. */
+  .rail {
+    overflow-x: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

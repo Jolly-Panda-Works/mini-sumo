@@ -62,7 +62,7 @@ docker-compose logs web | grep email
 
 در `https://sumo.ryujin.fans/api/catalog` هم باید `"emailRecovery":true` باشد. تا وقتی نیست، بخش «Save your progress» در پروفایل نمایش داده نمی‌شود.
 
-**لوگوی ایمیل** از `https://sumo.ryujin.fans/email/jolly-panda-logo.png` بارگذاری می‌شود، که همراه بازی روی سرور است.
+**لوگوی ایمیل** از `https://sumo.ryujin.fans/email/jolly-panda-logo.png` بارگذاری می‌شود، که همراه لندینگ روی سرور است.
 
 **تست محلی بدون EmailJS:** با `EMAIL_DEV_LOG=true` سرور کد را به‌جای فرستادن، در لاگ چاپ می‌کند. فقط برای تست است، نه روی سرور اصلی.
 

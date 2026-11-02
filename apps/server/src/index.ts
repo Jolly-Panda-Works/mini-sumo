@@ -81,7 +81,7 @@ const bazaarLogin =
     : null;
 console.log(bazaarLogin ? `[bazaar-login] web sign-in on (callback ${bazaarLogin.callbackUrl})` : "[bazaar-login] web sign-in off (no BAZAAR_LOGIN_CLIENT_ID / SECRET)");
 const handleApi = createApiHandler(economy, new PaymentService(flags), friends, bazaar, recovery, bazaarLogin);
-// The built web game, when this server also hosts it (STATIC_DIR, set in the Docker image).
+// The landing page, when this server also hosts it (STATIC_DIR, set in the Docker image).
 const handleStatic = createStaticHandler(process.env.STATIC_DIR);
 
 // Plain HTTP handler for non-matchmaking routes. Colyseus attaches /matchmake/* itself.

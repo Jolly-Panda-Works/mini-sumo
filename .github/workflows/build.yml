@@ -1,5 +1,4 @@
-# Builds Android, web and desktop. Only Android APK/AAB files go into GitHub Releases;
-# web and desktop builds remain available as workflow artifacts. GitHub Pages is disabled.
+# Builds the Android app: the game ships only as an APK/AAB, which go into GitHub Releases.
 #
 # Versions (automatic): every push to main that changes the game is released.
 #   The commits since the last release decide the bump (Conventional Commits):
@@ -16,7 +15,7 @@
 #   Variables
 #     VITE_SERVER_URL   public Colyseus endpoint (default: wss://sumo.ryujin.fans)
 #                       (optional until the server is live; releases then show a warning)
-#     VITE_PUBLIC_URL   (optional) public web address for invite links (default: https://sumo.ryujin.fans/)
+#     VITE_PUBLIC_URL   (optional) landing page address for invite links (default: https://sumo.ryujin.fans/)
 #   Secrets (optional, for a signed Android release APK/AAB)
 #     ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
 
@@ -48,7 +47,7 @@ env:
   NODE_VERSION: "22"
   # The game server (overridable with the repository variable VITE_SERVER_URL).
   VITE_SERVER_URL: ${{ vars.VITE_SERVER_URL || 'wss://sumo.ryujin.fans' }}
-  # Invite links open the web game hosted with the server (overridable with VITE_PUBLIC_URL).
+  # Invite links go to the landing page, which opens the app (overridable with VITE_PUBLIC_URL).
   VITE_PUBLIC_URL: ${{ vars.VITE_PUBLIC_URL || 'https://sumo.ryujin.fans/' }}
 
 jobs:
@@ -155,102 +154,6 @@ jobs:
       - name: Build server
         run: npm run build -w @mini-sumo/server
 
-  # ------------------------------------------------------------------ web
-  web:
-    name: Web
-    needs: [version, test]
-    runs-on: ubuntu-latest
-    env:
-      VITE_APP_VERSION: ${{ needs.version.outputs.version }}
-      # Relative paths: the zip works at any address and in any folder of a website.
-      VITE_BASE: ./
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          ref: ${{ needs.version.outputs.sha }}
-      - uses: actions/setup-node@v5
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-          cache-dependency-path: "**/package.json"
-      - name: Warn when no server URL is configured
-        if: env.VITE_SERVER_URL == ''
-        run: echo "::warning::Repository variable VITE_SERVER_URL is not set. Builds can't reach an online server."
-      - name: Install dependencies
-        run: if [ -f package-lock.json ]; then npm ci; else npm install; fi
-      - run: npm run build:web
-      - name: Package the web build
-        run: |
-          cp tools/web-hosting.txt apps/client/dist/HOSTING.txt
-          mkdir -p out
-          (cd apps/client/dist && zip -qr "../../../out/MiniSumo-${VITE_APP_VERSION}-Web.zip" .)
-          ls -la out
-      - uses: actions/upload-artifact@v4
-        with:
-          name: mini-sumo-web
-          path: out/*.zip
-          if-no-files-found: error
-          retention-days: 1
-
-  # ------------------------------------------------------------------ desktop
-  # The Electron app around the web client (apps/desktop). Unsigned: Windows SmartScreen asks
-  # once ("More info" -> "Run anyway").
-  desktop:
-    name: Desktop (${{ matrix.name }})
-    needs: [version, test]
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: Windows
-            os: windows-latest
-            target: --win
-          - name: Linux
-            os: ubuntu-latest
-            target: --linux
-    runs-on: ${{ matrix.os }}
-    defaults:
-      run:
-        shell: bash
-    env:
-      VERSION: ${{ needs.version.outputs.version }}
-      VITE_APP_VERSION: ${{ needs.version.outputs.version }}
-      # The desktop shell serves the game from the root of a local address.
-      VITE_BASE: /
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          ref: ${{ needs.version.outputs.sha }}
-      - uses: actions/setup-node@v5
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-          cache-dependency-path: "**/package.json"
-      - name: Install dependencies
-        run: if [ -f package-lock.json ]; then npm ci; else npm install; fi
-      - run: npm run build:web
-      - name: Install desktop dependencies
-        run: npm ci --prefix apps/desktop
-      - name: Set version
-        run: node -e "const f='apps/desktop/package.json',fs=require('fs'),p=JSON.parse(fs.readFileSync(f));p.version=process.env.VERSION;fs.writeFileSync(f,JSON.stringify(p,null,2))"
-      - name: Build the desktop app
-        env:
-          # Unsigned builds: don't look for a code-signing certificate.
-          CSC_IDENTITY_AUTO_DISCOVERY: "false"
-        run: npm run prepare:web --prefix apps/desktop && node apps/desktop/scripts/package.mjs ${{ matrix.target }}
-      - name: Collect outputs
-        run: |
-          mkdir -p out
-          cp apps/desktop/release/*.exe apps/desktop/release/*.AppImage apps/desktop/release/*.deb out/ 2>/dev/null || true
-          ls -la out
-          [ -n "$(ls -A out)" ] || { echo "::error::No desktop files were built."; exit 1; }
-      - uses: actions/upload-artifact@v4
-        with:
-          name: mini-sumo-desktop-${{ matrix.name }}
-          path: out/*
-          if-no-files-found: error
-          retention-days: 1
-
   # ------------------------------------------------------------------ android
   android:
     name: Android
@@ -297,6 +200,7 @@ jobs:
           # Portrait only, full screen (status bar hidden).
           node scripts/orientation.mjs
           node scripts/fullscreen.mjs
+          node scripts/deep-link.mjs
           # Google Play Games sign-in + cloud save (repository variable PLAY_GAMES_APP_ID).
           PLAY_GAMES_APP_ID="${{ vars.PLAY_GAMES_APP_ID }}" node scripts/play-games.mjs
 
@@ -366,7 +270,7 @@ jobs:
   # ------------------------------------------------------------------ release
   release:
     name: GitHub Release
-    needs: [version, web, android, desktop]
+    needs: [version, android]
     if: needs.version.outputs.release == 'true'
     runs-on: ubuntu-latest
     permissions:

@@ -3,9 +3,9 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { extname, join, normalize, resolve, sep } from "node:path";
 
 /**
- * Serves the built web game (apps/client/dist) from the game server itself, so one container
- * and one port carry the page, the API, matchmaking and the game websockets.
- * Enabled when STATIC_DIR points at the build. Unknown paths fall back to index.html.
+ * Serves the landing page (apps/landing) from the game server itself, so one container and
+ * one port carry the page, the API, matchmaking and the game websockets.
+ * Enabled when STATIC_DIR points at the page. Unknown paths fall back to index.html.
  */
 const TYPES: Record<string, string> = {
   ".html": "text/html; charset=utf-8",

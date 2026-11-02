@@ -6,6 +6,12 @@ Releases use the root `package.json` version and are tagged `vX.Y.Z` automatical
 
 ## [Unreleased]
 
+### Changed
+
+- The panda is now the game's logo everywhere: the round "Mini Sumo" logo is gone from Settings -> About, the landing page and the README.
+- **The game is Android only**: the web game is gone and the server's address now shows a landing page (`apps/landing`, Persian and English, responsive) that tells the game's story, from the training yard to the ring above the clouds, in its own art, with the game's panels and buttons, a link to the official game page and Jolly Panda Studio's logo. CI no longer builds web or desktop.
+- Invite links go to the landing page, whose button opens the app and joins the room (`minisumo://join?room=…`). The link in save-progress emails shows the code to type in the game.
+
 ### Added
 
 - **Link preview**: a shared link to the game shows the Mini Sumo banner ("Push. Dash. Win.", 1200 × 630) with a title and description (Open Graph and Twitter card tags; `public/social/mini-sumo-social-v1.jpg`). The other banner formats and the intro banner are in `docs/marketing/`, outside the builds.
