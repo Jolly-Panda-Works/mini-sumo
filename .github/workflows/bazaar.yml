@@ -25,7 +25,8 @@
 #     "fa" / "en" filled in. Edit it on the Iranian-store branch (after merging main), commit, push.
 #     After a successful release the file is emptied again (a [skip ci] commit on the branch), so
 #     the next version can't go out with old notes.
-#   - Run workflow: the two notes fields of the form (they take the place of the file).
+#   - Run workflow: the two notes fields of the form (they take the place of the file). The
+#     stores field sends to one store only, e.g. for notes that only fit that store.
 
 name: Iranian stores
 
@@ -50,6 +51,11 @@ on:
         type: choice
         options: [default, public, alpha]
         default: default
+      stores:
+        description: "Which stores this run sends to"
+        type: choice
+        options: [both, bazaar, myket]
+        default: both
 
 concurrency:
   group: iranian-stores-${{ github.ref }}
@@ -213,7 +219,7 @@ jobs:
       # Cafe Bazaar: send the signed APK and ask for review (only this branch, and only
       # with the API token; skipped when Bazaar already has this versionCode).
       - name: Release in Cafe Bazaar
-        if: matrix.store == 'bazaar' && github.ref == 'refs/heads/Iranian-store' && steps.notes.outcome == 'success' && env.HAS_KEYSTORE == 'true' && env.HAS_PISHKHAN == 'true'
+        if: matrix.store == 'bazaar' && inputs.stores != 'myket' && github.ref == 'refs/heads/Iranian-store' && steps.notes.outcome == 'success' && env.HAS_KEYSTORE == 'true' && env.HAS_PISHKHAN == 'true'
         env:
           BAZAAR_PISHKHAN_TOKEN: ${{ secrets.BAZAAR_PISHKHAN_TOKEN }}
           BAZAAR_AUTO_PUBLISH: ${{ vars.BAZAAR_AUTO_PUBLISH || 'true' }}
@@ -224,7 +230,7 @@ jobs:
 
       # Myket: the same, with its own token (skipped when Myket already has this versionCode).
       - name: Release in Myket
-        if: matrix.store == 'myket' && github.ref == 'refs/heads/Iranian-store' && steps.notes.outcome == 'success' && env.HAS_KEYSTORE == 'true' && env.HAS_MYKET == 'true'
+        if: matrix.store == 'myket' && inputs.stores != 'bazaar' && github.ref == 'refs/heads/Iranian-store' && steps.notes.outcome == 'success' && env.HAS_KEYSTORE == 'true' && env.HAS_MYKET == 'true'
         env:
           MYKET_ACCESS_TOKEN: ${{ secrets.MYKET_ACCESS_TOKEN }}
           MYKET_AUTO_PUBLISH: ${{ vars.MYKET_AUTO_PUBLISH || 'false' }}
