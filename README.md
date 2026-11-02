@@ -24,7 +24,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/bout.png" alt="Three sumo wrestlers colliding in the ring" width="900" />
+  <img src="docs/screenshots/bout.png" alt="A dash hit between sumo wrestlers in the ring" width="900" />
 </p>
 
 > **Server status:** the public game server is not online yet. Until it is, every build runs in **offline practice mode**: rooms are created on your device and you play against bots. Online play switches on by itself once a server is configured (see [Offline mode](#offline-mode)).
@@ -113,7 +113,7 @@ Tuning lives in `apps/server/src/simulation/SimulationConfig.ts` (acceleration 2
 | **Customise your wrestler** | **Countdown** |
 | <img src="docs/screenshots/wardrobe.png" alt="Customise: hair, colour, face and outfit with rarity frames" width="440" /> | <img src="docs/screenshots/countdown.png" alt="Countdown" width="440" /> |
 | **Bout** | **Results** |
-| <img src="docs/screenshots/bout.png" alt="Three wrestlers colliding in the ring" width="440" /> | <img src="docs/screenshots/results.png" alt="Results screen" width="440" /> |
+| <img src="docs/screenshots/bout.png" alt="A dash hit in the ring" width="440" /> | <img src="docs/screenshots/results.png" alt="Results screen" width="440" /> |
 
 **On a phone**
 
