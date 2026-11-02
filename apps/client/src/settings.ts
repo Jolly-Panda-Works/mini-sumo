@@ -20,6 +20,8 @@ export interface Settings {
   name: string;
   /** The first-run name prompt has been completed. */
   onboarded: boolean;
+  /** The opening comic has been shown (everyone sees it once, players from before it too). */
+  storySeen: boolean;
   tutorialCompleted: boolean;
   dashMode: "manual" | "auto";
   /** Persisted separately: replaying training must not ask this question again. */
@@ -37,7 +39,7 @@ export interface Settings {
 const KEY = "mini-sumo:settings";
 
 function load(): Settings {
-  const defaults: Settings = { musicVolume: 0.5, sfxVolume: 0.8, touchControls: "auto", joystick: "floating", vibration: true, name: "", onboarded: false, tutorialCompleted: false, dashMode: "manual", dashModeChosen: false, starterRewardPresented: false, menuTourCompleted: false, introStage: "first", menuTourIndex: 0, botLevel: "normal", appearance: { ...DEFAULT_APPEARANCE } };
+  const defaults: Settings = { musicVolume: 0.5, sfxVolume: 0.8, touchControls: "auto", joystick: "floating", vibration: true, name: "", onboarded: false, storySeen: false, tutorialCompleted: false, dashMode: "manual", dashModeChosen: false, starterRewardPresented: false, menuTourCompleted: false, introStage: "first", menuTourIndex: 0, botLevel: "normal", appearance: { ...DEFAULT_APPEARANCE } };
   try {
     const raw = window.localStorage.getItem(KEY);
     if (!raw) return defaults;
@@ -53,6 +55,7 @@ function load(): Settings {
       vibration: typeof parsed.vibration === "boolean" ? parsed.vibration : true,
       name: typeof parsed.name === "string" ? parsed.name.slice(0, 32) : "",
       onboarded: typeof parsed.onboarded === "boolean" ? parsed.onboarded : Boolean(parsed.name?.trim()),
+      storySeen: parsed.storySeen === true,
       tutorialCompleted: parsed.tutorialCompleted === true,
       dashMode: parsed.dashMode === "auto" ? "auto" : "manual",
       dashModeChosen: typeof parsed.dashModeChosen === "boolean" ? parsed.dashModeChosen : parsed.tutorialCompleted === true,
