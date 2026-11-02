@@ -1,4 +1,4 @@
-// What's new in Cafe Bazaar for one version: required before every Bazaar build.
+// What's new in Cafe Bazaar and Myket for one version: required before every release.
 //
 //   node tools/bazaar-notes.mjs check <out.json>   checks the notes and writes the ones to use
 //   node tools/bazaar-notes.mjs clear              empties the file for the next version
@@ -6,14 +6,14 @@
 // The notes come from (first match wins):
 //   1. a manual run's inputs (env NOTES_FA and NOTES_EN; "\n" starts a new line), or
 //   2. apps/mobile/bazaar-release-notes.json: { "version", "fa", "en" }, where version must be
-//      the version being built (package.json). Edit it on the bazaar branch before pushing.
+//      the version being built (package.json). Edit it on the Iranian-store branch before pushing.
 // Missing, empty, or written for another version: the check fails, so a release can't go out
 // without them. After a release the file is emptied (clear), so the next one needs new notes.
 import { readFileSync, writeFileSync } from "node:fs";
 
 const FILE = new URL("../apps/mobile/bazaar-release-notes.json", import.meta.url);
 const COMMENT =
-  "What's new in Cafe Bazaar for the next version (required: a Bazaar build fails without it). Set version to the version being released (package.json) and write fa and en, on the bazaar branch. Emptied after each release.";
+  "What's new in Cafe Bazaar and Myket for the next version (required: nothing is released without it). Set version to the version being released (package.json) and write fa and en, on the Iranian-store branch. Emptied after each release.";
 /** Longer notes are cut by Bazaar's page; keep them short. */
 const MAX = 1000;
 
@@ -48,7 +48,7 @@ if (inputFa || inputEn) {
     fail("apps/mobile/bazaar-release-notes.json is missing or isn't valid JSON.");
   }
   const forVersion = String(file.version ?? "").trim();
-  if (!forVersion) fail(`No release notes for ${version}: set "version": "${version}" and write "fa" and "en" in apps/mobile/bazaar-release-notes.json (on the bazaar branch), or run the workflow by hand with the notes.`);
+  if (!forVersion) fail(`No release notes for ${version}: set "version": "${version}" and write "fa" and "en" in apps/mobile/bazaar-release-notes.json (on the Iranian-store branch), or run the workflow by hand with the notes.`);
   if (forVersion !== version) fail(`The release notes are for ${forVersion}, but this build is ${version}. Update apps/mobile/bazaar-release-notes.json for ${version}.`);
   notes = { fa: clean(file.fa), en: clean(file.en) };
   if (!notes.fa) fail(`The Persian release notes ("fa") for ${version} are empty.`);

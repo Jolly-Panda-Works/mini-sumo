@@ -191,7 +191,7 @@ export function ProfilePanel() {
           ))}
         </dl>
 
-        {import.meta.env.VITE_STORE !== "bazaar" && (
+        {import.meta.env.VITE_STORE !== "bazaar" && import.meta.env.VITE_STORE !== "myket" && (
         <section className="profile__google" aria-label="Google Play">
           {play.status === "connected" ? (
             <button className="gplay-btn" onClick={() => void askPlayLogOut()} aria-label="Connected to Google Play: log out">

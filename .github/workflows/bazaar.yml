@@ -1,33 +1,37 @@
-# Cafe Bazaar build: the same game with Bazaar in-app billing (coin packs) instead of
-# Google Play Games. Runs on the `bazaar` branch (and on demand).
+# Iranian store builds: the same game for Cafe Bazaar (Bazaar in-app billing) and Myket, instead
+# of Google Play Games. Runs on the `Iranian-store` branch (and on demand).
 #
-# Keep the branch up to date with main (`git checkout bazaar && git merge main && git push`);
-# each push builds the Bazaar APK/AAB with the version from package.json and publishes it as
-# a GitHub Release tagged bazaar-vX.Y.Z (the same versionCode as the main Android build).
+# Keep the branch up to date with main (`git checkout Iranian-store && git merge main && git push`);
+# each push builds both stores with the version from package.json and publishes GitHub Releases
+# tagged bazaar-vX.Y.Z and myket-vX.Y.Z (the same versionCode as the main Android build).
 #
 # Settings: apps/mobile/bazaar.config.json (RSA key, library versions, developer id) and
 # apps/client/src/network/bazaarProducts.ts (product ids). The repository variable
 # BAZAAR_RSA_KEY overrides the key. Signing uses the same ANDROID_KEYSTORE_* secrets.
 #
 # Automatic release in Cafe Bazaar (Pishkhan API): with the secret BAZAAR_PISHKHAN_TOKEN set,
-# every successful build of the bazaar branch sends the signed APK to Bazaar and asks for review.
+# every successful build of the branch sends the signed APK to Bazaar and asks for review.
 #   Repository variables: BAZAAR_AUTO_PUBLISH ("true" default: published once approved;
 #   "false": you publish in the panel), BAZAAR_CHANNEL ("public" default, or "alpha").
 #   Alpha: the APK is uploaded as a draft; in the panel pick the alpha group and send it for
 #   review (the API can't choose the group). Run workflow can pick the channel for one build.
 #
-# Release notes are required (checked before anything is built; the build fails without them):
+# Automatic release in Myket: the same with the secret MYKET_ACCESS_TOKEN. Repository variable
+#   MYKET_AUTO_PUBLISH ("false" default: you publish in the panel; "true": published once approved).
+#
+# Release notes are required to release (both stores use the same notes). Without them a push
+# still builds both stores, but nothing is released: the files stay on the run for a day.
 #   - a push: apps/mobile/bazaar-release-notes.json with "version" = the version being built and
-#     "fa" / "en" filled in. Edit it on the bazaar branch (after merging main), commit, push.
-#     After a successful release the file is emptied again (a [skip ci] commit on bazaar), so
+#     "fa" / "en" filled in. Edit it on the Iranian-store branch (after merging main), commit, push.
+#     After a successful release the file is emptied again (a [skip ci] commit on the branch), so
 #     the next version can't go out with old notes.
 #   - Run workflow: the two notes fields of the form (they take the place of the file).
 
-name: Bazaar
+name: Iranian stores
 
 on:
   push:
-    branches: [bazaar]
+    branches: [Iranian-store]
     paths-ignore:
       - "docs/**"
       - "**.md"
@@ -48,7 +52,7 @@ on:
         default: default
 
 concurrency:
-  group: bazaar-${{ github.ref }}
+  group: iranian-stores-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -61,13 +65,20 @@ env:
 
 jobs:
   android:
-    name: Android (Cafe Bazaar)
+    name: Android (${{ matrix.title }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { store: bazaar, label: Bazaar, title: Cafe Bazaar }
+          - { store: myket, label: Myket, title: Myket }
     env:
-      VITE_STORE: bazaar
+      VITE_STORE: ${{ matrix.store }}
       VITE_BASE: /
       HAS_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
       HAS_PISHKHAN: ${{ secrets.BAZAAR_PISHKHAN_TOKEN != '' }}
+      HAS_MYKET: ${{ secrets.MYKET_ACCESS_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -95,11 +106,12 @@ jobs:
           DEV_ID="${{ vars.BAZAAR_DEVELOPER_ID }}"
           [ -n "$DEV_ID" ] || DEV_ID=$(node -p "require('./apps/mobile/bazaar.config.json').developerId || ''")
           echo "VITE_BAZAAR_DEVELOPER_ID=$DEV_ID" >> "$GITHUB_ENV"
-          echo "Bazaar build $VERSION"
+          echo "${{ matrix.title }} build $VERSION"
 
-      # Before anything is built: no release without its notes.
-      - name: Release notes (required)
+      # Before anything is built: no release without its notes (a push still builds).
+      - name: Release notes (required to release)
         id: notes
+        continue-on-error: ${{ github.event_name == 'push' }}
         env:
           NOTES_FA: ${{ inputs.notes_fa }}
           NOTES_EN: ${{ inputs.notes_en }}
@@ -122,7 +134,7 @@ jobs:
           node scripts/fullscreen.mjs
           node scripts/deep-link.mjs
           # Cafe Bazaar billing (no Google Play Games in this build).
-          BAZAAR_RSA_KEY="${{ vars.BAZAAR_RSA_KEY }}" node scripts/bazaar.mjs
+          if [ "${{ matrix.store }}" = bazaar ]; then BAZAAR_RSA_KEY="${{ vars.BAZAAR_RSA_KEY }}" node scripts/bazaar.mjs; fi
 
       - name: Target SDK (optional, repository variable ANDROID_TARGET_SDK)
         if: vars.ANDROID_TARGET_SDK != ''
@@ -160,10 +172,10 @@ jobs:
           VERSION=${{ steps.version.outputs.version }}
           mkdir -p out
           OUTPUTS=apps/mobile/android/app/build/outputs
-          cp "$OUTPUTS/apk/debug/app-debug.apk" "out/MiniSumo-$VERSION-Bazaar-debug.apk"
+          cp "$OUTPUTS/apk/debug/app-debug.apk" "out/MiniSumo-$VERSION-${{ matrix.label }}-debug.apk"
           if [ "$HAS_KEYSTORE" = "true" ]; then
-            cp "$OUTPUTS/apk/release/app-release.apk" "out/MiniSumo-$VERSION-Bazaar.apk"
-            cp "$OUTPUTS/bundle/release/app-release.aab" "out/MiniSumo-$VERSION-Bazaar.aab"
+            cp "$OUTPUTS/apk/release/app-release.apk" "out/MiniSumo-$VERSION-${{ matrix.label }}.apk"
+            cp "$OUTPUTS/bundle/release/app-release.aab" "out/MiniSumo-$VERSION-${{ matrix.label }}.aab"
           fi
           (cd out && sha256sum * > SHA256SUMS.txt)
           ls -la out
@@ -171,18 +183,18 @@ jobs:
         # The release below has the files; this copy is optional (it must not stop the release).
         continue-on-error: true
         with:
-          name: mini-sumo-bazaar
+          name: mini-sumo-${{ matrix.store }}
           path: out/*
           retention-days: 1
 
-      # Only the bazaar branch publishes; a manual run on another branch is a test build.
+      # Only this branch publishes, with notes; a manual run on another branch is a test build.
       - name: Publish release
-        if: github.ref == 'refs/heads/bazaar'
+        if: github.ref == 'refs/heads/Iranian-store' && steps.notes.outcome == 'success'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="bazaar-v${{ steps.version.outputs.version }}"
-          NOTES="Cafe Bazaar build of Mini Sumo ${{ steps.version.outputs.version }}.
+          TAG="${{ matrix.store }}-v${{ steps.version.outputs.version }}"
+          NOTES="${{ matrix.title }} build of Mini Sumo ${{ steps.version.outputs.version }}.
 
           ### What's new
           $(node -p "require(process.env.RUNNER_TEMP + '/bazaar-notes.json').en")
@@ -193,13 +205,13 @@ jobs:
           if gh release view "$TAG" > /dev/null 2>&1; then
             gh release upload "$TAG" "${ANDROID_FILES[@]}" --clobber
           else
-            gh release create "$TAG" "${ANDROID_FILES[@]}" --target "$GITHUB_SHA" --title "Mini Sumo ${{ steps.version.outputs.version }} (Cafe Bazaar)" --notes "$NOTES" --latest=false
+            gh release create "$TAG" "${ANDROID_FILES[@]}" --target "$GITHUB_SHA" --title "Mini Sumo ${{ steps.version.outputs.version }} (${{ matrix.title }})" --notes "$NOTES" --latest=false
           fi
 
-      # Cafe Bazaar: send the signed APK and ask for review (only the bazaar branch, and only
+      # Cafe Bazaar: send the signed APK and ask for review (only this branch, and only
       # with the API token; skipped when Bazaar already has this versionCode).
       - name: Release in Cafe Bazaar
-        if: github.ref == 'refs/heads/bazaar' && env.HAS_KEYSTORE == 'true' && env.HAS_PISHKHAN == 'true'
+        if: matrix.store == 'bazaar' && github.ref == 'refs/heads/Iranian-store' && steps.notes.outcome == 'success' && env.HAS_KEYSTORE == 'true' && env.HAS_PISHKHAN == 'true'
         env:
           BAZAAR_PISHKHAN_TOKEN: ${{ secrets.BAZAAR_PISHKHAN_TOKEN }}
           BAZAAR_AUTO_PUBLISH: ${{ vars.BAZAAR_AUTO_PUBLISH || 'true' }}
@@ -208,16 +220,35 @@ jobs:
           VERSION=${{ steps.version.outputs.version }}
           node tools/pishkhan-release.mjs "out/MiniSumo-$VERSION-Bazaar.apk" --version "$VERSION" --code ${{ steps.version.outputs.code }} --changelog "$RUNNER_TEMP/bazaar-notes.json"
 
-      # The notes in the file are used: empty it, so the next version needs its own.
-      - name: Empty the release notes for the next version
-        if: github.ref == 'refs/heads/bazaar' && steps.notes.outputs.source == 'file'
+      # Myket: the same, with its own token (skipped when Myket already has this versionCode).
+      - name: Release in Myket
+        if: matrix.store == 'myket' && github.ref == 'refs/heads/Iranian-store' && steps.notes.outcome == 'success' && env.HAS_KEYSTORE == 'true' && env.HAS_MYKET == 'true'
+        env:
+          MYKET_ACCESS_TOKEN: ${{ secrets.MYKET_ACCESS_TOKEN }}
+          MYKET_AUTO_PUBLISH: ${{ vars.MYKET_AUTO_PUBLISH || 'false' }}
         run: |
+          VERSION=${{ steps.version.outputs.version }}
+          node tools/myket-release.mjs "out/MiniSumo-$VERSION-Myket.apk" --version "$VERSION" --code ${{ steps.version.outputs.code }} --changelog "$RUNNER_TEMP/bazaar-notes.json"
+
+  # The notes in the file are used (by both stores): empty it, so the next version needs its own.
+  notes:
+    name: Empty the release notes
+    needs: android
+    if: github.ref == 'refs/heads/Iranian-store' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Empty the release notes for the next version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          NOTES_FOR=$(node -p "require('./apps/mobile/bazaar-release-notes.json').version")
+          [ "$NOTES_FOR" = "$VERSION" ] || exit 0
           node tools/bazaar-notes.mjs clear
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -qm "chore(bazaar): release notes for v${{ steps.version.outputs.version }} used [skip ci]" -- apps/mobile/bazaar-release-notes.json
+          git commit -qm "chore(stores): release notes for v$VERSION used [skip ci]" -- apps/mobile/bazaar-release-notes.json
           for attempt in 1 2 3; do
-            if git push --quiet origin HEAD:bazaar; then break; fi
-            if [ $attempt = 3 ]; then echo "::warning::Couldn't empty the release notes on bazaar; empty them by hand."; exit 0; fi
-            git pull --rebase --quiet origin bazaar
+            if git push --quiet origin HEAD:Iranian-store; then break; fi
+            if [ $attempt = 3 ]; then echo "::warning::Couldn't empty the release notes on Iranian-store; empty them by hand."; exit 0; fi
+            git pull --rebase --quiet origin Iranian-store
           done

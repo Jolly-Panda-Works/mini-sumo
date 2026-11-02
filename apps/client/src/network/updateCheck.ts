@@ -34,6 +34,7 @@ function updateTarget(): { kind: "store"; url: string; name: string } | { kind: 
   if (isDesktopApp()) return { kind: "store", url: CREDITS.projectUrl, name: "the Mini Sumo page" };
   if (!isNative()) return { kind: "reload" };
   if (import.meta.env.VITE_STORE === "bazaar") return { kind: "store", url: `https://cafebazaar.ir/app/${PACKAGE}`, name: "Cafe Bazaar" };
+  if (import.meta.env.VITE_STORE === "myket") return { kind: "store", url: `https://myket.ir/app/${PACKAGE}`, name: "Myket" };
   return { kind: "store", url: `https://play.google.com/store/apps/details?id=${PACKAGE}`, name: "Google Play" };
 }
 
