@@ -69,7 +69,22 @@ Defined once in `ARENA_CONFIG` (`config.ts`) and served to clients by `GET /api/
 
 **Daily coins:** the coin shop gives 100 free coins once a day.
 
-**Levels:** every finished bout (not left early) gives XP: 20, +30 for a win, times the arena's multiplier: Training and private rooms ×1, Rookie ×1.5, Amateur ×1.75, Pro ×2, Veteran ×2.5, Champion ×3, Master ×4, Legend ×5, Godlike ×6. Total XP for a level is `50 × (level − 1) × level` (level 2 = 100, level 5 = 1,000, level 10 = 4,500). Arenas, rewards, prizes and levels are defined once in `packages/shared/src/economy.ts` and used by both the local economy and the server.
+**Levels:** only top-half finishers who did not leave early earn XP: ranks 1–2 in a four-player bout, and rank 1 in two- or three-player bouts. The full roster includes bots. Qualifying finishers receive 20 XP, +30 for a win, times the arena's multiplier: Training and private rooms ×1, Rookie ×1.5, Amateur ×1.75, Pro ×2, Veteran ×2.5, Champion ×3, Master ×4, Legend ×5, Godlike ×6. Total XP for a level is `50 × (level − 1) × level` (level 2 = 100, level 5 = 1,000, level 10 = 4,500). Arenas, rewards, prizes and levels are defined once in `packages/shared/src/economy.ts` and used by both the local economy and the server.
+
+**Shrinking ring:** online and offline share these rules for a 90-second bout. Training and private rooms start at 70 seconds and finish at 72% of the original radius.
+
+| Arena | Shrinking starts after | Final radius |
+| --- | ---: | ---: |
+| Rookie | 65 s | 68% |
+| Amateur | 60 s | 64% |
+| Pro | 55 s | 60% |
+| Veteran | 50 s | 56% |
+| Champion | 45 s | 52% |
+| Master | 40 s | 48% |
+| Legend | 35 s | 44% |
+| Godlike | 30 s | 40% |
+
+The ring closes smoothly and resets to full size for each bout. Values live in `createArenaConfig` in `apps/server/src/simulation/SimulationConfig.ts`.
 
 **Bots:** on the device, every arena is played against bots. Training uses the difficulty picked on its card; paid arenas pick one at random for their tier (Rookie easy or normal, Amateur mostly normal, Pro and Veteran normal or hard, Champion mostly hard, Master / Legend / Godlike almost always hard). Online, paid arenas are humans only.
 

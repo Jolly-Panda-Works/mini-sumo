@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { IntroPanelFooter, finishIntroCustomize } from "./IntroPanelFooter";
 import { compactCoins } from "./Coins";
 import { Color, Object3D, Vector3, type InstancedMesh } from "three";
 import { Canvas, useFrame } from "@react-three/fiber";
@@ -295,13 +296,14 @@ function ItemThumb({ category, look, index, color }: { category: CosmeticCategor
 }
 
 export function Wardrobe() {
-  const { appearance } = useStore(settingsStore);
+  const { appearance, introStage } = useStore(settingsStore);
+  const guided = introStage === "customize";
   const economy = useStore(economyStore);
   const game = useStore(gameStore);
   const owned = ownedItems();
   const catalogPrices = new Map((economy.catalog?.items ?? []).map((i) => [i.id, i.price] as const));
   const priceOf = (id: string) => catalogPrices.get(id) ?? cosmeticPrice(id);
-  const [tab, setTab] = useState<Tab>(TABS[0]!);
+  const [tab, setTab] = useState<Tab>(TABS[guided ? 3 : 0]!);
   // Tapping an item you don't own tries it on (in the preview) until you buy it or pick another.
   const [trying, setTrying] = useState<{ category: CosmeticCategory; index: number } | null>(null);
   // Each tab opens at the top of its list (where the item you wear is).
@@ -430,8 +432,9 @@ export function Wardrobe() {
     <>
       <Dialog
         title="Your wrestler"
-        onClose={() => setWardrobeOpen(false)}
-        className="wardrobe"
+        onClose={() => guided ? finishIntroCustomize() : setWardrobeOpen(false)}
+        footer={guided ? <IntroPanelFooter panel="customize" /> : undefined}
+        className={`wardrobe${guided ? " intro-guided" : ""}`}
         bodyClassName={`wardrobe__body${sideTabs ? " wardrobe__body--side-tabs" : ""}`}
         aside={sideTabs ? tabs : undefined}
       >

@@ -3,6 +3,7 @@ import {
   REWARDS,
   DAILY_GIFT_COINS,
   STARTER_ITEMS,
+  INTRO_OUTFIT_ID,
   STARTING_COINS,
   allCosmeticItemIds,
   arenaDef,
@@ -33,6 +34,7 @@ const MAX_LEDGER = 200;
 
 interface LocalState {
   v: 1;
+  introRounds?: number[];
   coins: number;
   xp: number;
   matches: number;
@@ -185,6 +187,7 @@ export const localEconomy = {
     const day = today();
     return {
       accountId: "local",
+      introRounds: state.introRounds ?? [],
       balances: { coins: state.coins, gems: 0 },
       owned: [...new Set([...STARTER_ITEMS, ...state.owned])],
       appearance: settingsStore.get().appearance,
@@ -193,7 +196,7 @@ export const localEconomy = {
         wins: state.wins,
         coinsEarned: state.coinsEarned,
         ringOuts: state.ringOuts,
-        itemsBought: state.owned.length,
+        itemsBought: state.owned.length - (state.introRounds?.includes(1) && state.owned.includes(INTRO_OUTFIT_ID) ? 1 : 0),
         bestStreak: state.bestStreak,
       },
       level: levelFromXp(state.xp),
@@ -327,7 +330,7 @@ export const localEconomy = {
    */
   finish(
     entry: LocalEntry,
-    result: { matchId: string; won: boolean; draw: boolean; completed: boolean; durationMs: number; players: number; ringOuts?: number },
+    result: { matchId: string; won: boolean; draw: boolean; completed: boolean; durationMs: number; players: number; placement: number; introRound?: 1 | 2; ringOuts?: number },
   ): EconomyResultMessage {
     const arena = arenaDef(entry.arenaId);
     const base: EconomyResultMessage = {
@@ -341,6 +344,12 @@ export const localEconomy = {
       note: "",
     };
     if (entry.status === "done" || !arena) return base;
+    if (result.introRound) {
+      if (state.introRounds?.includes(result.introRound)) return base;
+      if (result.introRound === 2 && !state.introRounds?.includes(1)) return base;
+      if (result.introRound !== 1 || result.won) state.introRounds = [...(state.introRounds ?? []), result.introRound];
+      if (result.introRound === 1 && result.won && !state.owned.includes(INTRO_OUTFIT_ID)) state.owned.push(INTRO_OUTFIT_ID);
+    }
     entry.status = "done";
     const levelBefore = levelFromXp(state.xp).level;
 
@@ -364,7 +373,7 @@ export const localEconomy = {
       }
     }
 
-    // Stats and XP for every bout you finish (the minimum bout length only guards coin rewards).
+    // Stats for every finished bout; XP only for top-half placements (the minimum bout length only guards coin rewards).
     const counts = result.completed;
     if (counts) {
       state.matches += 1;
@@ -376,7 +385,7 @@ export const localEconomy = {
       } else {
         state.streak = 0;
       }
-      const xp = xpForMatch(entry.arenaId, result.won, true);
+      const xp = xpForMatch(entry.arenaId, result.won, true, result.placement, result.players);
       state.xp += xp;
       base.xp = xp;
     }

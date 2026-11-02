@@ -55,6 +55,9 @@ export function allCosmeticItemIds(): { id: string; category: CosmeticCategory; 
  * Free items every player owns: three per category, including the first option so the
  * default look is always valid. Everything else is bought once and owned for good.
  */
+export const INTRO_OUTFIT_ID = "outfit.sakura";
+export const INTRO_PLAYERS = { 1: 2, 2: 4 } as const;
+
 export const STARTER_ITEMS: readonly string[] = [
   "hair.topknot",
   "hair.bald",
@@ -249,6 +252,8 @@ export interface BazaarPurchaseResponse {
 }
 
 export interface ProfileResponse {
+  /** One-time guided bouts completed on this account. */
+  introRounds?: number[];
   accountId: string;
   /** Display name and when the name / look were last changed (ISO time; "" if never). */
   name?: string;
@@ -480,7 +485,7 @@ export function arenaInfo(arena: ArenaDef): ArenaInfo {
     maxPrize: full.prize,
     payoutRule:
       arena.entryFee === 0
-        ? "Free practice. No coins, but every finished bout earns XP."
+        ? "Free practice. No coins, but top-half finishers earn XP."
         : `The winner takes the pool minus a ${arena.economyFeePercent}% fee. Draws and bouts that never start are refunded.`,
     drawPolicy: "refund",
     bots: arena.bots,
@@ -559,8 +564,8 @@ const XP_ARENA_MULTIPLIER: Record<string, number> = {
   godlike: 6,
 };
 
-/** XP for a finished bout: 20 for taking part, +30 for a win, scaled by arena tier. */
-export function xpForMatch(arenaId: string, won: boolean, completed: boolean): number {
-  if (!completed) return 0;
+/** Only top-half finishers earn XP, scaled by arena tier. Odd rosters round down. */
+export function xpForMatch(arenaId: string, won: boolean, completed: boolean, placement: number, playerCount: number): number {
+  if (!completed || !Number.isInteger(placement) || !Number.isInteger(playerCount) || playerCount < 2 || placement < 1 || placement > Math.floor(playerCount / 2)) return 0;
   return Math.round((20 + (won ? 30 : 0)) * (XP_ARENA_MULTIPLIER[arenaId] ?? 1));
 }

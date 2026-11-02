@@ -1,5 +1,7 @@
 import {
   ARENA_RADIUS,
+  QUICK_MATCH_WAIT_MS,
+  INTRO_PLAYERS,
   ClientMessage,
   ServerMessage,
   sanitizeBotLevel,
@@ -7,12 +9,12 @@ import {
   type SyncedPlayer,
   type SyncedState,
 } from "@mini-sumo/shared";
-import { GameSession, createConfig, isDashing, isStunned, type ActionResult } from "@mini-sumo/sim";
+import { GameSession, createArenaConfig, isDashing, isStunned, type ActionResult } from "@mini-sumo/sim";
 import type { GameConnection } from "./connection";
 import { localEconomy, type LocalEntry } from "./localEconomy";
 
 /** Offline quick match: a short, natural-feeling "search" before bots fill the room. */
-const OFFLINE_SEARCH_MS = 10_000;
+const OFFLINE_SEARCH_MS = QUICK_MATCH_WAIT_MS;
 const TICK_MS = 1000 / 30;
 const roundUp100 = (ms: number) => Math.ceil(ms / 100) * 100;
 
@@ -29,6 +31,7 @@ function randomCode(length = 9): string {
 }
 
 export interface LocalRoomOptions {
+  introRound?: 1 | 2;
   name: string;
   appearance: unknown;
   isPrivate: boolean;
@@ -52,6 +55,7 @@ export class LocalConnection implements GameConnection {
   readonly state: LocalState;
 
   private readonly session: GameSession;
+  private readonly introRound: 1 | 2 | undefined;
   private readonly isPrivate: boolean;
   private timer = 0;
   private lastTick = 0;
@@ -66,13 +70,15 @@ export class LocalConnection implements GameConnection {
   private messageListeners = new Map<string, Set<(message: any) => void>>();
 
   constructor(options: LocalRoomOptions) {
+    this.introRound = options.introRound;
     this.isPrivate = options.isPrivate;
     this.arenaId = options.isPrivate ? "private" : (options.arenaId ?? "training");
     // Every local arena bout (free or paid) goes through the local economy, except private rooms.
     this.entry = options.entry ?? (options.isPrivate ? null : { id: randomCode(), arenaId: this.arenaId, fee: 0, status: "paid" });
-    this.session = new GameSession(createConfig({ quickMatchWaitMs: OFFLINE_SEARCH_MS }), options.maxPlayers, {
-      quickMatch: !options.isPrivate,
-      botLevel: sanitizeBotLevel(options.botLevel),
+    this.session = new GameSession(createArenaConfig(this.arenaId, { quickMatchWaitMs: OFFLINE_SEARCH_MS }), options.introRound ? INTRO_PLAYERS[options.introRound] : options.maxPlayers, {
+      quickMatch: !options.isPrivate && !options.introRound,
+      botLevel: options.introRound ? "easy" : sanitizeBotLevel(options.botLevel),
+      coached: options.introRound === 1,
     });
     this.state = {
       players: new Map(),
@@ -87,7 +93,7 @@ export class LocalConnection implements GameConnection {
       aliveCount: 0,
       searchRemainingMs: 0,
       arenaId: this.arenaId,
-      botLevel: sanitizeBotLevel(options.botLevel),
+      botLevel: this.session.botLevel,
       itemKind: "",
       itemX: 0,
       itemY: 0,
@@ -95,6 +101,11 @@ export class LocalConnection implements GameConnection {
       standings: [],
     };
     this.session.addPlayer(this.sessionId, options.name, options.appearance, options.level);
+    // Guided bouts have no matchmaking: every seat is filled at once, straight into the ring.
+    if (options.introRound) {
+      while (this.session.players.size < this.session.maxPlayers) this.session.addBot(this.sessionId);
+      this.session.requestStart(this.sessionId);
+    }
     this.sync();
     this.lastTick = performance.now();
     this.timer = window.setInterval(() => this.tick(), TICK_MS);
@@ -109,15 +120,17 @@ export class LocalConnection implements GameConnection {
         s.handleInput(id, message);
         return;
       case ClientMessage.Dash:
-        s.handleDash(id);
+        s.handleDash(id, message);
         break;
       case ClientMessage.StartMatch:
         result = s.requestStart(id);
         break;
       case ClientMessage.Rematch:
+        if (this.introRound) return;
         result = s.requestRematch(id);
         break;
       case ClientMessage.ReturnToLobby:
+        if (this.introRound) return;
         result = s.requestReturnToLobby(id);
         break;
       case ClientMessage.SetAppearance:
@@ -194,7 +207,7 @@ export class LocalConnection implements GameConnection {
 
   private tick(): void {
     const now = performance.now();
-    this.session.update(now - this.lastTick);
+    if (!(this.introRound && this.session.phase === "roundOver")) this.session.update(now - this.lastTick);
     this.lastTick = now;
     this.flush();
   }
@@ -253,7 +266,9 @@ export class LocalConnection implements GameConnection {
       completed: true,
       durationMs,
       players: this.session.players.size,
+      placement: this.session.players.get(this.sessionId)?.placement ?? 0,
       ringOuts: this.ringOuts,
+      introRound: this.introRound,
     });
     this.emit(ServerMessage.Economy, result);
     // Training rematches: each round is a fresh (free) entry.

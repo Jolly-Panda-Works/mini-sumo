@@ -57,7 +57,8 @@ Party games are best when everyone understands them in five seconds. Mini Sumo h
 - **Fair multiplayer:** the Colyseus server decides every push, ring-out and winner. Clients only send input.
 - **Play on Android** (and in the browser for testing), with touch or keyboard controls.
 - **Friends:** add friends with a friend code or straight from a bout's results, see who's online, in a lobby or in a match, and invite them into your room (private rooms also have an invite link). Tap anyone on the **leaderboard** to see their profile.
-- **Never wait long:** every arena finds an open room or creates one. If nobody shows up within 10 seconds, computer-controlled wrestlers fill the ring and the bout starts.
+- **Never wait long:** every arena finds an open room or creates one. After a 3-second search, computer-controlled wrestlers fill any remaining seats.
+- **Learn in the ring:** the panda coach teaches movement, dashes and ring-outs with animated control hints, then invites you straight into a free one-on-one Rookie bout with an easy bot and a guaranteed first win. A lost first attempt gets encouragement and a retry, without claiming the victory gift. Collect a Sakura outfit, explore customisation, play another easy bot bout and see your real stats in Profile. Friends, the leaderboard and the shop are introduced at the end. Progress and gifts are saved once. Choose automatic or manual dash after practice, or change it and replay practice from Settings. Manual dash fires immediately on the button or Space; auto dash targets nearby opponents when ready. The dash control pulses whenever it is ready.
 - **Bots with styles:** three levels (Easy, Normal, Hard); bots press, circle and charge in from a distance, each with its own temper. The host of a private room or Training can add random players with + in an empty seat.
 - **Power-ups:** every 8–12 s a nobori flag pops up on the ring; grab it for 12 s of *Iron Body* (鉄, twice as heavy), *Thunder Dash* (雷, dash recharges in 0.8 s), *Wind Feet* (風, 40 % faster) or *Giant* (巨, bigger and heavier). The flag then rides on your back until it runs out. Bots wait their turn before going for a flag (hard after 1.5 s, normal 3 s, easy 4.5 s), and no new flags appear in the final 30 seconds.
 - **Comeback balance:** in the last 30 seconds of a bout every player's dash recharges faster (down to about half the cooldown) and bots ease off a little, so endings stay exciting.
@@ -149,9 +150,9 @@ The home screen has its own night-stage backdrop with the title in the middle an
 | Legend | 10,000 | up to 36,000 | level 20 | ×5 |
 | Godlike | 25,000 | up to 90,000 | level 30 | ×6 |
 
-- New players get 200 coins (enough for a first Rookie bout) and level up with XP from every bout (up to level 1000); higher arenas unlock as you level up and give more XP. The *Profile* panel shows level, XP, stats and unlocks.
+- New players get 200 coins (enough for a first Rookie bout) and level up with XP from top-half finishes (up to level 1000); higher arenas unlock as you level up and give more XP. The *Profile* panel shows level, XP, stats and unlocks.
 - Online, coins, XP and items live on the server (and sync across devices); offline, the game keeps them on the device and syncs when it's back online.
-- Training is free practice: no coins, but every finished bout earns XP.
+- Training is free practice: no coins, but only top-half finishers earn XP (top two of four; first of two or three).
 - Prize = pool − 10 % economy fee (integer, `floor`). Draws and bouts that never start are refunded; leaving during a bout is a loss.
 - The **wardrobe is the shop**: priced options can be tried on and bought with coins. Looks never affect gameplay.
 - Everything (balances, prices, entries, prizes, ownership) is decided by the server and recorded in an append-only ledger with idempotency keys. *Settings* never stores coins.
@@ -174,10 +175,10 @@ Offline, *Play now* searches for a few seconds and fills the ring with bots; *Cr
 
 ## Download and install
 
-- **Android:** open the [**latest release**](https://github.com/Jolly-Panda-Works/mini-sumo-3d/releases/latest) and install `MiniSumo-<version>-Android.apk` (signed; the `.aab` is for Google Play). Every release ships `SHA256SUMS.txt` to verify the download.
-- **Web:** play at [sumo.ryujin.fans](https://sumo.ryujin.fans/) or on [GitHub Pages](https://jolly-panda-works.github.io/mini-sumo-3d/) (updated on every push to `main`), or host it yourself: every Release has `MiniSumo-X.Y.Z-Web.zip`, the whole game for the browser (WebGL). Unzip it onto any HTTPS web host, in any folder; `HOSTING.txt` inside explains caching and gives an nginx example.
+- **Android:** open the [**latest release**](https://github.com/Jolly-Panda-Works/mini-sumo-3d/releases/latest) and install `MiniSumo-<version>-Android.apk` (signed; the `.aab` is for Google Play). Release downloads contain Android files only.
+- **Web:** play at [sumo.ryujin.fans](https://sumo.ryujin.fans/), or download `mini-sumo-web` from the build run's Artifacts to host it yourself. Unzip `MiniSumo-X.Y.Z-Web.zip` onto any HTTPS web host; `HOSTING.txt` inside explains caching and gives an nginx example. GitHub Pages is disabled.
 
-- **Desktop:** every Release also has the desktop app: `MiniSumo-X.Y.Z-Windows-Setup.exe` (installer), `MiniSumo-X.Y.Z-Windows-Portable.exe` (no install), and `MiniSumo-X.Y.Z-Linux-x86_64.AppImage` / `-Linux-amd64.deb`. They aren't code-signed, so Windows asks once ("More info" → "Run anyway"). The desktop app plays with the keyboard (WASD or arrows, Space to dash, Esc for settings, H for Home, Enter for Rematch).
+- **Desktop:** download the `mini-sumo-desktop-*` Artifacts from a build run for Windows (installer and portable) or Linux (AppImage and deb). They aren't code-signed, so Windows asks once ("More info" → "Run anyway"). The desktop app plays with the keyboard (WASD or arrows, Space to dash, Esc for settings, H for Home, Enter for Rematch).
 
 **Game server:** `https://sumo.ryujin.fans` (web game, API and websockets on one address). Android, Cafe Bazaar and web builds connect to `wss://sumo.ryujin.fans` by default; the repository variables `VITE_SERVER_URL` / `VITE_PUBLIC_URL` override it. `npm run dev` still uses a local server.
 
@@ -273,7 +274,7 @@ Configure under *Settings → Secrets and variables → Actions*:
 
 ## Releases and versions
 
-Releases are automatic: **every push to `main` that changes the game becomes a GitHub Release** with the final Android builds (signed APK and the Play Store AAB), a ready-to-host web build (`MiniSumo-X.Y.Z-Web.zip`) and the desktop app (Windows installer and portable, Linux AppImage and .deb). The version comes from the commit messages since the last release ([Conventional Commits](https://www.conventionalcommits.org/)):
+Releases are automatic: **every push to `main` that changes the game becomes a GitHub Release** containing Android APK/AAB files only. Web and desktop builds still run and are kept as workflow Artifacts; GitHub Pages deployment is disabled. The version comes from the commit messages since the last release ([Conventional Commits](https://www.conventionalcommits.org/)):
 
 | Commit messages since the last release | Next version (from 1.4.2) |
 | --- | --- |

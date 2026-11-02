@@ -40,6 +40,8 @@ import { SettingsPanel } from "./ui/SettingsPanel";
 import { Toasts } from "./ui/Toasts";
 import { TouchControls } from "./ui/TouchControls";
 import { OutActions } from "./ui/OutActions";
+import { Tutorial } from "./ui/Tutorial";
+import { MenuOnboarding } from "./ui/MenuOnboarding";
 
 /** How long the finish plays before the results board comes up (ms). */
 const RESULTS_DELAY_MS = 1600;
@@ -170,7 +172,7 @@ export function App() {
   // Escape opens/closes the local settings overlay. It never pauses the shared match.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape" || !settingsStore.get().onboarded) return;
+      if (e.key !== "Escape" || !settingsStore.get().onboarded || !settingsStore.get().tutorialCompleted) return;
       if (uiStore.get().wardrobeOpen) setWardrobeOpen(false);
       else if (uiStore.get().walletOpen) setWalletOpen(false);
       else if (uiStore.get().profileOpen) setProfileOpen(false);
@@ -190,11 +192,14 @@ export function App() {
   }, []);
 
   const needsName = !inRoom && !settings.onboarded;
+  const needsTutorial = !inRoom && !needsName && !settings.tutorialCompleted;
 
   let screen: ReactNode;
   if (needsName) {
     // First launch: only the name prompt, nothing behind it.
     screen = <NameGate />;
+  } else if (needsTutorial) {
+    screen = <Tutorial />;
   } else if (!inRoom) {
     screen = <MainMenu />;
   } else if (game.phase === Phase.Waiting || game.phase === Phase.Lobby) {
@@ -217,6 +222,7 @@ export function App() {
       <div className="stage">{inRoom ? <GameCanvas /> : <HomeBackground />}</div>
       <div className="ui">
         {screen}
+        {!needsName && !needsTutorial && <MenuOnboarding />}
         <Toasts />
         {ui.wardrobeOpen && !needsName && (!inRoom || game.phase === Phase.Waiting || game.phase === Phase.Lobby) && <Wardrobe />}
         {ui.friendsOpen && !inRoom && !needsName && <FriendsPanel />}
@@ -232,7 +238,7 @@ export function App() {
         {!inRoom && !needsName && <DevButton />}
         <NoticePopup />
         <ServerWait />
-        <InviteWatcher />
+        {!needsName && !needsTutorial && settings.menuTourCompleted && <InviteWatcher />}
         {emailLink && economyStatus === "ready" && (
           <EmailSavePopup initial={emailLink} onClose={() => setEmailLink(null)} />
         )}

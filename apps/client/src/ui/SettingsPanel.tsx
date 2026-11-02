@@ -5,36 +5,9 @@ import { setAboutOpen, setSettingsOpen } from "../uiStore";
 import { Dialog } from "./Dialog";
 import { setDevEnabled } from "./DevPanel";
 import { setDevOpen, showWarning } from "../uiStore";
-import { AboutButton, VibrationToggle } from "./ArtButtons";
+import { AboutButton, GreenArtButton, VibrationToggle } from "./ArtButtons";
+import { DashModeChoice } from "./DashModeChoice";
 import { Icon, type IconName } from "./Icon";
-
-function Segmented<T extends string>({
-  label,
-  name,
-  value,
-  options,
-  onChange,
-}: {
-  label: string;
-  name: string;
-  value: T;
-  options: readonly (readonly [T, string])[];
-  onChange: (value: T) => void;
-}) {
-  return (
-    <fieldset className="field">
-      <legend className="field__label">{label}</legend>
-      <div className="segmented">
-        {options.map(([optionValue, optionLabel]) => (
-          <label key={optionValue} className={`segmented__opt${value === optionValue ? " segmented__opt--on" : ""}`}>
-            <input type="radio" name={name} value={optionValue} checked={value === optionValue} onChange={() => onChange(optionValue)} />
-            {optionLabel}
-          </label>
-        ))}
-      </div>
-    </fieldset>
-  );
-}
 
 function Slider({ label, icon, value, onChange }: { label: string; icon: IconName; value: number; onChange: (value: number) => void }) {
   return (
@@ -94,6 +67,8 @@ export function SettingsPanel() {
 
         <section className="settings__section" aria-label="Controls">
           <h3 className="settings__heading">Controls</h3>
+          <div className="field"><span className="field__label">Dash</span><DashModeChoice value={settings.dashMode} onChange={(dashMode) => settingsStore.update({ dashMode, dashModeChosen: true })} /></div>
+          {!inRoom && <GreenArtButton className="tutorial__replay-art" label="Replay tutorial" onClick={() => { close(); settingsStore.update({ tutorialCompleted: false }); }} />}
           <div className="field">
             <span className="field__label">Joystick</span>
             <div className="art-choice" role="radiogroup" aria-label="Joystick">

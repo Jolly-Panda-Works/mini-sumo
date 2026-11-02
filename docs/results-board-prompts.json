@@ -1,0 +1,16 @@
+{
+  "tool": "built-in imagegen",
+  "reference": "apps/client/public/ui/results-board.webp",
+  "assets": [
+    {
+      "path": "apps/client/public/ui/results-board-2.webp",
+      "prompt": "Edit the supplied game results board image. Produce the same exact Japanese red wood and rope game UI artwork, preserve its 700 by 950 portrait proportions, outer frame, blank top title plaque, cream row interiors, numbered red rank panels and warm tan background. Keep ONLY the first 2 rows, at exactly the same original positions and same sizes, numbered 1st and 2nd. Completely REMOVE 3rd and 4th rows including their borders and labels, replace those entire regions with seamless flat warm tan wood matching the area below the rows. Keep the remaining rows inside one neatly closed bordered block that ends immediately under row 2. Do not move or stretch the remaining rows, no new labels or text, no redesign, preserve all original surrounding decoration. Large empty tan area below the remaining rows for code-rendered rewards. Match the source precisely.",
+      "alphaPass": "Remove only the black background outside the frame. Preserve the opaque interior, every border, rope, row and label. True transparent alpha; preserve all artwork and row positions."
+    },
+    {
+      "path": "apps/client/public/ui/results-board-3.webp",
+      "prompt": "Edit the supplied game results board image. Produce the same exact Japanese red wood and rope game UI artwork, preserve its 700 by 950 portrait proportions, outer frame, blank top title plaque, cream row interiors, numbered red rank panels and warm tan background. Keep ONLY the first 3 rows, at exactly the same original positions and same sizes, numbered 1st, 2nd, and 3rd. Completely REMOVE the 4th row including their borders and labels, replace those entire regions with seamless flat warm tan wood matching the area below the rows. Keep the remaining rows inside one neatly closed bordered block that ends immediately under row 3. Do not move or stretch the remaining rows, no new labels or text, no redesign, preserve all original surrounding decoration. Large empty tan area below the remaining rows for code-rendered rewards. Match the source precisely.",
+      "alphaPass": "Remove only the black background outside the frame. Preserve the opaque interior, every border, rope, row and label. True transparent alpha; preserve all artwork and row positions."
+    }
+  ]
+}

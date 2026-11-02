@@ -1,6 +1,8 @@
-import { useRef, type RefObject } from "react";
+import { useEffect, useMemo, useRef, type RefObject } from "react";
+import { useFrame } from "@react-three/fiber";
 import {
   BoxGeometry,
+  Color,
   CapsuleGeometry,
   CircleGeometry,
   ConeGeometry,
@@ -110,13 +112,14 @@ function colorMaterial(color: string, roughness = 0.55): MeshStandardMaterial {
 function ringMaterial(color: string): MeshBasicMaterial {
   let mat = ringMaterials.get(color);
   if (!mat) {
-    mat = new MeshBasicMaterial({ color, transparent: true, opacity: 0.9, depthWrite: false });
+    mat = new MeshBasicMaterial({ color, transparent: true, opacity: 0.9, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
     ringMaterials.set(color, mat);
   }
   return mat;
 }
 
 export interface SumoParts {
+  dashStrength: RefObject<number>;
   root: RefObject<Group | null>;
   torso: RefObject<Group | null>;
   head: RefObject<Group | null>;
@@ -130,6 +133,7 @@ export interface SumoParts {
 
 export function useSumoParts(): SumoParts {
   return {
+    dashStrength: useRef(0),
     root: useRef<Group>(null),
     torso: useRef<Group>(null),
     head: useRef<Group>(null),
@@ -602,6 +606,10 @@ export function SumoModel({
   appearance?: Appearance;
   showRing?: boolean;
 }) {
+  const skin = useMemo(() => SKIN.clone(), []);
+  const dashColor = useMemo(() => new Color("#ef6553"), []);
+  useEffect(() => () => skin.dispose(), [skin]);
+  useFrame(() => skin.color.lerpColors(SKIN.color, dashColor, Math.min(1, parts.dashStrength.current) * 0.28));
   const hairStyle = HAIR_STYLES[appearance.hair]?.id ?? "topknot";
   const hairColor = HAIR_COLORS[appearance.hairColor]?.hex ?? HAIR_COLORS[0].hex;
   const face = FACES[appearance.face]?.id ?? "determined";
@@ -613,24 +621,24 @@ export function SumoModel({
       {showRing && (
         <mesh ref={parts.ring} geometry={GEO.ring} material={ringMaterial(color)} rotation-x={-Math.PI / 2} position-y={0.03} renderOrder={1} />
       )}
-      <mesh ref={parts.legL} geometry={GEO.leg} material={SKIN} position={[-0.32, 0.17, 0]} castShadow />
-      <mesh ref={parts.legR} geometry={GEO.leg} material={SKIN} position={[0.32, 0.17, 0]} castShadow />
+      <mesh ref={parts.legL} geometry={GEO.leg} material={skin} position={[-0.32, 0.17, 0]} castShadow />
+      <mesh ref={parts.legR} geometry={GEO.leg} material={skin} position={[0.32, 0.17, 0]} castShadow />
 
       <group ref={parts.torso} position-y={0.3}>
-        <mesh geometry={GEO.body} material={SKIN} position-y={0.42} scale={[1, 0.88, 0.92]} castShadow />
+        <mesh geometry={GEO.body} material={skin} position-y={0.42} scale={[1, 0.88, 0.92]} castShadow />
         <Outfit key={outfit} style={outfit} color={color} />
 
         <group ref={parts.armL} position={[-0.7, 0.62, 0.05]} rotation-z={0.7}>
-          <mesh geometry={GEO.arm} material={SKIN} position-y={-0.22} castShadow />
+          <mesh geometry={GEO.arm} material={skin} position-y={-0.22} castShadow />
           {armband}
         </group>
         <group ref={parts.armR} position={[0.7, 0.62, 0.05]} rotation-z={-0.7}>
-          <mesh geometry={GEO.arm} material={SKIN} position-y={-0.22} castShadow />
+          <mesh geometry={GEO.arm} material={skin} position-y={-0.22} castShadow />
           {armband}
         </group>
 
         <group ref={parts.head} position-y={1.12}>
-          <mesh geometry={GEO.head} material={SKIN} castShadow />
+          <mesh geometry={GEO.head} material={skin} castShadow />
           <Hair key={hairStyle} style={hairStyle} color={hairColor} />
           {/* key: switching faces rebuilds them. Reusing the old meshes kept stale props: a
               removed position-x was reset to 0 after the new position, so an eye could land

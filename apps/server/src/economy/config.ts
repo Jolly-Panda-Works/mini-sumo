@@ -1,5 +1,6 @@
 import {
   ARENA_DEFS,
+  QUICK_MATCH_WAIT_MS,
   REWARDS,
   STARTER_ITEMS,
   STARTING_COINS,
@@ -43,9 +44,9 @@ export const ECONOMY = {
   welcomeCoins: STARTING_COINS,
   rewards: REWARDS,
   /** Paid arenas: start this long after a second player joins (or at once when full). */
-  paidStartDelayMs: 10_000,
+  paidStartDelayMs: QUICK_MATCH_WAIT_MS,
   /** Paid arenas: cancel and refund when no opponent arrives in time. */
-  paidCancelAfterMs: 10_000,
+  paidCancelAfterMs: QUICK_MATCH_WAIT_MS,
 } as const;
 
 /**

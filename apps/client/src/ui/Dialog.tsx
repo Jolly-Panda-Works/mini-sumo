@@ -51,6 +51,7 @@ export function Dialog({
   sub,
   variant = "main",
   aside,
+  dismissible = true,
 }: {
   title: ReactNode;
   onClose: () => void;
@@ -71,6 +72,8 @@ export function Dialog({
   variant?: "main" | "sub" | "welcome" | "board" | "editname";
   /** Content attached to the outside of the panel (main popups), e.g. side tabs. */
   aside?: ReactNode;
+  /** Onboarding choices require an explicit action instead of an outside tap. */
+  dismissible?: boolean;
 }) {
   const id = useId();
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -78,6 +81,7 @@ export function Dialog({
   // Close with the closing animation (the × and a tap outside).
   const [closing, setClosing] = useState(false);
   const requestClose = () => {
+    if (!dismissible) return;
     if (closing) return;
     setClosing(true);
     window.setTimeout(onClose, 170);

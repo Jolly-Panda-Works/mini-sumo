@@ -16,6 +16,8 @@ import {
   levelFromXp,
   levelUpCoins,
   xpForMatch,
+  INTRO_OUTFIT_ID,
+  INTRO_PLAYERS,
   type LeaderboardEntry,
   type LeaderboardResponse,
 } from "@mini-sumo/shared";
@@ -195,6 +197,7 @@ export interface MatchParticipant {
   won: boolean;
   /** Finished the round (didn't leave). */
   completed: boolean;
+  placement: number;
 }
 
 const sha256 = (value: string) => createHash("sha256").update(value).digest("hex");
@@ -291,6 +294,26 @@ export class Economy {
     if (result.duplicate) throw new EconomyError("bad_request", "Already claimed today. Come back tomorrow.");
     this.emit("daily_gift", { accountId, amount: DAILY_GIFT_COINS });
     return { granted: DAILY_GIFT_COINS, balance: result.balance };
+  }
+
+  introRounds(accountId: string): number[] {
+    return [1, 2].filter((round) => Boolean(this.db.prepare("SELECT 1 FROM match_results WHERE match_id = ? AND account_id = ?").get(`intro:${accountId}:${round}`, accountId)));
+  }
+
+  canStartIntro(accountId: string, round: 1 | 2): boolean {
+    const completed = this.introRounds(accountId);
+    return !completed.includes(round) && (round === 1 || completed.includes(1));
+  }
+
+  recordIntroBout(accountId: string, round: 1 | 2, placement: number, durationMs: number, attemptId: string = randomUUID(), won = placement === 1) {
+    return this.tx(() => {
+      if (round === 2 && !this.introRounds(accountId).includes(1)) throw new EconomyError("bad_request", "Finish your first guided bout first.");
+      const retry = round === 1 && !won;
+      const matchId = retry ? `intro-attempt:${accountId}:${attemptId}` : `intro:${accountId}:${round}`;
+      const result = this.recordMatchDetailed({ matchId, durationMs, rewarded: false, arenaId: "rookie", playerCount: INTRO_PLAYERS[round], participants: [{ accountId, placement, won, completed: true }] });
+      if (round === 1 && won) this.db.prepare("INSERT INTO ownership (account_id, item_id, transaction_id, acquired_at) VALUES (?, ?, NULL, ?) ON CONFLICT DO NOTHING").run(accountId, INTRO_OUTFIT_ID, this.timestamp());
+      return result;
+    });
   }
 
   // ------------------------------------------------------------ bot players
@@ -562,6 +585,7 @@ export class Economy {
     const earned = account.reward_day === today ? account.reward_day_total : 0;
     return {
       accountId,
+      introRounds: this.introRounds(accountId),
       name: account.name ?? "",
       profileUpdatedAt: account.profile_updated_at ?? "",
       balances: { coins: this.balance(accountId, Currency.Coins), gems: this.balance(accountId, Currency.Gems) },
@@ -939,13 +963,15 @@ export class Economy {
     durationMs: number;
     rewarded: boolean;
     participants: readonly MatchParticipant[];
+    /** Total roster, including bots and players who left. */
+    playerCount: number;
     arenaId?: string;
   }): Map<string, number> {
     return this.recordMatchDetailed(input).rewards;
   }
 
   /**
-   * Records a finished bout: stats and XP for everyone who finished it (any length),
+   * Records a finished bout: stats for everyone who finished it, XP for top-half finishers,
    * level-up coins, and the free training rewards (only for bouts of at least
    * minMatchDurationMs, so very short bouts can't farm coins). Returns the coins and the
    * XP / level change per account.
@@ -955,6 +981,8 @@ export class Economy {
     durationMs: number;
     rewarded: boolean;
     participants: readonly MatchParticipant[];
+    /** Total roster, including bots and players who left. */
+    playerCount: number;
     arenaId?: string;
   }): { rewards: Map<string, number>; progress: Map<string, { xp: number; levelBefore: number; levelAfter: number; levelCoins: number }> } {
     const granted = new Map<string, number>();
@@ -973,7 +1001,7 @@ export class Economy {
 
         const counts = p.completed;
         if (counts) {
-          const xp = xpForMatch(input.arenaId ?? "training", p.won, true);
+          const xp = xpForMatch(input.arenaId ?? "training", p.won, true, p.placement, input.playerCount);
           const before = levelFromXp(account.xp).level;
           const after = levelFromXp(account.xp + xp).level;
           progress.set(p.accountId, { xp, levelBefore: before, levelAfter: after, levelCoins: levelUpCoins(before, after) });

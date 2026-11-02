@@ -6,6 +6,7 @@ import { setSettingsOpen } from "../uiStore";
 import { GearIcon } from "./MainMenu";
 import { PlayerFrames } from "./PlayerFrames";
 import { KeyCap } from "./Hotkey";
+import { settingsStore } from "../settings";
 
 const BASE = import.meta.env.BASE_URL;
 
@@ -25,6 +26,7 @@ export function HUD({ touch }: { touch: boolean }) {
 
   const game = useStore(gameStore);
   const session = useStore(sessionStore);
+  const automatic = useStore(settingsStore).dashMode === "auto";
   const you = game.players.find((p) => p.isYou);
   const playing = game.phase === Phase.Playing;
   const lowTime = playing && game.remainingMs <= 10_000;
@@ -54,13 +56,13 @@ export function HUD({ touch }: { touch: boolean }) {
       {!touch && you?.alive !== false && (
         <div className="hud__bottom">
           {/* Keyboard: the dash drum, its recharge bar and the key */}
-          <div className={`kb-dash${dashReady ? " kb-dash--ready" : ""}`} role="status" aria-label={dashReady ? "Dash ready: press Space" : "Dash recharging"}>
+          <div className={`kb-dash${dashReady ? " kb-dash--ready" : ""}`} role="status" aria-label={automatic ? "Auto dash recharge" : dashReady ? "Press Space to dash" : "Dash recharging"}>
             <img className="kb-dash__icon" src={`${BASE}hud/dash.webp`} alt="" width={256} height={256} draggable={false} />
             <span className="kb-dash__bar">
               <span className="kb-dash__fill" style={{ transform: `scaleX(${dashProgress})` }} />
-              <span className="kb-dash__label">{dashReady ? "DASH READY" : `DASH ${(you!.dashCooldownMs / 1000).toFixed(1)}s`}</span>
+              <span className="kb-dash__label">{dashReady ? automatic ? "AUTO READY" : "DASH READY" : `${automatic ? "AUTO" : "DASH"} ${(you!.dashCooldownMs / 1000).toFixed(1)}s`}</span>
             </span>
-            <KeyCap>Space</KeyCap>
+            {!automatic && <KeyCap>Space</KeyCap>}
           </div>
           <p className="hud__keys">
             <span>
@@ -70,7 +72,7 @@ export function HUD({ touch }: { touch: boolean }) {
               <KeyCap>D</KeyCap> or arrows: move
             </span>
             <span>
-              <KeyCap>Space</KeyCap> dash
+              {automatic ? "Auto dash: approach an opponent" : <><KeyCap>Space</KeyCap> dash</>}
             </span>
             <span>
               <KeyCap>Esc</KeyCap> settings

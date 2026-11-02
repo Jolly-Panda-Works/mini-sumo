@@ -1,4 +1,5 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { IntroPanelFooter, finishIntroProfile } from "./IntroPanelFooter";
 import { NAME_MAX_LENGTH } from "@mini-sumo/shared";
 import { economyStore } from "../network/economyClient";
 import { settingsStore } from "../settings";
@@ -53,6 +54,8 @@ function EditName({ onClose }: { onClose: () => void }) {
 export function ProfilePanel() {
   const settings = useStore(settingsStore);
   const economy = useStore(economyStore);
+  const statsRef = useRef<HTMLDListElement>(null);
+  useEffect(() => { if (settings.introStage === "profile") statsRef.current?.scrollIntoView({ block: "start" }); }, [settings.introStage]);
   const [editing, setEditing] = useState(false);
   const [picking, setPicking] = useState(false);
   const play = useStore(playGamesStore);
@@ -143,7 +146,7 @@ export function ProfilePanel() {
 
   return (
     <>
-      <Dialog title="Profile" onClose={() => setProfileOpen(false)} className="profile">
+      <Dialog title="Profile" onClose={() => settings.introStage === "profile" ? finishIntroProfile() : setProfileOpen(false)} className="profile" footer={settings.introStage === "profile" ? <IntroPanelFooter panel="profile" /> : undefined}>
         <div className="profile__level">
           <button className="profile__avatar" onClick={() => setPicking(true)} aria-label="Change picture">
             <img src={avatarSrc(settings.appearance.avatar)} alt="" width={160} height={160} />
@@ -179,7 +182,7 @@ export function ProfilePanel() {
           </div>
         </div>
 
-        <dl className="profile__stats">
+        <dl ref={statsRef} className="profile__stats">
           {rows.map(([label, value]) => (
             <div key={label}>
               <dt className="field__label">{label}</dt>

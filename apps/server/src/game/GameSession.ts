@@ -84,6 +84,8 @@ export interface PowerUpItem {
 }
 
 export interface SessionOptions {
+  /** First guided bout only: protect the sole human and let practice partners retreat. */
+  coached?: boolean;
   /**
    * Quick match room: a lone player waits up to cfg.quickMatchWaitMs for others, then the
    * room is filled with bots and the match starts automatically.
@@ -152,6 +154,7 @@ export class GameSession {
   ringRadius: number;
 
   readonly quickMatch: boolean;
+  readonly coached: boolean;
   readonly botLevel: BotLevel;
   readonly paidArena: { startDelayMs: number; cancelAfterMs: number } | null;
   /** Paid arena: simulation time at which the bout starts / the room is cancelled (-1 = none). */
@@ -160,6 +163,8 @@ export class GameSession {
   private cancelled = false;
   /** Paid arena: bots are filling the empty seats before the bout starts. */
   private paidFilling = false;
+  /** Paid arena: when the bots that are filling the seats finish and the bout starts. */
+  private paidStartAt = -1;
   private playStartedAt = 0;
   /** Simulation time when the quick-match wait started, -1 when not searching. */
   private searchStartedAt = -1;
@@ -175,6 +180,7 @@ export class GameSession {
 
   constructor(cfg: SimulationConfig = DEFAULT_CONFIG, maxPlayers: number = MAX_PLAYERS, options: SessionOptions = {}) {
     this.cfg = cfg;
+    this.coached = options.coached === true;
     this.paidArena = options.paidArena ?? null;
     this.quickMatch = options.quickMatch === true && !this.paidArena;
     this.botLevel = sanitizeBotLevel(options.botLevel);
@@ -199,14 +205,15 @@ export class GameSession {
   }
 
   /** Quick match: ms left before bots fill the room (0 when not searching). */
-  /** True while bots are joining one by one at the end of the wait. */
+  /** True while bots are joining one by one in the last moments of the wait. */
   get filling(): boolean {
-    return this.searchStartedAt >= 0 && this.time - this.searchStartedAt >= this.cfg.quickMatchWaitMs;
+    const lead = this.cfg.botJoinIntervalMs * Math.max(0, this.maxPlayers - this.humans.length - 1);
+    return this.searchStartedAt >= 0 && this.time - this.searchStartedAt >= this.cfg.quickMatchWaitMs - lead;
   }
 
   get searchRemainingMs(): number {
     if (this.paidArena) {
-      if (this.paidFilling) return 1; // bots are joining: the bout starts in a moment
+      if (this.paidFilling) return Math.max(1, this.paidStartAt - this.time); // bots are joining: the bout starts in a moment
       const at = this.autoStartAt >= 0 ? this.autoStartAt : this.cancelAt;
       return at >= 0 ? Math.max(0, at - this.time) : 0;
     }
@@ -385,14 +392,22 @@ export class GameSession {
     return true;
   }
 
-  handleDash(id: string): ActionResult {
+  handleDash(id: string, direction?: unknown): ActionResult {
     const player = this.players.get(id);
     if (!player || !player.connected) return fail("Unknown player.");
     if (!this.consumeToken(player)) return fail("Too many requests.");
     if (this.phase !== Phase.Playing) return fail("Dash is only available during a bout.");
     if (!player.alive) return fail("You are out of this round.");
+    const aim = direction === undefined ? null : validateMoveInput(direction);
+    if (direction !== undefined && (!aim || Math.hypot(aim.x, aim.y) < 0.01)) return fail("Invalid dash direction.");
     const cooldown = player.powerUp === "thunder" ? Math.min(this.cfg.thunderDashCooldownMs, this.humanDashCooldownMs()) : this.humanDashCooldownMs();
-    if (!tryDash(player, this.time, this.cfg, cooldown)) return fail("Dash is cooling down.");
+    const inputX = player.inputX;
+    const inputY = player.inputY;
+    if (aim) { player.inputX = aim.x; player.inputY = aim.y; }
+    const dashed = tryDash(player, this.time, this.cfg, cooldown);
+    player.inputX = inputX;
+    player.inputY = inputY;
+    if (!dashed) return fail("Dash is cooling down.");
     player.dashCooldownTotal = cooldown;
     this.events.push({ type: "dash", id });
     return OK;
@@ -483,6 +498,18 @@ export class GameSession {
     const cfg = this.ringRadius === this.cfg.arenaRadius ? this.cfg : { ...this.cfg, arenaRadius: this.ringRadius };
     this.tickPowerUps(bodies);
     this.driveBots(bodies, cfg);
+    if (this.coached) {
+      const elapsed = this.time - this.playStartedAt;
+      for (const bot of bodies.filter((p) => p.isBot)) {
+        bot.dashEndsAt = 0;
+        bot.dashReadyAt = this.time + 1000;
+        if (elapsed > 10000) {
+          const radius = Math.hypot(bot.x, bot.y) || 1;
+          bot.inputX = bot.x / radius;
+          bot.inputY = bot.y / radius;
+        } else { bot.inputX *= 0.2; bot.inputY *= 0.2; }
+      }
+    }
     for (const body of bodies) stepMovement(body, dt, cfg, this.time);
 
     for (const impact of resolveCollisions(bodies, this.cfg, this.time)) {
@@ -501,6 +528,23 @@ export class GameSession {
 
     this.recordContacts(bodies);
     this.collectItem(bodies);
+    if (this.coached) {
+      const human = bodies.find((p) => !p.isBot && p.connected);
+      if (human) {
+        const safe = Math.max(0.5, this.ringRadius - this.cfg.playerRadius - 0.25);
+        const radius = Math.hypot(human.x, human.y);
+        if (radius > safe) { human.x *= safe / radius; human.y *= safe / radius; human.vx = 0; human.vy = 0; }
+        // Partners yield one by one if the learner is idle, so the first win is guaranteed.
+        const elapsed = this.time - this.playStartedAt;
+        bodies.filter((p) => p.isBot).forEach((bot, i) => {
+          if (elapsed > 18000 + i * 2500) {
+            bot.x = this.ringRadius + this.cfg.eliminationTolerance + 1;
+            bot.y = 0;
+            bot.lastTouchBy = human.id; bot.lastTouchAt = this.time;
+          }
+        });
+      }
+    }
     for (const id of applyArenaEliminations(bodies, cfg, this.time)) {
       const player = this.players.get(id)!;
       player.elimReason = "ringOut";
@@ -725,9 +769,10 @@ export class GameSession {
     }
     if (this.paidFilling) return; // bots are filling the seats: the start is on its way
     if (humans >= 2) {
-      this.cancelAt = -1;
+      // The wait runs from the first player: someone joining late never extends it.
       if (humans >= this.maxPlayers) this.autoStartAt = this.time;
-      else if (this.autoStartAt < 0) this.autoStartAt = this.time + this.paidArena.startDelayMs;
+      else if (this.autoStartAt < 0) this.autoStartAt = Math.min(this.cancelAt >= 0 ? this.cancelAt : Infinity, this.time + this.paidArena.startDelayMs);
+      this.cancelAt = -1;
     } else {
       this.autoStartAt = -1;
       if (humans === 1 && this.cancelAt < 0) this.cancelAt = this.time + this.paidArena.cancelAfterMs;
@@ -736,13 +781,15 @@ export class GameSession {
   }
 
   /**
-   * Paid arenas: when the wait ends, bots fill the empty seats one by one (nobody else came,
-   * or not enough people), then the bout starts by itself. Players can't add bots here.
+   * Paid arenas: in the last moments of the wait, bots fill the empty seats one by one (nobody
+   * else came, or not enough people), so the bout starts on time. Players can't add bots here.
    */
   private tickPaidArena(): void {
-    const due = (this.autoStartAt >= 0 && this.time >= this.autoStartAt) || (this.cancelAt >= 0 && this.time >= this.cancelAt);
-    if (due && !this.paidFilling) {
+    const at = this.autoStartAt >= 0 ? this.autoStartAt : this.cancelAt;
+    const lead = this.cfg.botJoinIntervalMs * (this.maxPlayers - this.connectedPlayers.length);
+    if (at >= 0 && this.time >= at - lead && !this.paidFilling) {
       this.paidFilling = true;
+      this.paidStartAt = at;
       this.autoStartAt = -1;
       this.cancelAt = -1;
       this.nextBotAt = this.time;
@@ -782,11 +829,11 @@ export class GameSession {
   }
 
   /**
-   * Nobody joined in time: bots join one by one (each appears at its ring-side slot).
+   * Nobody joined: bots join one by one as the wait ends (each appears at its ring-side slot).
    * The search ends when the room is full; then the host starts the match.
    */
   private tickSearch(): void {
-    if (this.searchStartedAt < 0 || this.time - this.searchStartedAt < this.cfg.quickMatchWaitMs) return;
+    if (!this.filling) return;
     if (this.time < this.nextBotAt) return;
     if (this.connectedPlayers.length < this.maxPlayers) {
       this.createBot();

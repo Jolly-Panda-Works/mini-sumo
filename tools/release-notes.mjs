@@ -1,6 +1,5 @@
-// Writes the GitHub Release body. Env: VERSION, REPO (owner/name), SERVER_URL (optional).
+// Writes the Android-only GitHub Release body. Env: VERSION, SERVER_URL (optional).
 const version = process.env.VERSION ?? "0.0.0";
-const repo = process.env.REPO ?? "Jolly-Panda-Works/mini-sumo-3d";
 const server = (process.env.SERVER_URL ?? "").trim();
 const f = (kind) => `MiniSumo-${version}-${kind}`;
 
@@ -20,12 +19,5 @@ ${serverNote}
 | --- | --- |
 | Android (install on a phone) | \`${f("Android.apk")}\` (signed; if missing, use \`${f("Android-debug.apk")}\`) |
 | Android (Google Play upload) | \`${f("Android.aab")}\` |
-| Web (WebGL, ready to host) | \`${f("Web.zip")}\`: unzip onto any HTTPS web host; see \`HOSTING.txt\` inside |
-| Windows (installer) | \`${f("Windows-Setup.exe")}\` |
-| Windows (no install) | \`${f("Windows-Portable.exe")}\` |
-| Linux | \`${f("Linux-x86_64.AppImage")}\` or \`${f("Linux-amd64.deb")}\` |
-
-The desktop builds aren't code-signed: on Windows, choose "More info" and then "Run anyway" the first time.
-
-Verify a download with \`SHA256SUMS.txt\`.
+Web and desktop builds are available in the build workflow's artifacts, rather than as Release downloads.
 `);

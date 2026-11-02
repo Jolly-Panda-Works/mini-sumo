@@ -173,7 +173,7 @@ export function ArenaRow({ variant = "row" }: { variant?: "row" | "carousel" }) 
         </button>
       )}
 
-      <ul className="arena-row" aria-label="Arenas" ref={rowRef}>
+      <ul className="arena-row" aria-label="Arenas" data-menu-tour="arenas" ref={rowRef}>
         {arenas.map((arena) => {
           const theme = themeFor(arena.id);
           const free = arena.entryFee === 0;

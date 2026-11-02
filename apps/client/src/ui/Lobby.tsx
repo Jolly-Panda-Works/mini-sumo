@@ -10,6 +10,7 @@ import { friendsAvailable, friendsStore, inviteFriend, loadFriends } from "../ne
 import { useStore } from "../store";
 import { pushToast, setInviteUiOpen, showError, showMessage, showWarning, uiStore } from "../uiStore";
 import { PlayerBadge } from "./PlayerBadge";
+import { settingsStore } from "../settings";
 
 export function Lobby() {
   const game = useStore(gameStore);
@@ -17,8 +18,10 @@ export function Lobby() {
   const { mode } = useStore(networkStore);
   const offline = mode === "offline";
   const economy = useStore(economyStore);
+  const stage = useStore(settingsStore).introStage;
+  const intro = stage === "firstPlaying" || stage === "secondPlaying";
   const arena = economy.catalog?.arenas.find((a) => a.id === game.arenaId);
-  const paid = (arena?.entryFee ?? 0) > 0;
+  const paid = !intro && (arena?.entryFee ?? 0) > 0;
   const you = game.players.find((p) => p.isYou);
   const isHost = Boolean(you?.isHost);
   const connected = game.players.filter((p) => p.connected);
@@ -26,17 +29,17 @@ export function Lobby() {
   const full = connected.length >= game.maxPlayers;
   const searching = !game.isPrivate && game.searchRemainingMs > 0;
   // Online paid arenas start on their own; everything else is started by the host.
-  const autoStart = paid && !offline;
-  // The button unlocks one second after the wait is over (and the bots have arrived).
+  const autoStart = intro || paid && !offline;
+  // Quick match: the button unlocks as the wait ends. Private rooms: one second after the last change.
   const [armed, setArmed] = useState(false);
   useEffect(() => {
     if (searching || !canStart) {
       setArmed(false);
       return;
     }
-    const timer = window.setTimeout(() => setArmed(true), 1000);
+    const timer = window.setTimeout(() => setArmed(true), game.isPrivate ? 1000 : 0);
     return () => window.clearTimeout(timer);
-  }, [searching, canStart]);
+  }, [searching, canStart, game.isPrivate]);
   const searchSeconds = Math.ceil(game.searchRemainingMs / 1000);
   const slots = Array.from({ length: game.maxPlayers }, (_, i) => connected[i] ?? null);
   // The host may add bots in private rooms and in Training (not in paid arenas).
@@ -57,6 +60,12 @@ export function Lobby() {
   // The picker belongs to this room: close it when leaving.
   useEffect(() => () => setInviteUiOpen(false), []);
   const inRoomIds = new Set(game.players.map((p) => p.accountId).filter(Boolean));
+  // Guided bouts never show matchmaking. A server that doesn't seat the bots itself yet gets
+  // asked for them here (and starts the bout once the room is full).
+  useEffect(() => {
+    if (intro && isHost && connected.length < game.maxPlayers) roomManager.addBot();
+  }, [intro, isHost, connected.length, game.maxPlayers]);
+  if (intro) return null;
 
   // The start button sits in the fixed footer, so the waiting room never scrolls.
   const startArea = autoStart ? (

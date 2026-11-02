@@ -1,0 +1,17 @@
+{
+  "tool": "built-in image_gen",
+  "poses": [
+    {
+      "id": "welcome",
+      "prompt": "Use case: identity-preserve. Create a full-body tutorial instructor pose of the EXACT panda in the reference: cute round black-and-white panda, large warm brown eyes, pink cheeks, black topknot with orange and gold band, orange sumo ceremonial apron with gold wave pattern and coral side trims, dark paws. Preserve identity, clothing, colors, proportions, polished outlined hand-painted cartoon style. The reference checkerboard is NOT part of the character: remove it completely and use genuine transparent alpha. No text, logo, scenery, checkerboard, or ground shadows. Full character and all limbs fit with padding. Used only as UI guide in Mini Sumo, not a gameplay skin. Welcoming teaching pose: standing, smiling warmly, one paw lifted in a friendly open-paw greeting, other paw holding a small closed cream scroll."
+    },
+    {
+      "id": "aim",
+      "prompt": "Use case: identity-preserve. Create a full-body tutorial instructor pose of the EXACT panda in the reference: cute round black-and-white panda, large warm brown eyes, pink cheeks, black topknot with orange and gold band, orange sumo ceremonial apron with gold wave pattern and coral side trims, dark paws. Preserve identity, clothing, colors, proportions, polished outlined hand-painted cartoon style. The reference checkerboard is NOT part of the character: remove it completely and use genuine transparent alpha. No text, logo, scenery, checkerboard, or ground shadows. Full character and all limbs fit with padding. Used only as UI guide in Mini Sumo, not a gameplay skin. Explaining and demonstrating a dash: slight three-quarter stance, one paw pointing clearly to the right with confident friendly expression, other paw held close. Stable feet, full silhouette."
+    },
+    {
+      "id": "cheer",
+      "prompt": "Use case: identity-preserve. Create a full-body tutorial instructor pose of the EXACT panda in the reference: cute round black-and-white panda, large warm brown eyes, pink cheeks, black topknot with orange and gold band, orange sumo ceremonial apron with gold wave pattern and coral side trims, dark paws. Preserve identity, clothing, colors, proportions, polished outlined hand-painted cartoon style. The reference checkerboard is NOT part of the character: remove it completely and use genuine transparent alpha. No text, logo, scenery, checkerboard, or ground shadows. Full character and all limbs fit with padding. Used only as UI guide in Mini Sumo, not a gameplay skin. Celebrating the student's success: both paws raised joyfully, happy open smile, a small lively hop with feet fully visible. Same clothing and face."
+    }
+  ]
+}

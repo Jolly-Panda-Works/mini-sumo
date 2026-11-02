@@ -187,10 +187,12 @@ jobs:
           $(node -p "require(process.env.RUNNER_TEMP + '/bazaar-notes.json').en")
 
           $(node -p "require(process.env.RUNNER_TEMP + '/bazaar-notes.json').fa")"
+          shopt -s nullglob
+          ANDROID_FILES=(out/*.apk out/*.aab)
           if gh release view "$TAG" > /dev/null 2>&1; then
-            gh release upload "$TAG" out/* --clobber
+            gh release upload "$TAG" "${ANDROID_FILES[@]}" --clobber
           else
-            gh release create "$TAG" out/* --target "$GITHUB_SHA" --title "Mini Sumo ${{ steps.version.outputs.version }} (Cafe Bazaar)" --notes "$NOTES" --latest=false
+            gh release create "$TAG" "${ANDROID_FILES[@]}" --target "$GITHUB_SHA" --title "Mini Sumo ${{ steps.version.outputs.version }} (Cafe Bazaar)" --notes "$NOTES" --latest=false
           fi
 
       # Cafe Bazaar: send the signed APK and ask for review (only the bazaar branch, and only

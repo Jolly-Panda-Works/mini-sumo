@@ -1,5 +1,7 @@
 import { roomManager } from "../network/RoomManager";
 import { KeyCap, useHotkey, useKeyboardUi } from "./Hotkey";
+import { settingsStore } from "../settings";
+import { useStore } from "../store";
 
 const BASE = import.meta.env.BASE_URL;
 
@@ -9,12 +11,14 @@ const BASE = import.meta.env.BASE_URL;
  */
 export function OutActions() {
   const keyboard = useKeyboardUi();
+  const stage = useStore(settingsStore).introStage;
+  const intro = stage === "firstPlaying" || stage === "secondPlaying";
   const goHome = () => void roomManager.leave();
   useHotkey(["KeyH"], goHome);
   return (
     <div className="out-actions">
       <p className="plank-label out-actions__note" role="status">
-        You're out! Watching the rest of the bout
+        {intro ? "That's okay! Every wrestler needs practice. Take a breath and try again!" : "You're out! Watching the rest of the bout"}
       </p>
       <button type="button" className="art art--out-home" onClick={goHome} aria-label="Return home" aria-keyshortcuts="H">
         <img src={`${BASE}ui/btn-return-home.webp`} alt="" width={360} height={110} draggable={false} />

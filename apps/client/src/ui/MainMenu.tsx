@@ -78,10 +78,10 @@ export function MainMenu() {
             <button className="tile-btn" onClick={() => setWardrobeOpen(true)} aria-label="Customise your wrestler">
               <Icon name="customize" size={48} />
             </button>
-            <button className="tile-btn tile-btn--square" onClick={() => setShopOpen(true)} aria-label="Shop">
+            <button className="tile-btn tile-btn--square" onClick={() => setShopOpen(true)} aria-label="Shop" data-menu-tour="shop">
               <img src={`${import.meta.env.BASE_URL}ui/icon-shop.webp`} alt="" width={249} height={256} />
             </button>
-            <button className="tile-btn tile-btn--square" onClick={() => setFriendsOpen(true)} aria-label="Friends">
+            <button className="tile-btn tile-btn--square" onClick={() => setFriendsOpen(true)} aria-label="Friends" data-menu-tour="friends">
               <img src={`${import.meta.env.BASE_URL}ui/friends-icon.webp`} alt="" width={216} height={221} />
             </button>
           </div>
@@ -97,7 +97,7 @@ export function MainMenu() {
             <button className="tile-btn" onClick={() => setSettingsOpen(true)} aria-label="Settings">
               <GearIcon />
             </button>
-            <button className="tile-btn tile-btn--square" onClick={() => setLeaderboardOpen(true)} aria-label="Leaderboard">
+            <button className="tile-btn tile-btn--square" onClick={() => setLeaderboardOpen(true)} aria-label="Leaderboard" data-menu-tour="leaderboard">
               <img src={`${import.meta.env.BASE_URL}ui/icon-leaderboard.webp`} alt="" width={252} height={256} />
             </button>
           </div>
@@ -119,10 +119,10 @@ export function MainMenu() {
           <Icon name="plus" size={26} className="coin-frame__plus" />
         </button>
         {/* Friends under the profile (settings is under the coins) */}
-        <button className="tile-btn hub__friends" onClick={() => setFriendsOpen(true)} aria-label="Friends">
+        <button className="tile-btn hub__friends" onClick={() => setFriendsOpen(true)} aria-label="Friends" data-menu-tour="friends">
           <img src={`${import.meta.env.BASE_URL}ui/friends-icon.webp`} alt="" width={216} height={221} />
         </button>
-        <button className="tile-btn hub__leaderboard" onClick={() => setLeaderboardOpen(true)} aria-label="Leaderboard">
+        <button className="tile-btn hub__leaderboard" onClick={() => setLeaderboardOpen(true)} aria-label="Leaderboard" data-menu-tour="leaderboard">
           <img src={`${import.meta.env.BASE_URL}ui/icon-leaderboard.webp`} alt="" width={252} height={256} />
         </button>
         <button className="tile-btn hub__settings" onClick={() => setSettingsOpen(true)} aria-label="Settings">
@@ -141,7 +141,7 @@ export function MainMenu() {
         <button className="hub__side-btn" onClick={() => setWardrobeOpen(true)} aria-label="Customise your wrestler">
           <Icon name="customize" size={56} />
         </button>
-        <button className="hub__side-btn hub__side-btn--shop" onClick={() => setShopOpen(true)} aria-label="Shop">
+        <button className="hub__side-btn hub__side-btn--shop" onClick={() => setShopOpen(true)} aria-label="Shop" data-menu-tour="shop">
           <img className="hub__shop-art" src={`${import.meta.env.BASE_URL}ui/icon-shop.webp`} alt="" width={249} height={256} />
         </button>
       </nav>
