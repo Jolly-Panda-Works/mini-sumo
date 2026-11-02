@@ -1,10 +1,9 @@
 # Running Mini Sumo with Docker
 
-One container (`web`): the Node game server also serves the built web game, so the page,
+One container (`web`): the Node game server also serves the landing page, so the page,
 the economy API (`/api`), matchmaking (`/matchmake`), `/health` and the game websockets all
 share one port (80 inside the container, 6803 outside by default). The database (SQLite) is
-in the `mini-sumo-data` volume. The web game is built with `VITE_SERVER_URL=same-origin`, so it
-finds the server on the same address as the page.
+in the `mini-sumo-data` volume. The game itself ships only as the Android app.
 
 ```bash
 cp .env.docker.example .env   # once: every setting and key the server uses, with notes

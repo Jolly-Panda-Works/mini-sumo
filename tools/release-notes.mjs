@@ -19,5 +19,4 @@ ${serverNote}
 | --- | --- |
 | Android (install on a phone) | \`${f("Android.apk")}\` (signed; if missing, use \`${f("Android-debug.apk")}\`) |
 | Android (Google Play upload) | \`${f("Android.aab")}\` |
-Web and desktop builds are available in the build workflow's artifacts, rather than as Release downloads.
 `);

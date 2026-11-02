@@ -6,8 +6,15 @@ Releases use the root `package.json` version and are tagged `vX.Y.Z` automatical
 
 ## [Unreleased]
 
+### Changed
+
+- The panda is now the game's logo everywhere: the round "Mini Sumo" logo is gone from Settings -> About, the landing page and the README.
+- **The game is Android only**: the web game is gone and the server's address now shows a landing page (`apps/landing`, Persian and English, responsive) that tells the game's story, from the training yard to the ring above the clouds, in its own art, with the game's panels and buttons, a link to the official game page and Jolly Panda Studio's logo. CI no longer builds web or desktop.
+- Invite links go to the landing page, whose button opens the app and joins the room (`minisumo://join?room=…`). The link in save-progress emails shows the code to type in the game.
+
 ### Added
 
+- **Opening comic**: every player sees the story once, on the first launch after updating too, as comic pages whose panels appear one by one (tap to go on, Skip to leave).
 - **Link preview**: a shared link to the game shows the Mini Sumo banner ("Push. Dash. Win.", 1200 × 630) with a title and description (Open Graph and Twitter card tags; `public/social/mini-sumo-social-v1.jpg`). The other banner formats and the intro banner are in `docs/marketing/`, outside the builds.
 - Dev panel: a **Sounds** section plays each of the game's sounds, to try them.
 - **Sign in with Cafe Bazaar on the web** (the browser game, next to Google Play and email): OAuth2 on the game server (`account/BazaarLogin.ts`). A new Bazaar account is linked to the player; one that already saves another player signs this device in as them. The browser only ever sees a one-time ticket (5 minutes), never a key; states expire after 10 minutes and come back only to the game's own pages. Server keys `BAZAAR_LOGIN_CLIENT_ID` / `BAZAAR_LOGIN_SECRET` in `.env`; the catalog says `bazaarLogin` when it's on. 6 new tests (188 total).

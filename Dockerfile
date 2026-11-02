@@ -1,7 +1,8 @@
 # syntax=docker/dockerfile:1
 #
 # Mini Sumo in one container: the game server (Colyseus + economy API, SQLite) also serves
-# the web game, so the page, the API, matchmaking and the game websockets share one port.
+# the landing page, so the page, the API, matchmaking and the game websockets share one port.
+# The game itself ships only as the Android app.
 #
 #   docker compose up -d --build        -> http://<host>:6803
 #
@@ -38,24 +39,14 @@ COPY packages/shared/package.json packages/shared/
 COPY apps/server/package.json apps/server/
 COPY apps/client/package.json apps/client/
 
-# ---------------------------------------------------------------- build shared, server and web game
+# ---------------------------------------------------------------- build shared and server
 FROM base AS build
 RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
 COPY tsconfig.base.json ./
 COPY packages/shared packages/shared
 COPY apps/server apps/server
-COPY apps/client apps/client
-# The web game finds the server on the same address as the page.
-ARG VITE_SERVER_URL=same-origin
-ARG VITE_NETWORK_MODE=auto
-ARG VITE_APP_VERSION
-ENV VITE_SERVER_URL=${VITE_SERVER_URL} \
-    VITE_NETWORK_MODE=${VITE_NETWORK_MODE} \
-    VITE_APP_VERSION=${VITE_APP_VERSION} \
-    VITE_BASE=/
 RUN npm run build:shared \
- && npm run build -w @mini-sumo/server \
- && npm run build -w @mini-sumo/client
+ && npm run build -w @mini-sumo/server
 
 # ---------------------------------------------------------------- production dependencies only
 FROM base AS deps
@@ -79,7 +70,10 @@ COPY --from=build /app/packages/shared/package.json packages/shared/
 COPY --from=build /app/packages/shared/dist packages/shared/dist
 COPY --from=build /app/apps/server/package.json apps/server/
 COPY --from=build /app/apps/server/dist apps/server/dist
-COPY --from=build /app/apps/client/dist ./public
+COPY apps/landing ./public
+# Also needed outside the page: the logo in emails and the link preview image.
+COPY apps/client/public/email ./public/email
+COPY apps/client/public/social ./public/social
 # The database lives in a volume and survives rebuilds.
 RUN mkdir -p /data
 VOLUME ["/data"]
