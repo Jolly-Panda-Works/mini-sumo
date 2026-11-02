@@ -12,6 +12,7 @@ import { PaymentService } from "./economy/payments.js";
 import { createApiHandler } from "./http/api.js";
 import { Friends } from "./social/Friends.js";
 import { BazaarVerifier, bazaarConfigFromEnv } from "./economy/bazaar.js";
+import { MyketVerifier, myketConfigFromEnv } from "./economy/myket.js";
 import { AccountRecovery } from "./account/Recovery.js";
 import { BazaarLogin } from "./account/BazaarLogin.js";
 import { EmailJsMailer, LogMailer, emailJsConfigFromEnv } from "./account/mailer.js";
@@ -55,6 +56,19 @@ void bazaar?.selfCheck().then((state) =>
         : "[bazaar] WARNING: Cafe Bazaar can't be reached from this server (network / firewall): purchases can't be checked",
   ),
 );
+// Myket purchases: on when MYKET_ACCESS_TOKEN is in .env.
+const myketConfig = myketConfigFromEnv();
+const myket = myketConfig ? new MyketVerifier(myketConfig) : null;
+console.log(myket ? `[myket] purchase verification on (${myketConfig!.packageName})` : "[myket] purchase verification off (no token)");
+void myket?.selfCheck().then((state) =>
+  console.log(
+    state === "ok"
+      ? "[myket] Myket accepts the token from this server"
+      : state === "refused"
+        ? "[myket] WARNING: Myket refused MYKET_ACCESS_TOKEN: make a new one in the panel and put it in .env"
+        : "[myket] WARNING: Myket can't be reached from this server (network / firewall): purchases can't be checked",
+  ),
+);
 // Saving progress with an email (EmailJS; EMAIL_DEV_LOG=true prints codes instead, for testing)
 const emailConfig = emailJsConfigFromEnv();
 const mailer = emailConfig ? new EmailJsMailer(emailConfig) : process.env.EMAIL_DEV_LOG === "true" ? new LogMailer() : null;
@@ -80,7 +94,7 @@ const bazaarLogin =
       })
     : null;
 console.log(bazaarLogin ? `[bazaar-login] web sign-in on (callback ${bazaarLogin.callbackUrl})` : "[bazaar-login] web sign-in off (no BAZAAR_LOGIN_CLIENT_ID / SECRET)");
-const handleApi = createApiHandler(economy, new PaymentService(flags), friends, bazaar, recovery, bazaarLogin);
+const handleApi = createApiHandler(economy, new PaymentService(flags), friends, bazaar, recovery, bazaarLogin, myket);
 // The landing page, when this server also hosts it (STATIC_DIR, set in the Docker image).
 const handleStatic = createStaticHandler(process.env.STATIC_DIR);
 

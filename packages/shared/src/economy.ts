@@ -215,7 +215,7 @@ export interface CatalogResponse {
   arenas: ArenaInfo[];
   items: ShopItemInfo[];
   /** Stores whose purchases this server can verify (and credit) right now. */
-  stores?: { bazaar: boolean };
+  stores?: { bazaar: boolean; myket?: boolean };
   /** Progress can be saved with an email (and restored on another device). */
   emailRecovery?: boolean;
   /** Sign in with Cafe Bazaar on the web (the server has its OAuth keys). */

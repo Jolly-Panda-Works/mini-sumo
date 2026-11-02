@@ -135,6 +135,8 @@ jobs:
           node scripts/deep-link.mjs
           # Cafe Bazaar billing (no Google Play Games in this build).
           if [ "${{ matrix.store }}" = bazaar ]; then BAZAAR_RSA_KEY="${{ vars.BAZAAR_RSA_KEY }}" node scripts/bazaar.mjs; fi
+          # Myket billing (its public key: myket.config.json or the variable MYKET_PUBLIC_KEY).
+          if [ "${{ matrix.store }}" = myket ]; then MYKET_PUBLIC_KEY="${{ vars.MYKET_PUBLIC_KEY }}" node scripts/myket.mjs; fi
 
       - name: Target SDK (optional, repository variable ANDROID_TARGET_SDK)
         if: vars.ANDROID_TARGET_SDK != ''

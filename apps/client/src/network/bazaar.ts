@@ -4,8 +4,8 @@ import { localEconomy } from "./localEconomy";
 import { networkStore } from "./networkMode";
 
 /**
- * Cafe Bazaar in-app billing (the Bazaar build only: VITE_STORE=bazaar plus the native
- * Bazaar plugin).
+ * In-app billing of the Iranian store builds: Cafe Bazaar (VITE_STORE=bazaar) or Myket
+ * (VITE_STORE=myket), each with its native plugin. Both plugins have the same methods.
  *
  * Online, the purchase token goes to the game server, which checks it with Cafe Bazaar and
  * credits the coins to your account once; only then is the purchase consumed in Bazaar (so
@@ -30,10 +30,14 @@ interface BazaarNative {
 
 export type BuyResult = "bought" | "cancelled";
 
+const store = import.meta.env.VITE_STORE === "myket" ? "myket" : "bazaar";
+const storeName = store === "myket" ? "Myket" : "Cafe Bazaar";
+const pluginName = store === "myket" ? "Myket" : "Bazaar";
+
 function native(): BazaarNative | null {
   const cap = (window as unknown as { Capacitor?: { isPluginAvailable?(name: string): boolean; Plugins?: Record<string, unknown> } }).Capacitor;
-  if (!cap?.isPluginAvailable?.("Bazaar")) return null;
-  return (cap.Plugins?.Bazaar as BazaarNative | undefined) ?? null;
+  if (!cap?.isPluginAvailable?.(pluginName)) return null;
+  return (cap.Plugins?.[pluginName] as BazaarNative | undefined) ?? null;
 }
 
 /** True in the Cafe Bazaar build on a device. */
@@ -61,7 +65,10 @@ export async function bazaarPrices(): Promise<Record<string, string>> {
   }
 }
 
-export const bazaarEnabled = (): boolean => import.meta.env.VITE_STORE === "bazaar" && native() !== null;
+export const bazaarEnabled = (): boolean => (import.meta.env.VITE_STORE === "bazaar" || import.meta.env.VITE_STORE === "myket") && native() !== null;
+
+/** The store selling the packs, for the shop's texts. */
+export const coinStoreName = storeName;
 
 /**
  * Coin packs can be bought right now: the Bazaar build on a device, and either offline (the
@@ -70,18 +77,18 @@ export const bazaarEnabled = (): boolean => import.meta.env.VITE_STORE === "baza
 export function bazaarBuyable(): boolean {
   if (!bazaarEnabled()) return false;
   if (networkStore.get().mode !== "online") return true;
-  return Boolean(economyStore.get().catalog?.stores?.bazaar);
+  return Boolean(economyStore.get().catalog?.stores?.[store]);
 }
 
 
 let connecting: Promise<void> | null = null;
 async function connect(): Promise<BazaarNative> {
   const plugin = native();
-  if (!plugin) throw new Error("Buying coins needs the Cafe Bazaar version of the game.");
+  if (!plugin) throw new Error(`Buying coins needs the ${storeName} version of the game.`);
   connecting ??= plugin.connect().catch((error: unknown) => {
     connecting = null;
     throw new Error(
-      error instanceof Error && error.message ? error.message : "Couldn't reach Cafe Bazaar. Check that Bazaar is installed and you're signed in.",
+      error instanceof Error && error.message ? error.message : `Couldn't reach ${storeName}. Check that it's installed and you're signed in.`,
     );
   });
   await connecting;
@@ -96,7 +103,7 @@ async function finish(plugin: BazaarNative, purchase: Purchase): Promise<boolean
   let credited: boolean;
   if (networkStore.get().mode === "online") {
     // Throws when the server can't confirm it yet: the purchase then stays unconsumed.
-    const result = await request<BazaarPurchaseResponse>("/purchases/bazaar", {
+    const result = await request<BazaarPurchaseResponse>(`/purchases/${store}`, {
       method: "POST",
       body: JSON.stringify({ productId: purchase.productId, purchaseToken: purchase.purchaseToken } satisfies BazaarPurchaseRequest),
     });
@@ -115,7 +122,7 @@ async function finish(plugin: BazaarNative, purchase: Purchase): Promise<boolean
 
 export async function buyCoinPack(pack: CoinPack): Promise<BuyResult> {
   const productId = BAZAAR_PRODUCTS[pack.id];
-  if (!productId) throw new Error("This pack isn't sold in Cafe Bazaar.");
+  if (!productId) throw new Error(`This pack isn't sold in ${storeName}.`);
   const plugin = await connect();
   let purchase: Purchase;
   try {

@@ -246,7 +246,7 @@ export class Economy {
   // ------------------------------------------------------------ store purchases
 
   /** Whether this store purchase was credited already (to anyone). */
-  creditedStorePurchase(store: "bazaar", purchaseToken: string): boolean {
+  creditedStorePurchase(store: "bazaar" | "myket", purchaseToken: string): boolean {
     return Boolean(row(this.db.prepare("SELECT id FROM transactions WHERE idempotency_key = ?").get(`purchase:${store}:${purchaseToken}`)));
   }
 
@@ -254,7 +254,7 @@ export class Economy {
    * Credits a coin pack bought in a store, once per purchase token (whichever account sends it
    * first). Call only after the store has confirmed the purchase.
    */
-  creditStorePurchase(accountId: string, store: "bazaar", purchaseToken: string, coins: number, label: string): { credited: boolean; balance: number } {
+  creditStorePurchase(accountId: string, store: "bazaar" | "myket", purchaseToken: string, coins: number, label: string): { credited: boolean; balance: number } {
     if (!this.flags.economy) throw new EconomyError("disabled", "The economy is disabled.");
     this.account(accountId);
     const result = this.apply({

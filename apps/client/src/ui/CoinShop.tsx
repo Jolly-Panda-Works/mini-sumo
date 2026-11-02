@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { COIN_PACKS, DAILY_GIFT_COINS, type CoinPack } from "@mini-sumo/shared";
-import { bazaarBuyable, bazaarPrices, buyCoinPack, restoreBazaarPurchases } from "../network/bazaar";
+import { bazaarBuyable, bazaarPrices, buyCoinPack, coinStoreName, restoreBazaarPurchases } from "../network/bazaar";
 import { economyStore, refreshProfile, request } from "../network/economyClient";
 import { localEconomy } from "../network/localEconomy";
 import { networkStore } from "../network/networkMode";
@@ -26,7 +26,7 @@ export function CoinShop() {
   // Cafe Bazaar build: packs are bought with real money through Bazaar.
   // Cafe Bazaar build: offline the coins go to this device; online the server verifies the
   // purchase and credits your account (COMING SOON until the server has its Bazaar keys).
-  const storeLive = bazaarBuyable() && (local || Boolean(economy.catalog?.stores?.bazaar));
+  const storeLive = bazaarBuyable();
   // Dev mode: the store's BUY buttons with sample prices (buying does nothing).
   const samplePrices = useStore(devSamples).storePrices;
   const store = storeLive || samplePrices !== null;
@@ -137,7 +137,7 @@ export function CoinShop() {
               <PriceButton
                 className="pack__buy"
                 priceText={prices[pack.id] ?? ""}
-                label={`Buy ${pack.name}, ${pack.coins} Sumo Coins, in Cafe Bazaar${prices[pack.id] ? ` for ${prices[pack.id]}` : ""}`}
+                label={`Buy ${pack.name}, ${pack.coins} Sumo Coins, in ${coinStoreName}${prices[pack.id] ? ` for ${prices[pack.id]}` : ""}`}
                 disabled={buying !== null}
                 sfx="none"
                 onClick={() => void buy(pack)}

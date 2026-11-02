@@ -29,6 +29,9 @@ services:
       BAZAAR_CLIENT_SECRET: ${BAZAAR_CLIENT_SECRET:-}
       BAZAAR_REFRESH_TOKEN: ${BAZAAR_REFRESH_TOKEN:-}
       BAZAAR_PACKAGE_NAME: ${BAZAAR_PACKAGE_NAME:-com.jollypanda.mini_sumo}
+      # Myket purchases: the token from the Myket developer panel (empty = off). See docs/MYKET.fa.md.
+      MYKET_ACCESS_TOKEN: ${MYKET_ACCESS_TOKEN:-}
+      MYKET_PACKAGE_NAME: ${MYKET_PACKAGE_NAME:-com.jollypanda.mini_sumo}
       # Sign in with Cafe Bazaar on the web (panel -> "ورود با بازار"; empty = off). See docs/BAZAAR.fa.md.
       BAZAAR_LOGIN_CLIENT_ID: ${BAZAAR_LOGIN_CLIENT_ID:-}
       BAZAAR_LOGIN_SECRET: ${BAZAAR_LOGIN_SECRET:-}
