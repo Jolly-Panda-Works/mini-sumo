@@ -1,6 +1,6 @@
 # نسخه‌ی مایکت
 
-نسخه‌ی مایکت همان بازی است و کنار نسخه‌ی بازار روی شاخه‌ی `Iranian-store` ساخته می‌شود (**Actions ← Iranian stores**). نسخه و versionCode با بازار یکی است و Release آن تگ `myket-vX.Y.Z` می‌گیرد. برای به‌روز کردن شاخه و یادداشت نسخه، [BAZAAR.fa.md](BAZAAR.fa.md) را ببینید؛ هر دو فروشگاه از یک یادداشت استفاده می‌کنند.
+نسخه‌ی مایکت همان بازی است و کنار نسخه‌ی بازار روی شاخه‌ی `Iranian-store` ساخته می‌شود (**Actions ← Iranian stores**). نسخه و versionCode با بازار یکی است و Release آن تگ `myket-vX.Y.Z` می‌گیرد. برای به‌روز کردن شاخه و یادداشت نسخه، [BAZAAR.fa.md](BAZAAR.fa.md) را ببینید. یادداشت مایکت جداست: `apps/mobile/myket-release-notes.json`، با همان ساختار فایل بازار.
 
 تفاوت با نسخه‌ی بازار:
 

@@ -1,0 +1,6 @@
+{
+  "$comment": "What's new in Myket for the next version (required: nothing is released without it). Set version to the version being released (package.json) and write fa and en, on the Iranian-store branch. Emptied after each release.",
+  "version": "",
+  "fa": "",
+  "en": ""
+}

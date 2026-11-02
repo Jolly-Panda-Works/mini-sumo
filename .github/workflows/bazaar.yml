@@ -19,9 +19,10 @@
 # Automatic release in Myket: the same with the secret MYKET_ACCESS_TOKEN. Repository variable
 #   MYKET_AUTO_PUBLISH ("false" default: you publish in the panel; "true": published once approved).
 #
-# Release notes are required to release (both stores use the same notes). Without them a push
-# still builds both stores, but nothing is released: the files stay on the run for a day.
-#   - a push: apps/mobile/bazaar-release-notes.json with "version" = the version being built and
+# Release notes are required to release, and each store has its own. Without them a push still
+# builds that store, but it isn't released: the files stay on the run for a day.
+#   - a push: apps/mobile/bazaar-release-notes.json and myket-release-notes.json, each with
+#     "version" = the version being built and
 #     "fa" / "en" filled in. Edit it on the Iranian-store branch (after merging main), commit, push.
 #     After a successful release the file is emptied again (a [skip ci] commit on the branch), so
 #     the next version can't go out with old notes.
@@ -119,6 +120,7 @@ jobs:
         id: notes
         continue-on-error: ${{ github.event_name == 'push' }}
         env:
+          STORE: ${{ matrix.store }}
           NOTES_FA: ${{ inputs.notes_fa }}
           NOTES_EN: ${{ inputs.notes_en }}
         run: node tools/bazaar-notes.mjs check "$RUNNER_TEMP/bazaar-notes.json"
@@ -238,7 +240,7 @@ jobs:
           VERSION=${{ steps.version.outputs.version }}
           node tools/myket-release.mjs "out/MiniSumo-$VERSION-Myket.apk" --version "$VERSION" --code ${{ steps.version.outputs.code }} --changelog "$RUNNER_TEMP/bazaar-notes.json"
 
-  # The notes in the file are used (by both stores): empty it, so the next version needs its own.
+  # The notes in the files are used: empty them, so the next version needs its own.
   notes:
     name: Empty the release notes
     needs: android
@@ -249,12 +251,14 @@ jobs:
       - name: Empty the release notes for the next version
         run: |
           VERSION=$(node -p "require('./package.json').version")
-          NOTES_FOR=$(node -p "require('./apps/mobile/bazaar-release-notes.json').version")
-          [ "$NOTES_FOR" = "$VERSION" ] || exit 0
-          node tools/bazaar-notes.mjs clear
+          for STORE in bazaar myket; do
+            NOTES_FOR=$(node -p "require('./apps/mobile/$STORE-release-notes.json').version")
+            [ "$NOTES_FOR" != "$VERSION" ] || STORE=$STORE node tools/bazaar-notes.mjs clear
+          done
+          git diff --quiet && exit 0
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -qm "chore(stores): release notes for v$VERSION used [skip ci]" -- apps/mobile/bazaar-release-notes.json
+          git commit -qam "chore(stores): release notes for v$VERSION used [skip ci]"
           for attempt in 1 2 3; do
             if git push --quiet origin HEAD:Iranian-store; then break; fi
             if [ $attempt = 3 ]; then echo "::warning::Couldn't empty the release notes on Iranian-store; empty them by hand."; exit 0; fi
