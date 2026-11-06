@@ -32,7 +32,7 @@
     "build:web": "npm run build:shared && npm run build -w @mini-sumo/client",
     "desktop": "npm run build:web && npm run desktop:install && npm start --prefix apps/desktop",
     "build:desktop": "npm run build:web && npm run desktop:install && npm run dist --prefix apps/desktop",
-    "build:android": "npm run build:web && npm run android:install && npm run android:sync --prefix apps/mobile",
+    "build:android": "node scripts/build.mjs",
     "desktop:install": "npm install --prefix apps/desktop",
     "android:install": "npm install --prefix apps/mobile"
   },

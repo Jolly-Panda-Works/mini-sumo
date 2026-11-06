@@ -25,3 +25,6 @@ preview.log
 docs/art-generated/
 docs/art-samples/
 docs/marketing/instagram/
+
+.local/
+out/
