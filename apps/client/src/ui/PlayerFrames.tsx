@@ -21,7 +21,7 @@ export function PlayerFrames({ players }: { players: readonly UIPlayer[] }) {
             style={{ backgroundImage: `url("${BASE}hud/player-${FRAMES[p.colorIndex % FRAMES.length]}.webp")` }}
           >
             <img className="frame__avatar" src={avatarSrc(p.appearance.avatar)} alt="" width={160} height={160} />
-            <span className="frame__name">{p.isYou ? `${p.name} (you)` : p.name}</span>
+            <span className="frame__name"><span translate="no">{p.name}</span>{p.isYou && <> (<span>You</span>)</>}</span>
             <span className="frame__level" aria-label={`Level ${p.level}`}>
               {p.level}
             </span>

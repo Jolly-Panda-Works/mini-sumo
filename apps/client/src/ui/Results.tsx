@@ -66,7 +66,7 @@ export function Results() {
         {standings.map((p, i) => (
           <div key={p.id} className={`results-board__row${p.isYou ? " results-board__row--you" : ""}`} style={{ top: `${ROWS[i]}%` }}>
             <img className="results-board__avatar" src={avatarSrc(p.appearance.avatar)} alt="" width={160} height={160} />
-            <span className="results-board__name">{p.isYou ? `${p.name} (you)` : p.name}</span>
+            <span className="results-board__name"><span translate="no">{p.name}</span>{p.isYou && <> (<span>You</span>)</>}</span>
             {!p.isYou && p.accountId && <AddFriend accountId={p.accountId} name={p.name} />}
             <span className="results-board__note">
               {!p.connected || p.elimReason === "left" ? "Left" : p.alive ? "In the ring" : "Out"}

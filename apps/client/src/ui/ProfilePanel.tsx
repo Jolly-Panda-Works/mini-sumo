@@ -157,7 +157,7 @@ export function ProfilePanel() {
           </button>
           <div className="profile__xp">
             <div className="profile__name-row">
-              <p className="profile__name">{settings.name}</p>
+              <p className="profile__name" translate="no">{settings.name}</p>
               <button className="profile__edit profile__edit--art" onClick={() => setEditing(true)} aria-label="Edit name">
                 <img src={`${import.meta.env.BASE_URL}ui/btn-edit.webp`} alt="" width={140} height={138} draggable={false} />
               </button>

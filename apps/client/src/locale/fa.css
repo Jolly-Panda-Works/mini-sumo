@@ -1,0 +1,29 @@
+@font-face { font-family: Vazirmatn; src: url('/fonts/vazirmatn-500.woff2') format('woff2'); font-weight: 100 600; font-display: swap; }
+@font-face { font-family: Vazirmatn; src: url('/fonts/vazirmatn-700.woff2') format('woff2'); font-weight: 601 900; font-display: swap; }
+html[lang="fa"] body, html[lang="fa"] button, html[lang="fa"] input,
+html[lang="fa"] .green-art__label, html[lang="fa"] .art-title {
+  font-family: "Vazirmatn", Tahoma, sans-serif;
+}
+html[lang="fa"] .dialog__body, html[lang="fa"] .sub-dialog__body,
+html[lang="fa"] .board-dialog__body, html[lang="fa"] .welcome-dialog__inner,
+html[lang="fa"] .editname-dialog__inner, html[lang="fa"] .story__panel figcaption,
+html[lang="fa"] .tutorial__actions, html[lang="fa"] .toast,
+html[lang="fa"] .intro-panel-footer, html[lang="fa"] .tutorial__copy,
+html[lang="fa"] .notice-popup__message, html[lang="fa"] .menu-tour__card {
+  direction: rtl;
+  text-align: start;
+}
+html[lang="fa"] .green-art__label { letter-spacing: 0; }
+html[lang="fa"] input[type="email"], html[lang="fa"] .email-save__code,
+html[lang="fa"] .code-field, html[lang="fa"] .coins,
+html[lang="fa"] .slider__value, html[lang="fa"] .hud__timer {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+html[lang="fa"] input[autocomplete="nickname"] { direction: auto; }
+html[lang="fa"] #root *, html[lang="fa"] #popup-layer *, html[lang="fa"] #boot * {
+  font-family: Vazirmatn, Tahoma, sans-serif;
+}
+html[lang="fa"] .profile-card__level::before { content: "★ سطح "; }
+html[lang="fa"] .frame__level::before { content: "سطح "; }
+html[lang="fa"] .art-slider { direction: ltr; }

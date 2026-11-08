@@ -1,6 +1,6 @@
 {
   "name": "mini-sumo",
-  "version": "1.45.0",
+  "version": "1.46.0",
   "private": true,
   "type": "module",
   "description": "Mini Sumo: a 3D multiplayer party game for Android built with React Three Fiber and Colyseus.",
@@ -27,14 +27,16 @@
     "build": "npm run build:shared && npm run build -w @mini-sumo/server && npm run build -w @mini-sumo/client",
     "start": "npm run start -w @mini-sumo/server",
     "preview": "npm run preview -w @mini-sumo/client",
-    "test": "npm run build:shared && npm run test -w @mini-sumo/server",
+    "test": "npm run build:shared && npm run test -w @mini-sumo/server && npm run test:locale",
     "typecheck": "npm run build:shared && npm run typecheck -w @mini-sumo/server && npm run typecheck -w @mini-sumo/client",
     "build:web": "npm run build:shared && npm run build -w @mini-sumo/client",
     "desktop": "npm run build:web && npm run desktop:install && npm start --prefix apps/desktop",
     "build:desktop": "npm run build:web && npm run desktop:install && npm run dist --prefix apps/desktop",
     "build:android": "node scripts/build.mjs",
     "desktop:install": "npm install --prefix apps/desktop",
-    "android:install": "npm install --prefix apps/mobile"
+    "android:install": "npm install --prefix apps/mobile",
+    "test:locale": "node scripts/test-persian.mjs",
+    "locale:art": "node scripts/build-persian-art.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",

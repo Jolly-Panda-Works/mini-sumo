@@ -9,6 +9,9 @@ import "@fontsource/baloo-2/800.css";
 import "./styles.css";
 import "./tutorial.css";
 import "./story.css";
+import './locale/fa.css';
+import { persian } from './locale';
+import { localizedArt } from './locale/art';
 import { bootTrack, preloadImage, startBoot } from "./boot";
 import { startScrollFade } from "./ui/scrollFade";
 import { roomManager } from "./network/RoomManager";
@@ -22,7 +25,11 @@ import { initBazaarApp } from "./network/bazaarApp";
 // they would point into assets/ui/.
 const base = new URL(import.meta.env.BASE_URL, document.baseURI).href;
 const images = ["title.webp", "logo.webp", "ui/frame.webp", "ui/header.webp", "ui/close.webp", "ui/bg-tile.webp", "ui/coin-frame.webp", "ui/icon-shop.webp", "ui/icon-settings.webp", "ui/profile-frame.webp", "ui/timer-circle.webp", "ui/powerup-frame.webp", "ui/results-board.webp", "ui/arena-panel.webp", "ui/btn-enter.webp", "ui/popup-sub.webp", "ui/welcome-frame.webp", "ui/friends-icon.webp", "ui/icon-leaderboard.webp", "ui/popup-message.webp", "ui/popup-warning.webp", "ui/popup-error.webp", ...["ok", "leave", "stay", "shop", "not-now", "retry", "close"].map((n) => `ui/notice-${n}.webp`), "ui/btn-leave.webp", "ui/btn-great.webp", "ui/reward-coin.webp", "ui/reward-xp.webp", "ui/label-level.webp", "ui/levelup-frame.webp", "ui/btn-about.webp", "ui/btn-buy.webp", "ui/btn-not-now.webp", "ui/btn-coming-soon.webp", "ui/label-free.webp", "ui/vibration-frame.webp", "ui/vibration-on.webp", "ui/vibration-off.webp", "ui/btn-play.webp", "ui/btn-home.webp", "ui/btn-rematch.webp", "ui/btn-play-again.webp", ...["red", "blue", "green", "yellow"].map((c) => `hud/player-${c}.webp`), ...["dash", "count-3", "count-2", "count-1", "go", "joy-base", "joy-knob", "out"].map((n) => `hud/${n}.webp`), ...["private", "training", "rookie", "amateur", "pro", "veteran", "champion", "master", "legend", "godlike"].map((id) => `arenas/${id}.webp`), ...["iron", "thunder", "wind", "giant"].flatMap((k) => [`powerups/${k}-coin.webp`, `powerups/${k}-flag.webp`])];
-images.forEach((file) => bootTrack(`img:${file}`, 1, preloadImage(`${base}${file}`)));
+images.forEach((file) => {
+  const asset = file.replace(/\.webp$/, '');
+  const path = persian && localizedArt.has(asset) ? `locale/fa/${asset}.svg` : file;
+  bootTrack(`img:${file}`, 1, preloadImage(`${base}${path}`));
+});
 bootTrack("fonts", 1, document.fonts?.ready ?? Promise.resolve());
 bootTrack("network", 2, roomManager.ready);
 bootTrack("music", 2, music.preload("menu"));
@@ -104,6 +111,19 @@ for (const name of ["dash", "joy-base", "joy-knob"]) {
 }
 
 startScrollFade();
+
+// Localized backgrounds keep the existing layout; movement and HUD geometry stay unchanged.
+if (persian) {
+  document.documentElement.lang = 'fa';
+  // Keep the playfield's physical left/right controls; text panels opt into RTL in fa.css.
+  document.documentElement.dir = 'ltr';
+  for (const asset of localizedArt) {
+    if (!asset.startsWith('ui/')) continue;
+    const name = asset.replace('ui/', '');
+    document.documentElement.style.setProperty(`--ui-${name}`, `url("${base}locale/fa/${asset}.svg")`);
+  }
+  document.documentElement.style.setProperty('--ui-btn-start', `url("${base}ui/btn-start-blank.webp")`);
+}
 
 const root = document.getElementById("root");
 if (!root) throw new Error("Missing #root element");

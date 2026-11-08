@@ -1,4 +1,5 @@
 import { CanvasTexture, SRGBColorSpace } from "three";
+import { persian } from '../locale';
 
 const FONT = '700 34px "Baloo 2", ui-rounded, "Arial Rounded MT Bold", system-ui, sans-serif';
 
@@ -9,8 +10,9 @@ export function drawNameTag(canvas: HTMLCanvasElement, slot: number, name: strin
   const w = canvas.width;
   const h = canvas.height;
   ctx.clearRect(0, 0, w, h);
-  ctx.font = FONT;
-  const label = isYou ? `P${slot} You` : `P${slot} ${name}`;
+  ctx.font = persian ? '700 34px Vazirmatn, Tahoma, sans-serif' : FONT;
+  ctx.direction = persian ? 'rtl' : 'ltr';
+  const label = persian ? `${isYou ? 'تو' : name} · ${slot}` : isYou ? `P${slot} You` : `P${slot} ${name}`;
   const textWidth = Math.min(ctx.measureText(label).width, w - 40);
   const pillW = textWidth + 36;
   const x = (w - pillW) / 2;

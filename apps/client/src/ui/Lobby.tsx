@@ -114,7 +114,7 @@ export function Lobby() {
             p ? (
               <li key={p.id} className={`roster__item${p.isYou ? " roster__item--you" : ""}`}>
                 <PlayerBadge colorIndex={p.colorIndex} />
-                <span className="roster__name">{p.name}</span>
+                <span className="roster__name" translate="no">{p.name}</span>
                 {p.isYou && <img className="tag tag--you-art" src={`${import.meta.env.BASE_URL}ui/label-you.webp`} alt="You" width={220} height={82} draggable={false} />}
                 {p.isHost && <img className="tag-host" src={`${import.meta.env.BASE_URL}ui/label-host.webp`} alt="Host" width={200} height={98} />}
                 {p.isBot && isHost && (

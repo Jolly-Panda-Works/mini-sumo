@@ -94,6 +94,8 @@ if (!props.includes("kotlin.jvm.target.validation.mode")) {
 
 // RSA key resource
 let strings = read("android/app/src/main/res/values/strings.xml");
+strings = strings.replace(/(<string name="(?:app_name|title_activity_main)">)[^<]*(<\/string>)/g, '$1مینی سومو$2');
+write("android/app/src/main/res/values/strings.xml", strings);
 if (!strings.includes("bazaar_rsa_key")) {
   strings = strings.replace("</resources>", `    <string name="bazaar_rsa_key" translatable="false">${rsaKey}</string>\n</resources>`);
   write("android/app/src/main/res/values/strings.xml", strings);

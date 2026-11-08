@@ -3,6 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import { CanvasTexture, SRGBColorSpace, type Sprite, type SpriteMaterial } from "three";
 import { roomManager } from "../network/RoomManager";
 import { calloutBus, type Callout } from "./effectsBus";
+import { text as localizedText, persian } from '../locale';
 
 const POOL = 8;
 const LIFE = 1.05;
@@ -14,10 +15,12 @@ const FONT = '800 104px "Baloo 2", ui-rounded, "Arial Rounded MT Bold", system-u
 const textures = new Map<string, CanvasTexture>();
 
 function draw(canvas: HTMLCanvasElement, text: string, color: string): void {
+  text = localizedText(text);
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
   ctx.clearRect(0, 0, W, H);
-  ctx.font = FONT;
+  ctx.font = persian ? '800 90px Vazirmatn, Tahoma, sans-serif' : FONT;
+  ctx.direction = persian ? 'rtl' : 'ltr';
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.lineJoin = "round";

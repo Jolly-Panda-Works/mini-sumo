@@ -57,7 +57,7 @@ export function FriendProfilePopup({ accountId, onClose, isPublic = false }: { a
   };
 
   return (
-    <Dialog title={profile?.name ?? "Profile"} onClose={onClose} className="friend-profile" variant="sub">
+    <Dialog title={profile ? <span translate="no">{profile.name}</span> : "Profile"} onClose={onClose} className="friend-profile" variant="sub">
       {error && <p className="hint hint--center">{error}</p>}
       {profile && (
         <div className="friend-profile__body">
@@ -65,7 +65,7 @@ export function FriendProfilePopup({ accountId, onClose, isPublic = false }: { a
             <WrestlerPreview appearance={sanitizeAppearance(profile.appearance)} className="friend-profile__wrestler" />
             <img className="friend-profile__avatar" src={avatarSrc(profile.avatar)} alt="" width={160} height={160} />
           </div>
-          <p className="friend-profile__name">{profile.name}</p>
+          <p className="friend-profile__name" translate="no">{profile.name}</p>
           <p className="friend-profile__status">
             Level {profile.level} · {profile.online ? "Online" : "Offline"}
           </p>

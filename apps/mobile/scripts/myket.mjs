@@ -58,6 +58,8 @@ write("android/app/build.gradle", appGradle);
 
 // Public key resource
 let strings = read("android/app/src/main/res/values/strings.xml");
+strings = strings.replace(/(<string name="(?:app_name|title_activity_main)">)[^<]*(<\/string>)/g, '$1مینی سومو$2');
+write("android/app/src/main/res/values/strings.xml", strings);
 if (!strings.includes("myket_public_key")) {
   strings = strings.replace("</resources>", `    <string name="myket_public_key" translatable="false">${publicKey}</string>\n</resources>`);
   write("android/app/src/main/res/values/strings.xml", strings);

@@ -116,7 +116,7 @@ function Row({
       </span>
       <img className="lb-row__avatar" src={avatarSrc(entry.avatar)} alt="" width={160} height={160} loading="lazy" />
       <span className="lb-row__who">
-        <strong>{you ? `${entry.name} (you)` : entry.name}</strong>
+        <strong><span translate="no">{entry.name}</span>{you && <> (<span>You</span>)</>}</strong>
         <span>Lvl {entry.level}</span>
       </span>
       <span className="lb-row__score" aria-label={`${entry.xp} XP`}>

@@ -12,7 +12,7 @@ import { request, switchAccount } from "./economyClient";
  */
 export type SignInPurpose = "link" | "restore";
 
-const lang = (): "en" | "fa" => (navigator.language?.toLowerCase().startsWith("fa") ? "fa" : "en");
+const lang = (): "en" | "fa" => (import.meta.env.VITE_STORE === 'bazaar' || import.meta.env.VITE_STORE === 'myket' || navigator.language?.toLowerCase().startsWith("fa") ? "fa" : "en");
 
 export const linkedEmail = () => request<{ email: string | null; available: boolean }>("/account/email");
 

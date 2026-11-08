@@ -157,7 +157,7 @@ function ProfileCard({ className = "" }: { className?: string }) {
   return (
     <button className={`profile-card ${className}`} onClick={() => setProfileOpen(true)} aria-label={`Profile: ${settings.name}, level ${level}`}>
       <img className="profile-card__avatar" src={avatarSrc(settings.appearance.avatar)} alt="" width={160} height={160} />
-      <span className="profile-card__name">{settings.name}</span>
+      <span className="profile-card__name" translate="no">{settings.name}</span>
       <span className="profile-card__level">{level}</span>
     </button>
   );

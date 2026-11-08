@@ -160,7 +160,7 @@ export function FriendRow({
           <img src={avatarSrc(friend.avatar)} alt="" width={160} height={160} loading="lazy" />
         </span>
         <span className="friend-row__text">
-          <strong>{friend.name}</strong>
+          <strong translate="no">{friend.name}</strong>
           <span className="friend-row__level">Lvl {friend.level}</span>
           {hideStatus ? null : pending ? (
             <span className="friend-row__status friend-row__status--pending">Not accepted yet</span>
