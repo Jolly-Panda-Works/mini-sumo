@@ -64,7 +64,7 @@ jobs:
       sha: ${{ steps.v.outputs.sha }}
       previous: ${{ steps.v.outputs.previous }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - id: v
@@ -139,7 +139,7 @@ jobs:
     needs: version
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.version.outputs.sha }}
       - uses: actions/setup-node@v5
@@ -165,7 +165,7 @@ jobs:
       VITE_BASE: /
       HAS_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.version.outputs.sha }}
       - uses: actions/setup-node@v5
@@ -279,7 +279,7 @@ jobs:
       VERSION: ${{ needs.version.outputs.version }}
       PREVIOUS: ${{ needs.version.outputs.previous }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.version.outputs.sha }}
           fetch-depth: 0
