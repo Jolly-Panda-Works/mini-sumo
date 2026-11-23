@@ -24,8 +24,6 @@ export interface Settings {
   storySeen: boolean;
   tutorialCompleted: boolean;
   dashMode: "manual" | "auto";
-  /** Persisted separately: replaying training must not ask this question again. */
-  dashModeChosen: boolean;
   starterRewardPresented: boolean;
   menuTourCompleted: boolean;
   introStage: IntroStage;
@@ -39,11 +37,13 @@ export interface Settings {
 const KEY = "mini-sumo:settings";
 
 function load(): Settings {
-  const defaults: Settings = { musicVolume: 0.5, sfxVolume: 0.8, touchControls: "auto", joystick: "floating", vibration: true, name: "", onboarded: false, storySeen: false, tutorialCompleted: false, dashMode: "manual", dashModeChosen: false, starterRewardPresented: false, menuTourCompleted: false, introStage: "first", menuTourIndex: 0, botLevel: "normal", appearance: { ...DEFAULT_APPEARANCE } };
+  const defaults: Settings = { musicVolume: 0.5, sfxVolume: 0.8, touchControls: "auto", joystick: "floating", vibration: true, name: "", onboarded: false, storySeen: false, tutorialCompleted: false, dashMode: "manual", starterRewardPresented: false, menuTourCompleted: false, introStage: "first", menuTourIndex: 0, botLevel: "normal", appearance: { ...DEFAULT_APPEARANCE } };
   try {
     const raw = window.localStorage.getItem(KEY);
     if (!raw) return defaults;
-    const parsed = JSON.parse(raw) as Partial<Settings> & { sound?: boolean };
+    const parsed = JSON.parse(raw) as Partial<Settings> & { sound?: boolean; dashModeChosen?: boolean };
+    // An older build could clear completion without clearing the finished dash choice.
+    const tutorialCompleted = parsed.tutorialCompleted === true || parsed.dashModeChosen === true;
     const volume = (value: unknown, fallback: number) =>
       typeof value === "number" && Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : fallback;
     return {
@@ -56,12 +56,11 @@ function load(): Settings {
       name: typeof parsed.name === "string" ? parsed.name.slice(0, 32) : "",
       onboarded: typeof parsed.onboarded === "boolean" ? parsed.onboarded : Boolean(parsed.name?.trim()),
       storySeen: parsed.storySeen === true,
-      tutorialCompleted: parsed.tutorialCompleted === true,
+      tutorialCompleted,
       dashMode: parsed.dashMode === "auto" ? "auto" : "manual",
-      dashModeChosen: typeof parsed.dashModeChosen === "boolean" ? parsed.dashModeChosen : parsed.tutorialCompleted === true,
-      starterRewardPresented: typeof parsed.starterRewardPresented === "boolean" ? parsed.starterRewardPresented : parsed.tutorialCompleted === true,
-      menuTourCompleted: typeof parsed.menuTourCompleted === "boolean" ? parsed.menuTourCompleted : parsed.tutorialCompleted === true,
-      introStage: INTRO_STAGES.includes(parsed.introStage as IntroStage) ? parsed.introStage as IntroStage : (parsed.introStage as string) === "firstRetry" ? "first" : (parsed.menuTourCompleted ?? parsed.tutorialCompleted) ? "done" : "first",
+      starterRewardPresented: typeof parsed.starterRewardPresented === "boolean" ? parsed.starterRewardPresented : tutorialCompleted,
+      menuTourCompleted: typeof parsed.menuTourCompleted === "boolean" ? parsed.menuTourCompleted : tutorialCompleted,
+      introStage: INTRO_STAGES.includes(parsed.introStage as IntroStage) ? parsed.introStage as IntroStage : (parsed.introStage as string) === "firstRetry" ? "first" : (parsed.menuTourCompleted ?? tutorialCompleted) ? "done" : "first",
       menuTourIndex: Number.isInteger(parsed.menuTourIndex) ? Math.max(0, Math.min(2, parsed.menuTourIndex!)) : 0,
       appearance: sanitizeAppearance(parsed.appearance),
       botLevel: sanitizeBotLevel(parsed.botLevel),
