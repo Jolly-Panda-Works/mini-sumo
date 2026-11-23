@@ -4,3 +4,4 @@ export * from "./types.js";
 export * from "./math.js";
 export * from "./appearance.js";
 export * from "./economy.js";
+export * from "./username.js";

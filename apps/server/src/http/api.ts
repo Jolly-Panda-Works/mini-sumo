@@ -146,6 +146,8 @@ const STATUS: Record<EconomyError["code"], number> = {
   not_friends: 403,
   friend_offline: 409,
   bad_request: 400,
+  username_invalid: 400,
+  username_taken: 409,
 };
 
 export function createApiHandler(
@@ -411,6 +413,13 @@ export function createApiHandler(
         const body = ((await readJson(req)) ?? {}) as Record<string, unknown>;
         friends.dismissInvite(accountId, body.id);
         send(res, 200, { ok: true });
+      } else if (route === "PUT /api/profile/username") {
+        if (!writeLimiter.allow(accountId)) {
+          send(res, 429, { error: "rate_limited", message: "Slow down a little." });
+        } else {
+          const body = ((await readJson(req)) ?? {}) as Record<string, unknown>;
+          send(res, 200, { name: economy.setUsername(accountId, body.name, body.policy) });
+        }
       } else if (route === "POST /api/profile/sync") {
         if (!writeLimiter.allow(accountId)) {
           send(res, 429, { error: "rate_limited", message: "Slow down a little." });

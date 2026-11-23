@@ -202,6 +202,16 @@ export class MiniSumoRoom extends Room<MiniSumoState> {
     const check = this.session.canJoin();
     if (!check.ok) throw new ServerError(4003, check.error);
 
+    const profile = economy && accountId ? economy.profile(accountId) : null;
+    let name = profile?.name || options.name;
+    if (economy && accountId && !profile?.name) {
+      try {
+        name = economy.setUsername(accountId, name, options.usernamePolicy);
+      } catch (error) {
+        throw new ServerError(4005, error instanceof EconomyError ? error.message : "Choose a valid username.");
+      }
+    }
+
     const appearance = economy && accountId ? economy.saveAppearance(accountId, options.appearance) : options.appearance;
     if (this.paid) {
       if (!economy || !accountId) throw new ServerError(4010, "Paid arenas need a player account.");
@@ -212,8 +222,8 @@ export class MiniSumoRoom extends Room<MiniSumoState> {
       }
     }
 
-    const level = economy && accountId ? economy.profile(accountId).level.level : options.level;
-    const result = this.session.addPlayer(client.sessionId, options.name, appearance, level);
+    const level = profile?.level.level ?? options.level;
+    const result = this.session.addPlayer(client.sessionId, name, appearance, level);
     if (!result.ok) {
       if (this.paid && economy && accountId) economy.refundReserved(this.roomId, accountId, "Couldn't join the room: entry refunded");
       throw new ServerError(4003, result.error);

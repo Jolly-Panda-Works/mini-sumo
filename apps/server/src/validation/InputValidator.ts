@@ -24,7 +24,7 @@ export function validateMoveInput(raw: unknown): InputPayload | null {
 }
 
 // Control characters, zero-width characters and bidi overrides.
-const UNSAFE_CHARS = /[\u0000-\u001F\u007F-\u009F\u200B-\u200F\u202A-\u202E\u2060-\u2069\uFEFF]/g;
+const UNSAFE_CHARS = /[\u0000-\u001F\u007F-\u009F\u200B\u200D-\u200F\u202A-\u202E\u2060-\u2069\uFEFF]/g;
 
 /** Trims, strips control/bidi characters and limits length (by code point). */
 export function sanitizeName(raw: unknown, fallback: string): string {

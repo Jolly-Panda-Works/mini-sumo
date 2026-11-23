@@ -307,6 +307,7 @@ export interface ProfileResponse {
  * the newer side wins. XP and play stats: the higher value wins (progress is never lost).
  */
 export interface ProfileSyncRequest {
+  usernamePolicy?: import("./username.js").UsernamePolicy;
   name: string;
   appearance: Appearance;
   xp: number;

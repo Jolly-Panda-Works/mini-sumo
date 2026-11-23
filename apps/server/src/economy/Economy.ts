@@ -3,7 +3,7 @@ import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import {
-  AD_RULES, DAILY_GIFT_COINS, APPEARANCE_LIMITS, NAME_MAX_LENGTH,
+  AD_RULES, DAILY_GIFT_COINS, APPEARANCE_LIMITS, validateUsername, usernameKey,
   Currency,
   STARTER_ITEMS,
   restrictToOwned,
@@ -38,6 +38,8 @@ export class EconomyError extends Error {
       | "not_friends"
       | "friend_offline"
       | "bad_request"
+      | "username_invalid"
+      | "username_taken"
       | "store_unavailable"
       | "purchase_invalid"
       | "unknown_arena"
@@ -235,6 +237,27 @@ export class Economy {
     if (!columns.some((c) => c.name === "profile_updated_at")) this.db.exec("ALTER TABLE accounts ADD COLUMN profile_updated_at TEXT NOT NULL DEFAULT ''");
     // Bot players: real accounts for the leaderboard, friends and in-game bots.
     if (!columns.some((c) => c.name === "is_bot")) this.db.exec("ALTER TABLE accounts ADD COLUMN is_bot INTEGER NOT NULL DEFAULT 0");
+    if (!columns.some((c) => c.name === "username_key")) {
+      this.tx(() => {
+        this.db.exec("ALTER TABLE accounts ADD COLUMN username_key TEXT");
+        const accounts = rows<{ id: string; name: string }>(
+          this.db.prepare("SELECT id, name FROM accounts WHERE is_bot = 0 AND name != '' ORDER BY created_at, rowid").all(),
+        );
+        const seen = new Set<string>();
+        const update = this.db.prepare("UPDATE accounts SET name = ?, username_key = ? WHERE id = ?");
+        for (const account of accounts) {
+          const name = validateUsername(account.name);
+          const key = name ? usernameKey(name) : null;
+          if (!name || !key || seen.has(key)) {
+            update.run("", null, account.id);
+            continue;
+          }
+          seen.add(key);
+          update.run(name, key, account.id);
+        }
+        this.db.exec("CREATE UNIQUE INDEX accounts_username ON accounts(username_key) WHERE username_key IS NOT NULL");
+      });
+    }
     this.db.exec("CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)");
     // Keys for extra devices on an account (restored with an email)
     this.db.exec(
@@ -717,6 +740,24 @@ export class Economy {
     return restrictToOwned(sanitizeAppearance(parsed), this.owned(accountId));
   }
 
+  private reserveUsername(accountId: string, name: string): void {
+    const key = usernameKey(name);
+    const owner = this.db.prepare("SELECT id FROM accounts WHERE username_key = ? AND id != ?").get(key, accountId);
+    if (owner) throw new EconomyError("username_taken", "This username is already taken.");
+    this.db.prepare("UPDATE accounts SET name = ?, username_key = ? WHERE id = ?").run(name, key, accountId);
+  }
+
+  setUsername(accountId: string, raw: unknown, policy: unknown): string {
+    const name = validateUsername(raw, policy === "persian" ? "persian" : "international");
+    if (!name) throw new EconomyError("username_invalid", "Enter a valid username of 3 to 16 characters.");
+    this.tx(() => {
+      this.account(accountId);
+      this.reserveUsername(accountId, name);
+      this.db.prepare("UPDATE accounts SET profile_updated_at = MAX(profile_updated_at, ?) WHERE id = ?").run(this.timestamp(), accountId);
+    });
+    return name;
+  }
+
   /**
    * Merges a device's copy of the profile (sent when it reaches the server again).
    * Name and look: the newer side wins (the look only with owned items). XP, matches and
@@ -731,11 +772,19 @@ export class Economy {
     const clientAt = at && at.getTime() <= this.now().getTime() + 5 * 60_000 ? at.toISOString() : "";
     const serverAt = account.profile_updated_at ?? "";
     if (clientAt && clientAt > serverAt) {
-      const name = typeof body.name === "string" ? body.name.replace(/\s+/g, " ").trim().slice(0, NAME_MAX_LENGTH) : "";
+      const name = validateUsername(body.name, body.usernamePolicy === "persian" ? "persian" : "international");
       const appearance = restrictToOwned(sanitizeAppearance(body.appearance), this.owned(accountId));
-      this.db
-        .prepare("UPDATE accounts SET name = ?, appearance = ?, profile_updated_at = ? WHERE id = ?")
-        .run(name || account.name || "", JSON.stringify(appearance), clientAt, accountId);
+      this.tx(() => {
+        if (name && name !== account.name) {
+          try {
+            this.reserveUsername(accountId, name);
+          } catch (error) {
+            if (!(error instanceof EconomyError) || error.code !== "username_taken") throw error;
+          }
+        }
+        this.db.prepare("UPDATE accounts SET appearance = ?, profile_updated_at = ? WHERE id = ?")
+          .run(JSON.stringify(appearance), clientAt, accountId);
+      });
     }
     const count = (value: unknown, max: number) =>
       typeof value === "number" && Number.isFinite(value) ? Math.max(0, Math.min(max, Math.floor(value))) : 0;

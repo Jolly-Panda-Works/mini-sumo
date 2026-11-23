@@ -77,6 +77,7 @@ export interface ErrorPayload {
 
 /** Options accepted by client.create / joinOrCreate / joinById. */
 export interface JoinOptions {
+  usernamePolicy?: import("./username.js").UsernamePolicy;
   /** Isolated, one-time guided bot bout. Never joins public matchmaking. */
   introRound?: 1 | 2;
   name?: string;

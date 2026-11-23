@@ -22,7 +22,7 @@ import { settingsStore } from "../settings";
 import { wrapColyseusRoom, type GameConnection } from "./connection";
 import { LocalConnection, type LocalRoomOptions } from "./LocalConnection";
 import { detectNetworkMode, networkStore, probeServer, serverConfigured } from "./networkMode";
-import { syncProfile } from "./profileSync";
+import { syncProfile, usernamePolicy } from "./profileSync";
 import { accountToken, economyStore, ensureAccount, initLocalEconomy, loadEconomy, refreshProfile, setLastResult } from "./economyClient";
 import { localEconomy } from "./localEconomy";
 
@@ -260,7 +260,7 @@ class RoomManager {
         { name, appearance, isPrivate: false, maxPlayers: 4, botLevel, arenaId, entry, level: myLevel() },
       );
     }
-    const options: JoinOptions = { name, private: false, maxPlayers: 4, appearance, arenaId, botLevel: arenaId === "training" ? botLevel : undefined, level: myLevel() };
+    const options: JoinOptions = { name, usernamePolicy, private: false, maxPlayers: 4, appearance, arenaId, botLevel: arenaId === "training" ? botLevel : undefined, level: myLevel() };
     return this.connect(
       async () => {
         options.authToken = await this.authToken();
@@ -275,7 +275,7 @@ class RoomManager {
     await this.modeReady;
     const { name, appearance } = settingsStore.get();
     const local: LocalRoomOptions = { name, appearance, isPrivate: false, maxPlayers: INTRO_PLAYERS[introRound], botLevel: "easy", arenaId: "rookie", introRound, level: myLevel() };
-    return this.connect(async () => wrapColyseusRoom(await this.client.create(ROOM_NAME, { ...local, authToken: await this.authToken() })), local);
+    return this.connect(async () => wrapColyseusRoom(await this.client.create(ROOM_NAME, { ...local, usernamePolicy, authToken: await this.authToken() })), local);
   }
 
   /** Guest token for the economy (created on first online use). */
@@ -292,7 +292,7 @@ class RoomManager {
   createPrivate(name: string, maxPlayers: number): Promise<boolean> {
     const appearance = settingsStore.get().appearance;
     const botLevel = settingsStore.get().botLevel;
-    const options: JoinOptions = { name, private: true, maxPlayers, appearance, arenaId: "private", botLevel };
+    const options: JoinOptions = { name, usernamePolicy, private: true, maxPlayers, appearance, arenaId: "private", botLevel };
     return this.connect(
       async () => {
         options.authToken = await this.authToken();
@@ -312,7 +312,7 @@ class RoomManager {
       sessionStore.update({ error: "Playing with friends is coming soon." });
       return Promise.resolve(false);
     }
-    const options: JoinOptions = { name, appearance: settingsStore.get().appearance };
+    const options: JoinOptions = { name, usernamePolicy, appearance: settingsStore.get().appearance };
     const joined = await this.connect(async () => {
       options.authToken = await this.authToken();
       return wrapColyseusRoom(await this.client.joinById(trimmed, options));

@@ -53,7 +53,7 @@ function load(): Settings {
       touchControls: "auto",
       joystick: parsed.joystick === "fixed" ? "fixed" : "floating",
       vibration: typeof parsed.vibration === "boolean" ? parsed.vibration : true,
-      name: typeof parsed.name === "string" ? parsed.name.slice(0, 32) : "",
+      name: typeof parsed.name === "string" ? Array.from(parsed.name).slice(0, 32).join("") : "",
       onboarded: typeof parsed.onboarded === "boolean" ? parsed.onboarded : Boolean(parsed.name?.trim()),
       storySeen: parsed.storySeen === true,
       tutorialCompleted,

@@ -34,10 +34,10 @@ describe("leaderboard", () => {
   it("ranks players by XP and includes your own row", () => {
     const { economy, make } = setup();
     make("Low", 100);
-    const me = make("Me", 500);
+    const me = make("Mid", 500);
     make("Top", 2000);
     const board = economy.leaderboard(me);
-    expect(board.top.map((e) => e.name)).toEqual(["Top", "Me", "Low"]);
+    expect(board.top.map((e) => e.name)).toEqual(["Top", "Mid", "Low"]);
     expect(board.top.map((e) => e.rank)).toEqual([1, 2, 3]);
     expect(board.you.rank).toBe(2);
     expect(board.total).toBe(3);
@@ -45,9 +45,9 @@ describe("leaderboard", () => {
 
   it("gives your rank when you're outside the top list; equal XP shares a rank", () => {
     const { economy, make } = setup();
-    make("A", 900);
-    make("B", 900);
-    const me = make("Me", 10);
+    make("Ava", 900);
+    make("Ben", 900);
+    const me = make("Mid", 10);
     const board = economy.leaderboard(me, 2);
     expect(board.top).toHaveLength(2);
     expect(board.top.map((e) => e.rank)).toEqual([1, 1]);
@@ -57,7 +57,7 @@ describe("leaderboard", () => {
   it("leaves out players without a name", () => {
     const { economy, make } = setup();
     economy.createGuest();
-    const me = make("Me", 0);
+    const me = make("Mid", 0);
     expect(economy.leaderboard(me).total).toBe(1);
   });
 });
