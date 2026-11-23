@@ -1,5 +1,9 @@
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { DatabaseSync } from "node:sqlite";
 import { describe, expect, it } from "vitest";
-import { DEFAULT_APPEARANCE } from "@mini-sumo/shared";
+import { DEFAULT_APPEARANCE, validateUsername } from "@mini-sumo/shared";
 import { Economy } from "../src/economy/Economy.js";
 import { silentEventSink } from "../src/economy/events.js";
 
@@ -61,4 +65,70 @@ describe("profile sync", () => {
     economy.syncProfile(accountId, sync("2026-10-18T09:00:00Z", { xp: 50_000 }));
     expect(economy.profile(accountId).balances.coins).toBe(before);
   });
+});
+
+
+describe("usernames", () => {
+  it("checks the length, letters and separators", () => {
+    expect(validateUsername("ab")).toBeNull();
+    expect(validateUsername("a".repeat(16))).toBe("a".repeat(16));
+    expect(validateUsername("a".repeat(17))).toBeNull();
+    expect(validateUsername("Ali__123")).toBeNull();
+    expect(validateUsername("Ali_123")).toBe("Ali_123");
+    expect(validateUsername("Ali😀")).toBeNull();
+  });
+
+  it("accepts Persian names and normalizes Arabic keyboard forms", () => {
+    expect(validateUsername("علي كريمي", "persian")).toBe("علی کریمی");
+    expect(validateUsername("علی‌رضا", "persian")).toBe("علی‌رضا");
+    expect(validateUsername("Aliعلی", "persian")).toBeNull();
+    expect(validateUsername("علی۱۲۳", "persian")).toBeNull();
+  });
+
+  it("reserves names across accounts regardless of case or Persian half-spaces", () => {
+    const { economy, accountId } = setup();
+    const other = economy.createGuest().accountId;
+    expect(economy.setUsername(accountId, "Usef", "international")).toBe("Usef");
+    expect(() => economy.setUsername(other, "usef", "international")).toThrow("already taken");
+    expect(economy.setUsername(accountId, "USEF", "international")).toBe("USEF");
+    expect(economy.setUsername(other, "علی‌رضا", "persian")).toBe("علی‌رضا");
+    expect(() => economy.setUsername(accountId, "عليرضا", "persian")).toThrow("already taken");
+    expect(economy.setUsername(other, "رضا", "persian")).toBe("رضا");
+    expect(economy.setUsername(accountId, "عليرضا", "persian")).toBe("علیرضا");
+  });
+
+  it("keeps offline progress when a requested username is taken", () => {
+    const { economy, accountId } = setup();
+    const other = economy.createGuest().accountId;
+    economy.setUsername(other, "Usef", "international");
+    const profile = economy.syncProfile(accountId, sync("2026-10-18T09:00:00Z", { name: "usef", xp: 900 }));
+    expect(profile.name).toBe("");
+    expect(profile.level.xp).toBe(900);
+  });
+});
+
+it("keeps the oldest valid name when migrating legacy duplicates", () => {
+  const directory = mkdtempSync(join(tmpdir(), "mini-sumo-usernames-"));
+  const path = join(directory, "economy.db");
+  try {
+    const original = new Economy(path, FLAGS, silentEventSink, () => new Date("2026-10-18T10:00:00Z"), false);
+    const first = original.createGuest().accountId;
+    const duplicate = original.createGuest().accountId;
+    original.close();
+    const legacy = new DatabaseSync(path);
+    legacy.exec("DROP INDEX accounts_username; ALTER TABLE accounts DROP COLUMN username_key");
+    legacy.prepare("UPDATE accounts SET name = ? WHERE id = ?").run("Usef", first);
+    legacy.prepare("UPDATE accounts SET name = ? WHERE id = ?").run("usef", duplicate);
+    legacy.close();
+    const migrated = new Economy(path, FLAGS, silentEventSink, undefined, false);
+    try {
+      expect(migrated.profile(first).name).toBe("Usef");
+      expect(migrated.profile(duplicate).name).toBe("");
+      expect(() => migrated.setUsername(duplicate, "USEF", "international")).toThrow("already taken");
+    } finally {
+      migrated.close();
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
 });

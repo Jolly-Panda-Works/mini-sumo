@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import { IntroPanelFooter, finishIntroProfile } from "./IntroPanelFooter";
-import { NAME_MAX_LENGTH } from "@mini-sumo/shared";
+import { UsernameForm } from "./UsernameForm";
 import { economyStore } from "../network/economyClient";
 import { settingsStore } from "../settings";
 import { useStore } from "../store";
@@ -20,32 +20,9 @@ import { bazaarWebLinked, bazaarWebPossible, startBazaarWebLogin } from "../netw
 
 function EditName({ onClose }: { onClose: () => void }) {
   const settings = useStore(settingsStore);
-  const [name, setName] = useState(settings.name);
-  const trimmed = name.trim().slice(0, NAME_MAX_LENGTH);
-
-  const save = (event: FormEvent) => {
-    event.preventDefault();
-    if (!trimmed) return;
-    settingsStore.update({ name: trimmed });
-    onClose();
-  };
-
   return (
     <Dialog title="Edit name" onClose={onClose} className="edit-name" variant="editname">
-      <form className="edit-name__form" onSubmit={save}>
-        <input
-          className="input input--art"
-          value={name}
-          onChange={(e) => setName(e.target.value.slice(0, NAME_MAX_LENGTH))}
-          maxLength={NAME_MAX_LENGTH}
-          autoComplete="nickname"
-          aria-label="Name"
-          autoFocus
-        />
-        <button type="submit" className="art art--save" aria-label="Save" disabled={!trimmed || trimmed === settings.name}>
-          <img src={`${import.meta.env.BASE_URL}ui/btn-save.webp`} alt="" width={329} height={119} draggable={false} />
-        </button>
-      </form>
+      <UsernameForm initial={settings.name} className="edit-name__form" onSaved={onClose} />
     </Dialog>
   );
 }

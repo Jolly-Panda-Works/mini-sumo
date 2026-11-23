@@ -1,6 +1,6 @@
-import { sanitizeAppearance, type ProfileResponse, type ProfileSyncRequest } from "@mini-sumo/shared";
+import { sanitizeAppearance, validateUsername, type UsernamePolicy, type ProfileResponse, type ProfileSyncRequest } from "@mini-sumo/shared";
 import { settingsStore } from "../settings";
-import { applyServerProfile, economyStore, request } from "./economyClient";
+import { ApiError, applyServerProfile, economyStore, request } from "./economyClient";
 import { localEconomy } from "./localEconomy";
 import { networkStore } from "./networkMode";
 
@@ -9,6 +9,32 @@ import { networkStore } from "./networkMode";
  * server and are saved locally. When the server is reachable, the device's copy is sent and
  * merged (newer name/look wins, higher XP and stats win) and the result is kept on both.
  */
+export const usernamePolicy: UsernamePolicy =
+  import.meta.env.VITE_STORE === "myket" || import.meta.env.VITE_STORE === "bazaar" ? "persian" : "international";
+
+export const usernameHint = usernamePolicy === "persian"
+  ? "Use 3 to 16 Persian letters. Spaces and half-spaces are allowed."
+  : "Use 3 to 16 characters. Start with a letter and use letters, numbers, spaces, hyphens or underscores.";
+
+export async function saveUsername(raw: string): Promise<void> {
+  const name = validateUsername(raw, usernamePolicy);
+  if (!name) throw new Error(usernameHint);
+  let savedName = name;
+  if (networkStore.get().mode === "online" && economyStore.get().catalog?.flags.economy !== false) {
+    try {
+      const saved = await request<{ name: string }>("/profile/username", {
+        method: "PUT",
+        body: JSON.stringify({ name, policy: usernamePolicy }),
+      });
+      savedName = saved.name;
+    } catch (error) {
+      // Older servers accept the name through profile sync.
+      if (!(error instanceof ApiError) || error.status !== 404) throw error;
+    }
+  }
+  settingsStore.update({ name: savedName, onboarded: true });
+}
+
 const UPDATED_KEY = "mini-sumo:profile-updated-at";
 
 function readUpdatedAt(): string {
@@ -52,20 +78,25 @@ export function syncProfile(): Promise<void> {
   syncing ??= (async () => {
     const settings = settingsStore.get();
     const progress = localEconomy.progress();
+    const deviceUpdatedAt = readUpdatedAt();
     const body: ProfileSyncRequest = {
       name: settings.name,
+      usernamePolicy,
       appearance: settings.appearance,
       ...progress,
-      updatedAt: readUpdatedAt() || new Date(0).toISOString(),
+      updatedAt: deviceUpdatedAt || new Date(settings.name && !economyStore.get().profile?.name ? Date.now() : 0).toISOString(),
     };
     try {
       const profile = await request<ProfileResponse>("/profile/sync", { method: "POST", body: JSON.stringify(body) });
       // The server's name/look is newer (changed on another device): take it.
-      if (profile.profileUpdatedAt && profile.profileUpdatedAt > body.updatedAt) {
+      const current = settingsStore.get();
+      const unchanged = current.name === body.name && readUpdatedAt() === deviceUpdatedAt;
+      if (unchanged && profile.profileUpdatedAt && profile.profileUpdatedAt >= body.updatedAt) {
         applyingServer = true;
+        const serverName = validateUsername(profile.name, usernamePolicy);
         settingsStore.update({
-          ...(profile.name ? { name: profile.name } : {}),
-          appearance: sanitizeAppearance(profile.appearance),
+          ...(serverName ? { name: serverName } : body.name ? { onboarded: false } : {}),
+          ...(profile.profileUpdatedAt > body.updatedAt ? { appearance: sanitizeAppearance(profile.appearance) } : {}),
         });
         applyingServer = false;
         writeUpdatedAt(profile.profileUpdatedAt);

@@ -32,8 +32,8 @@ describe("friends", () => {
 
   it("two requests the same way make friends right away; codes are case-insensitive", () => {
     const { friends, make } = setup();
-    const a = make("A");
-    const b = make("B");
+    const a = make("Ava");
+    const b = make("Ben");
     friends.request(a, friends.codeOf(b).toLowerCase());
     friends.request(b, friends.codeOf(a));
     expect(friends.areFriends(a, b)).toBe(true);
@@ -41,7 +41,7 @@ describe("friends", () => {
 
   it("rejects bad codes and your own code", () => {
     const { friends, make } = setup();
-    const a = make("A");
+    const a = make("Ava");
     expect(() => friends.request(a, "ZZZZZZ")).toThrow();
     expect(() => friends.request(a, friends.codeOf(a))).toThrow();
     expect(() => friends.request(a, "x")).toThrow();
@@ -49,11 +49,11 @@ describe("friends", () => {
 
   it("declining or removing ends it; profiles only for friends and requests", () => {
     const { friends, make } = setup();
-    const a = make("A");
-    const b = make("B");
-    const c = make("C");
+    const a = make("Ava");
+    const b = make("Ben");
+    const c = make("Cam");
     friends.request(a, friends.codeOf(b));
-    expect(friends.profile(b, a).name).toBe("A");
+    expect(friends.profile(b, a).name).toBe("Ava");
     expect(friends.profile(b, a).appearance.hair).toBe(0);
     expect(() => friends.profile(c, a)).toThrow();
     friends.respond(b, a, false);
@@ -66,7 +66,7 @@ describe("friends", () => {
 
   it("presence: online after an API call, offline a minute later", () => {
     const { friends, make, advance } = setup();
-    const a = make("A");
+    const a = make("Ava");
     friends.touch(a);
     expect(friends.isOnline(a)).toBe(true);
     advance(61_000);
