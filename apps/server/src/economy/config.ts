@@ -36,6 +36,7 @@ export function loadFlags(): EconomyFlags {
     shop: envFlag("SHOP_ENABLED", true),
     premiumCurrency: envFlag("PREMIUM_CURRENCY_ENABLED", false),
     realMoneyPurchases: envFlag("REAL_MONEY_PURCHASES_ENABLED", false),
+    adRewards: envFlag("AD_REWARDS_ENABLED", false),
   };
 }
 

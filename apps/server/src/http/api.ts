@@ -1,6 +1,8 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { packForBazaarProduct } from "@mini-sumo/shared";
 import type {
+  AdRewardRequest,
+  AdRewardResponse,
   BazaarPurchaseRequest,
   BazaarPurchaseResponse,
   CatalogResponse,
@@ -43,6 +45,7 @@ import type { PaymentService } from "../economy/payments.js";
  *   POST /api/purchases/bazaar { productId, purchaseToken }  a Cafe Bazaar coin pack (Bearer token)
  *   POST /api/purchases/myket  { productId, purchaseToken }  a Myket coin pack (Bearer token)
  *   POST /api/daily-gift                    the free daily coins (once a day) (Bearer token)
+ *   POST /api/ads/reward { adId }           coins for a watched rewarded ad (Bearer token)
  *   GET  /api/version                       latest app version, minimum to play (no token)
  *   GET  /api/leaderboard?limit=100         top players by XP + your rank    (Bearer token)
  *   GET  /api/friends                       your code, friends, requests     (Bearer token)
@@ -188,6 +191,7 @@ export function createApiHandler(
         arenas: listArenas(),
         items: CATALOG.map((item) => ({ ...item })),
         stores: { bazaar: Boolean(economy && bazaar), myket: Boolean(economy && myket) },
+        adRewards: Boolean(economy?.flags.adRewards),
         emailRecovery: Boolean(economy && recovery?.available),
         bazaarLogin: Boolean(economy && bazaarLogin),
       };
@@ -338,6 +342,36 @@ export function createApiHandler(
         }
       } else if (route === "POST /api/daily-gift") {
         send(res, 200, economy.claimDailyGift(accountId));
+      } else if (route === "POST /api/ads/reward") {
+        // A watched rewarded ad: paid once per ad id, within the daily limit and cooldown.
+        if (!writeLimiter.allow(accountId)) {
+          send(res, 429, { error: "rate_limited", message: "Slow down a little." });
+        } else {
+          const body = ((await readJson(req)) ?? {}) as Partial<AdRewardRequest>;
+          if (!economy.flags.adRewards) throw new EconomyError("disabled", "Rewarded ads are not available.");
+          const { adId } = body;
+          if (typeof adId !== "string" || !/^[\w-]{8,64}$/.test(adId)) throw new EconomyError("bad_request", "Unknown ad.");
+          let out: AdRewardResponse | null = economy.recordedAdReward(accountId, adId);
+          if (!out) {
+            const status = economy.adRewardStatus(accountId);
+            if (!status.left || status.nextAt) throw new EconomyError("bad_request", "No rewarded ad is available right now.");
+            const verification = await fetch("https://api.tapsell.ir/v2/suggestions/validate-suggestion", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ suggestionId: adId }),
+              redirect: "error",
+              signal: AbortSignal.timeout(5000),
+            }).catch(() => null);
+            if (!verification?.ok) throw new EconomyError("store_unavailable", "Couldn't verify the ad. Try again later.");
+            const confirmation = await verification.json().catch(() => null) as { valid?: boolean } | null;
+            out = economy.recordedAdReward(accountId, adId);
+            if (!out) {
+              if (confirmation?.valid !== true) throw new EconomyError("bad_request", "Tapsell couldn't confirm this reward.");
+              out = economy.claimAdReward(accountId, adId);
+            }
+          }
+          send(res, 200, out);
+        }
       } else if (route === "GET /api/leaderboard") {
         const body: LeaderboardResponse = economy.leaderboard(accountId, Number(url.searchParams.get("limit") ?? 100));
         send(res, 200, body);

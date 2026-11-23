@@ -46,7 +46,11 @@ if(c.android.profile==='mini') {
 npx(['cap','sync','android'],{cwd:mobile});
 if(c.android.profile==='mini') {
   for(const name of ['orientation','fullscreen','deep-link']) run(process.execPath,[`scripts/${name}.mjs`],{cwd:mobile});
-  if(!debug) run(process.execPath,[`scripts/${store}.mjs`],{cwd:mobile});
+  if (store === 'release') run(process.execPath, ['scripts/play-games.mjs'], {cwd: mobile});
+  if (c.stores.includes(store)) {
+    run(process.execPath, [`scripts/${store}.mjs`], {cwd: mobile});
+    run(process.execPath, ['scripts/tapsell.mjs'], {cwd: mobile});
+  }
 }
 if (env.ANDROID_TARGET_SDK) {
   const sdk = env.ANDROID_TARGET_SDK;

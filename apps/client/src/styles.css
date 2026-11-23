@@ -8655,6 +8655,11 @@ button.code-field {
   max-width: 100%;
 }
 
+.pack__watch {
+  width: calc(371px * var(--art-scale));
+  max-width: 100%;
+}
+
 /* Notices always sit above the match HUD and the player frames */
 .toasts {
   position: fixed;

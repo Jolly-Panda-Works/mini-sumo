@@ -174,6 +174,8 @@ export interface EconomyFlags {
   shop: boolean;
   premiumCurrency: boolean;
   realMoneyPurchases: boolean;
+  /** Rewarded ads pay coins on this server (a client's word until the ad network can confirm). */
+  adRewards?: boolean;
 }
 
 export type DrawPolicy = "refund";
@@ -216,6 +218,8 @@ export interface CatalogResponse {
   items: ShopItemInfo[];
   /** Stores whose purchases this server can verify (and credit) right now. */
   stores?: { bazaar: boolean; myket?: boolean };
+  /** This server pays rewarded ads. */
+  adRewards?: boolean;
   /** Progress can be saved with an email (and restored on another device). */
   emailRecovery?: boolean;
   /** Sign in with Cafe Bazaar on the web (the server has its OAuth keys). */
@@ -280,6 +284,9 @@ export interface ProfileResponse {
     firstMatchBonusAvailable: boolean;
     /** The free daily coins (coin shop) can be claimed today. */
     giftAvailable: boolean;
+    /** Rewarded ads left today, and when the next one can be watched (ISO time; "" = now). */
+    adRewardsLeft?: number;
+    nextAdAt?: string;
   };
 }
 
@@ -367,6 +374,7 @@ export type LedgerCategory =
   | "daily_bonus"
   | "cosmetic_purchase"
   | "daily_gift"
+  | "ad_reward"
   | "level_up"
   | "coin_purchase"
   | "adjustment";
@@ -407,6 +415,49 @@ export interface EconomyResultMessage {
 
 // ---------------------------------------------------------------- rules shared by the
 // local (offline) economy and the server. Balancing values live here, in one place.
+
+/**
+ * In-app ads. The rules both sides enforce, and how often the client may interrupt a player.
+ * One rewarded ad pays one Rookie entry, so ads never compete with the coin packs.
+ */
+export const AD_RULES = {
+  /** Coins for watching a rewarded ad to the end. */
+  rewardedCoins: 50,
+  /** Rewarded ads paid per (UTC) day. */
+  rewardedDailyLimit: 5,
+  /** Wait between two rewarded ads. */
+  rewardedCooldownMs: 5 * 60_000,
+  /** No interstitial before a new player has finished this many bouts. */
+  interstitialGraceBouts: 4,
+  /** At most one interstitial every this many bouts... */
+  interstitialEveryBouts: 4,
+  /** Minimum time between interstitials. */
+  interstitialMinGapMs: 0,
+  /** The "Ad break" notice before an interstitial, so nobody taps the ad by accident. */
+  interstitialNoticeMs: 1_500,
+} as const;
+
+/** Whether the next break between bouts may show an interstitial. */
+export function interstitialDue(input: { totalBouts: number; boutsSinceAd: number; msSinceAd: number; payer: boolean }): boolean {
+  if (input.payer) return false;
+  if (input.totalBouts < AD_RULES.interstitialGraceBouts) return false;
+  return input.boutsSinceAd >= AD_RULES.interstitialEveryBouts && input.msSinceAd >= AD_RULES.interstitialMinGapMs;
+}
+
+/** POST /api/ads/reward */
+export interface AdRewardRequest {
+  /** One id per watched ad, so a retry can't pay twice. */
+  adId: string;
+}
+
+export interface AdRewardResponse {
+  /** false when this ad was already paid. */
+  credited: boolean;
+  coins: number;
+  balance: number;
+  /** Rewarded ads left today. */
+  left: number;
+}
 
 /** Coins a new player starts with: enough for a first Rookie bout. */
 export const STARTING_COINS = 200;

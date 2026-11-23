@@ -4,6 +4,7 @@ export const persian = import.meta.env.VITE_STORE === 'bazaar' || import.meta.en
 export const locale = persian ? 'fa-IR' : 'en-US';
 
 const patterns: [RegExp, (...values: string[]) => string][] = [
+  [/^Watch an ad \((\d+) left today\)$/, n => `تماشای تبلیغ (${n} بار باقی‌مانده برای امروز)`],
   [/^PANDA COACH · (\d+) \/ (\d+)$/, (n, count) => `مربی پاندا · ${n} / ${count}`],
   [/^x(\d+) COMBO$/, n => `${n} ضربهٔ پیاپی`],
   [/^You pushed (.+) out!$/, name => `${name} را بیرون انداختی!`],

@@ -59,6 +59,9 @@ jobs:
           ANDROID_TARGET_SDK: ${{ vars.ANDROID_TARGET_SDK }}
           BAZAAR_RSA_KEY: ${{ vars.BAZAAR_RSA_KEY }}
           BAZAAR_DEVELOPER_ID: ${{ vars.BAZAAR_DEVELOPER_ID }}
+          TAPSELL_APP_KEY: ${{ secrets.TAPSELL_APP_KEY }}
+          TAPSELL_REWARDED_ZONE: ${{ vars.TAPSELL_REWARDED_ZONE }}
+          TAPSELL_INTERSTITIAL_ZONE: ${{ vars.TAPSELL_INTERSTITIAL_ZONE }}
           MYKET_PUBLIC_KEY: ${{ vars.MYKET_PUBLIC_KEY }}
           KEYSTORE_BASE64: ${{ matrix.edition != 'debug' && secrets.ANDROID_KEYSTORE_BASE64 || '' }}
           KEYSTORE_PASSWORD: ${{ matrix.edition != 'debug' && secrets.ANDROID_KEYSTORE_PASSWORD || '' }}

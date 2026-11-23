@@ -304,6 +304,12 @@ Profile:|پروفایل:
 Progress restored from|پیشرفت بازیابی شد از
 Progress to the next level|پیشرفت تا سطح بعد
 Purchase failed|خرید ناموفق بود
+Remove between-match ads|حذف تبلیغات بین مسابقه‌ها
+Ad break|وقفهٔ تبلیغاتی
+WATCH|تماشا
+SOON|به‌زودی
+OWNED|خریداری‌شده
+No ad right now. Try again later.|فعلاً تبلیغی در دسترس نیست. بعداً دوباره تلاش کن.
 Push them out!|بیرونشان بینداز!
 READY TO PLAY|آمادهٔ بازی
 RING OUT!|بیرون از میدان!

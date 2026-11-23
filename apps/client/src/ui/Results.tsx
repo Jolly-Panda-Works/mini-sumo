@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { adBreak, noteBoutFinished } from "../network/ads";
 import { addFriendById, friendsAvailable, friendsStore, loadFriends } from "../network/friendsClient";
 import { pushToast, showError } from "../uiStore";
 import { gameStore, roomManager } from "../network/RoomManager";
@@ -45,15 +46,16 @@ export function Results() {
 
   useEffect(() => {
     audio.sample("menu-open");
+    if (!intro) noteBoutFinished();
   }, []);
 
   const playAgain = () => {
     const arenaId = game.arenaId;
-    void roomManager.leave().then(() => roomManager.enterArena(arenaId, settingsStore.get().name));
+    void roomManager.leave().then(adBreak).then(() => roomManager.enterArena(arenaId, settingsStore.get().name));
   };
   // Keyboard: H for Home, Enter for Play again / Rematch.
   const keyboard = useKeyboardUi();
-  const goHome = () => intro ? continueIntro() : void roomManager.leave();
+  const goHome = () => intro ? continueIntro() : void roomManager.leave().then(adBreak);
   const next = intro ? continueIntro : paid ? playAgain : isHost ? () => roomManager.rematch() : null;
   useHotkey(["KeyH"], goHome);
   useHotkey(["Enter", "NumpadEnter"], () => next?.(), next !== null);
