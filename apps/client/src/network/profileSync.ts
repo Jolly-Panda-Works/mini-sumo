@@ -12,9 +12,7 @@ import { networkStore } from "./networkMode";
 export const usernamePolicy: UsernamePolicy =
   import.meta.env.VITE_STORE === "myket" || import.meta.env.VITE_STORE === "bazaar" ? "persian" : "international";
 
-export const usernameHint = usernamePolicy === "persian"
-  ? "Use 3 to 16 Persian letters. Spaces and half-spaces are allowed."
-  : "Use 3 to 16 characters. Start with a letter and use letters, numbers, spaces, hyphens or underscores.";
+export const usernameHint = "Use 3 to 16 character";
 
 export async function saveUsername(raw: string): Promise<void> {
   const name = validateUsername(raw, usernamePolicy);

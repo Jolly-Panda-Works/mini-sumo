@@ -1,6 +1,5 @@
 {
-  "$comment": "What's new in Cafe Bazaar for the next version (required: nothing is released without it). Set version to the version being released (package.json) and write fa and en, on the Iranian-store branch. Emptied after each release.",
-  "version": "",
-  "fa": "",
-  "en": ""
+  "version": "1.46.8",
+  "fa": "• رابط بازی، منوها و پیام‌ها فارسی شدند.\n• ۱۰ ماسک حیوانی تازه به شخصی‌سازی اضافه شد. رنگ بدن کشتی‌گیر هم با ماسک هماهنگ می‌شود.\n• نام کاربری فارسی با ۳ تا ۱۶ کاراکتر و راهنمای کوتاه‌تر در فرم ورود نام.\n• امکان دریافت سکه با تماشای تبلیغ جایزه‌ای و خرید بستهٔ حذف تبلیغات بین مسابقه‌ها اضافه شد.\n• آموزش برای شروع بازی نمایش داده می‌شود و گزینهٔ اجرای دوبارهٔ آن از تنظیمات حذف شد.",
+  "en": "• The game interface, menus and messages are now in Persian.\n• Added 10 animal masks to customization. The wrestler's colors adapt to the chosen mask.\n• Persian usernames must be 3–16 characters long, and the username form has a shorter hint.\n• Added optional rewarded ads for coins and a one-time purchase to remove between-match ads.\n• The tutorial remains part of the first-time experience. Its replay option was removed from Settings."
 }

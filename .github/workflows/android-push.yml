@@ -79,3 +79,16 @@ jobs:
           name: mini-sumo-${{ matrix.edition }}-${{ github.run_number }}
           path: out/
           if-no-files-found: error
+
+      - name: Send the Bazaar build requested in this commit
+        if: matrix.edition == 'bazaar' && github.ref == 'refs/heads/Iranian-store' && contains(github.event.head_commit.message, '[submit bazaar]')
+        env:
+          BAZAAR_PISHKHAN_TOKEN: ${{ secrets.BAZAAR_PISHKHAN_TOKEN }}
+          BAZAAR_CHANNEL: ${{ vars.BAZAAR_CHANNEL || 'alpha' }}
+          BAZAAR_AUTO_PUBLISH: 'false'
+          BAZAAR_KEEP_DRAFT: 'true'
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          CODE=$(node --input-type=module -e 'import { versionCode } from "./scripts/version.mjs"; console.log(versionCode(process.argv[1]));' "$VERSION")
+          node tools/bazaar-notes.mjs check "$RUNNER_TEMP/bazaar-release-notes.json"
+          node tools/pishkhan-release.mjs "out/mini_sumo-v$VERSION-bazaar.apk" --version "$VERSION" --code "$CODE" --changelog "$RUNNER_TEMP/bazaar-release-notes.json"

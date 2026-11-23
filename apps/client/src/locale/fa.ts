@@ -137,7 +137,7 @@ Easy|آسان
 Edit name|ویرایش نام
 Username|نام کاربری
 Save username|ذخیرهٔ نام کاربری
-Use 3 to 16 Persian letters. Spaces and half-spaces are allowed.|نام کاربری باید ۳ تا ۱۶ کاراکتر و با حروف فارسی باشد. فاصله و نیم‌فاصله مجاز است.
+Use 3 to 16 character|از ۳ تا ۱۶ کاراکتر استفاده کن
 Enter a valid username of 3 to 16 characters.|یک نام کاربری معتبر با ۳ تا ۱۶ کاراکتر وارد کن.
 This username is already taken.|این نام کاربری قبلاً گرفته شده است.
 Choose a valid username.|یک نام کاربری معتبر انتخاب کن.
