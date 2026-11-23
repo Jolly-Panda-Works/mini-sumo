@@ -90,9 +90,7 @@ if (draft.json.type === "success" && highestCode(draft.json.release) >= code) {
   process.exit(0);
 }
 if (draft.json.type === "success") {
-  console.log(`Removing an unfinished draft release (versionCode ${highestCode(draft.json.release) || "none"}).`);
-  const removed = await call("DELETE");
-  if (!removed.ok) fail(`Couldn't remove the draft release: ${removed.json.message ?? removed.status}`);
+  fail("An older Bazaar draft already exists. It has been preserved.");
 }
 
 // 3. New release.

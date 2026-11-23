@@ -1,6 +1,5 @@
 {
-  "$comment": "What's new in Myket for the next version (required: nothing is released without it). Set version to the version being released (package.json) and write fa and en, on the Iranian-store branch. Emptied after each release.",
-  "version": "",
-  "fa": "",
-  "en": ""
+  "version": "1.46.8",
+  "fa": "مینی سومو یک بازی کشتی سوموی سه‌بعدی با رابط فارسی است. وارد رینگ شو، جاخالی بده و با یک یورش به‌موقع حریف‌ها را از دایره بیرون بینداز. در مسابقه‌های آنلاین ۲ تا ۴ نفره رقابت کن، با کد اتاق دوستانت را دعوت کن یا آفلاین با حریف‌های رایانه‌ای تمرین کن. آموزش شروع بازی حرکت و یورش را یاد می‌دهد. کشتی‌گیرت را با لباس، مدل مو، چهره و ماسک‌های حیوانی شخصی‌سازی کن، سکه جمع کن و رتبه‌ات را دنبال کن. خرید درون‌برنامه‌ای اختیاری است.",
+  "en": "Mini Sumo is a 3D sumo party game with a Persian interface. Dodge and dash to knock your opponents out of the ring. Play online with 2–4 players, invite friends with a room code, or practise offline against bots. Learn the basics in the first-run tutorial. Customize your wrestler with outfits, hairstyles, faces and animal masks, earn coins and track your rank. In-app purchases are optional."
 }
