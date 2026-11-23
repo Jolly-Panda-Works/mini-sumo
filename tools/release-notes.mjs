@@ -18,5 +18,6 @@ ${serverNote}
 | | File |
 | --- | --- |
 | Android (install on a phone) | \`${f("Android.apk")}\` (signed; if missing, use \`${f("Android-debug.apk")}\`) |
+| Android (standalone debug APK) | `${f("Android-debug.apk")}` |
 | Android (Google Play upload) | \`${f("Android.aab")}\` |
 `);

@@ -9,18 +9,18 @@
 <p align="center">Created by <a href="https://www.useffarahmand.com"><b>Usef Farahmand</b></a></p>
 
 <p align="center">
-  <a href="https://github.com/Jolly-Panda-Works/mini-sumo-3d/actions/workflows/build.yml"><img src="https://github.com/Jolly-Panda-Works/mini-sumo-3d/actions/workflows/build.yml/badge.svg" alt="Build" /></a>
-  <a href="https://github.com/Jolly-Panda-Works/mini-sumo-3d/releases/latest"><img src="https://img.shields.io/github/v/release/Jolly-Panda-Works/mini-sumo-3d?display_name=tag&color=FF5D73" alt="Latest release" /></a>
-  <a href="https://github.com/Jolly-Panda-Works/mini-sumo-3d/releases"><img src="https://img.shields.io/github/downloads/Jolly-Panda-Works/mini-sumo-3d/total?color=FF5D73" alt="Downloads" /></a>
+  <a href="https://github.com/Jolly-Panda-Works/mini-sumo/actions/workflows/android-push.yml"><img src="https://github.com/Jolly-Panda-Works/mini-sumo/actions/workflows/android-push.yml/badge.svg" alt="Build" /></a>
+  <a href="https://github.com/Jolly-Panda-Works/mini-sumo/releases/latest"><img src="https://img.shields.io/github/v/release/Jolly-Panda-Works/mini-sumo?display_name=tag&color=FF5D73" alt="Latest release" /></a>
+  <a href="https://github.com/Jolly-Panda-Works/mini-sumo/releases"><img src="https://img.shields.io/github/downloads/Jolly-Panda-Works/mini-sumo/total?color=FF5D73" alt="Downloads" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>
   <img src="https://img.shields.io/badge/platform-Android-lightgrey" alt="Platforms" />
 </p>
 
 <p align="center">
-  <a href="https://github.com/Jolly-Panda-Works/mini-sumo-3d/releases/latest">Download</a> ·
+  <a href="https://github.com/Jolly-Panda-Works/mini-sumo/releases/latest">Download</a> ·
   <a href="https://www.useffarahmand.com/en/projects/mini-sumo">Game page</a> ·
-  <a href="https://github.com/Jolly-Panda-Works/mini-sumo-3d/issues/new?template=bug_report.yml">Report a bug</a> ·
-  <a href="https://github.com/Jolly-Panda-Works/mini-sumo-3d/issues/new?template=feature_request.yml">Request a feature</a>
+  <a href="https://github.com/Jolly-Panda-Works/mini-sumo/issues/new?template=bug_report.yml">Report a bug</a> ·
+  <a href="https://github.com/Jolly-Panda-Works/mini-sumo/issues/new?template=feature_request.yml">Request a feature</a>
 </p>
 
 <p align="center">
@@ -175,7 +175,7 @@ Offline, *Play now* searches for a few seconds and fills the ring with bots; *Cr
 
 ## Download and install
 
-- **Android:** open the [**latest release**](https://github.com/Jolly-Panda-Works/mini-sumo-3d/releases/latest) and install `MiniSumo-<version>-Android.apk` (signed; the `.aab` is for Google Play). Release downloads contain Android files only.
+- **Android:** open the [**latest release**](https://github.com/Jolly-Panda-Works/mini-sumo/releases/latest) and install `MiniSumo-<version>-Android.apk` (signed; the `.aab` is for Google Play). Release downloads contain Android files only.
 The game ships only as the Android app. [sumo.ryujin.fans](https://sumo.ryujin.fans/) is the landing page (`apps/landing`) with the store links; it isn't playable in a browser.
 
 **Game server:** `https://sumo.ryujin.fans` (landing page, API and websockets on one address). Android and Cafe Bazaar builds connect to `wss://sumo.ryujin.fans` by default; the repository variables `VITE_SERVER_URL` / `VITE_PUBLIC_URL` override it. `npm run dev` still uses a local server.
@@ -189,8 +189,8 @@ The game ships only as the Android app. [sumo.ryujin.fans](https://sumo.ryujin.f
 Requirements: **Node.js 22.13+** (the server uses the built-in `node:sqlite`) and npm 10+.
 
 ```bash
-git clone https://github.com/Jolly-Panda-Works/mini-sumo-3d.git
-cd mini-sumo-3d
+git clone https://github.com/Jolly-Panda-Works/mini-sumo.git
+cd mini-sumo
 npm install
 npm run dev
 ```
@@ -242,7 +242,7 @@ Dev mode (`?dev`) has a sample of the invite popup.
 
 ## Build the apps yourself
 
-**GitHub Actions.** Each push to `main` builds a standalone Android debug APK. Each push to `Iranian-store` builds the signed APK and AAB for each store listed in `game.config.json`. Download the files from the **Android builds on push** run artifacts.
+**GitHub Actions.** Each push to `main` builds a standalone debug APK and a signed release APK and AAB. Each push to `Iranian-store` builds the signed APK and AAB for each store listed in `game.config.json`. Download the files from the workflow artifacts or, for main builds, from GitHub Releases.
 
 **Locally:**
 
@@ -272,9 +272,11 @@ Configure under *Settings → Secrets and variables → Actions*:
 
 ## Releases and versions
 
-Push builds use the version in `package.json` and build the pushed commit. The debug APK uses the `com.jollypanda.mini_sumo.debug` application ID so it can be installed alongside a store build.
+**Latest Android release** · v1.46.0
 
-Store packages are available for review in the workflow artifacts.
+Each push to `main` gets an automatic patch version and an Android GitHub Release for the pushed commit. The same version appears in the game under Settings → About and is recorded in the README and package files on `main`. The debug APK can be installed alongside the signed APK.
+
+Store builds use the version in `package.json` on `Iranian-store`. Their packages are available in the workflow artifacts.
 
 ## Deployment
 
@@ -323,7 +325,7 @@ A standalone copy of the server with a step-by-step Ubuntu guide (Node.js, PM2, 
 ## Project structure
 
 ```
-mini-sumo-3d/
+mini-sumo/
 ├── apps/
 │   ├── client/          # React + React Three Fiber web client (Vite)
 │   ├── server/          # Colyseus room, game session, simulation, tests
@@ -378,7 +380,7 @@ How the server, client and networking fit together, the synced state, the room l
 
 ## Contributing
 
-Contributions are very welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) and follow the [Code of Conduct](CODE_OF_CONDUCT.md). A good first step: play a match and [open an issue](https://github.com/Jolly-Panda-Works/mini-sumo-3d/issues/new/choose).
+Contributions are very welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) and follow the [Code of Conduct](CODE_OF_CONDUCT.md). A good first step: play a match and [open an issue](https://github.com/Jolly-Panda-Works/mini-sumo/issues/new/choose).
 
 ## Security
 

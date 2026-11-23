@@ -7,19 +7,31 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: android-push-${{ github.ref }}
+  queue: max
+
 jobs:
   editions:
     runs-on: ubuntu-latest
     outputs:
       editions: ${{ steps.plan.outputs.editions }}
+      version: ${{ steps.plan.outputs.version }}
     steps:
       - uses: actions/checkout@v5
         with:
           persist-credentials: false
+          fetch-depth: 0
       - id: plan
         run: |
           if [[ "$GITHUB_REF_NAME" == main ]]; then
-            echo 'editions=["debug"]' >> "$GITHUB_OUTPUT"
+            echo 'editions=["debug","release"]' >> "$GITHUB_OUTPUT"
+            version=$(git for-each-ref --format='%(refname:short) %(contents:subject)' 'refs/tags/v*' |
+              awk -v run="android-build-run:$GITHUB_RUN_ID" '$2 == run { sub(/^v/, "", $1); print $1 }')
+            if [[ -z "$version" ]]; then
+              version=$(node scripts/version.mjs)
+            fi
+            echo "version=$version" >> "$GITHUB_OUTPUT"
           else
             node -p '"editions=" + JSON.stringify(require("./game.config.json").stores)' >> "$GITHUB_OUTPUT"
           fi
@@ -54,6 +66,8 @@ jobs:
       - name: Build Android package
         env:
           STORE: ${{ matrix.edition }}
+          VERSION: ${{ needs.editions.outputs.version }}
+          PLAY_GAMES_APP_ID: ${{ vars.PLAY_GAMES_APP_ID }}
           VITE_SERVER_URL: ${{ vars.VITE_SERVER_URL }}
           VITE_PUBLIC_URL: ${{ vars.VITE_PUBLIC_URL }}
           ANDROID_TARGET_SDK: ${{ vars.ANDROID_TARGET_SDK }}
@@ -65,14 +79,92 @@ jobs:
           KEY_ALIAS: ${{ matrix.edition != 'debug' && secrets.ANDROID_KEY_ALIAS || '' }}
           KEY_PASSWORD: ${{ matrix.edition != 'debug' && secrets.ANDROID_KEY_PASSWORD || '' }}
         run: node scripts/build.mjs
-      - name: Verify APK signature
+      - name: Verify Android signatures
+        env:
+          EDITION: ${{ matrix.edition }}
         run: |
           signer=$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n 1)
           for apk in out/*.apk; do
             "$signer" verify "$apk"
           done
+          if [[ "$EDITION" != debug ]]; then
+            LC_ALL=C jarsigner -verify out/*.aab | grep -F "jar verified."
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: mini-sumo-${{ matrix.edition }}-${{ github.run_number }}
           path: out/
           if-no-files-found: error
+
+  publish:
+    name: Publish Android release
+    if: github.ref == 'refs/heads/main'
+    needs: [editions, android]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VERSION: ${{ needs.editions.outputs.version }}
+      SERVER_URL: ${{ vars.VITE_SERVER_URL || 'wss://sumo.ryujin.fans' }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: mini-sumo-*-${{ github.run_number }}
+          path: builds
+      - name: Publish APKs and AAB
+        run: |
+          tag="v$VERSION"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          if git show-ref --verify --quiet "refs/tags/$tag"; then
+            test "$(git rev-list -n 1 "$tag")" = "$GITHUB_SHA"
+            test "$(git for-each-ref --format='%(contents:subject)' "refs/tags/$tag")" = "android-build-run:$GITHUB_RUN_ID"
+          else
+            git tag -a "$tag" "$GITHUB_SHA" -m "android-build-run:$GITHUB_RUN_ID"
+            git push origin "refs/tags/$tag"
+          fi
+
+          if ! gh release view "$tag" --json isDraft > /dev/null 2>&1; then
+            node tools/release-notes.mjs > "$RUNNER_TEMP/mini-sumo-release.md"
+            gh release create "$tag" --verify-tag --draft --title "Mini Sumo $tag" \
+              --generate-notes --notes-file "$RUNNER_TEMP/mini-sumo-release.md"
+          fi
+          is_draft=$(gh release view "$tag" --json isDraft --jq .isDraft)
+          if [[ "$is_draft" == true ]]; then
+            mkdir -p release
+            cp builds/mini-sumo-debug-"$GITHUB_RUN_NUMBER"/mini_sumo-v"$VERSION"-standalone-debug.apk "release/MiniSumo-$VERSION-Android-debug.apk"
+            cp builds/mini-sumo-release-"$GITHUB_RUN_NUMBER"/mini_sumo-v"$VERSION"-release.apk "release/MiniSumo-$VERSION-Android.apk"
+            cp builds/mini-sumo-release-"$GITHUB_RUN_NUMBER"/mini_sumo-v"$VERSION"-release.aab "release/MiniSumo-$VERSION-Android.aab"
+            (cd release && sha256sum *.apk *.aab > SHA256SUMS.txt)
+            gh release upload "$tag" release/* --clobber
+            gh release edit "$tag" --draft=false --latest
+          fi
+      - name: Record the latest version on main
+        run: |
+          # The repository token does not trigger another push workflow.
+          for attempt in 1 2 3 4 5; do
+            latest_tag=$(gh release view --json tagName --jq .tagName)
+            if [[ "$latest_tag" != "v$VERSION" ]]; then
+              exit 0
+            fi
+            git fetch --quiet origin main
+            git checkout -B release-metadata origin/main
+            node scripts/release-metadata.mjs "$VERSION"
+            npm version "$VERSION" --no-git-tag-version --no-workspaces-update --allow-same-version
+            git add README.md package.json package-lock.json
+            git diff --cached --quiet && exit 0
+            git commit -m "chore(release): v$VERSION [skip ci]"
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            sleep "$attempt"
+          done
+          echo "::error::Could not update the released version on main."
+          exit 1

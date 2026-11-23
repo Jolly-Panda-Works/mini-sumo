@@ -6,7 +6,7 @@ import { versionCode } from './version.mjs';
 const root=process.cwd();
 const c=JSON.parse(fs.readFileSync('game.config.json','utf8'));
 const store=process.env.STORE||'debug';
-if(store!=='debug' && !c.stores.includes(store)) throw Error('Store edition is not configured');
+if (!['debug', 'release', ...c.stores].includes(store)) throw Error('Android edition is not configured');
 if(process.env.PUBLISH_STORES==='true') throw Error('Android package builds must not call store APIs');
 const debug=store==='debug';
 const version=process.env.VERSION||JSON.parse(fs.readFileSync('package.json')).version;
@@ -46,7 +46,8 @@ if(c.android.profile==='mini') {
 npx(['cap','sync','android'],{cwd:mobile});
 if(c.android.profile==='mini') {
   for(const name of ['orientation','fullscreen','deep-link']) run(process.execPath,[`scripts/${name}.mjs`],{cwd:mobile});
-  if(!debug) run(process.execPath,[`scripts/${store}.mjs`],{cwd:mobile});
+  if (store === 'release') run(process.execPath, ['scripts/play-games.mjs'], {cwd: mobile});
+  if (c.stores.includes(store)) run(process.execPath, [`scripts/${store}.mjs`], {cwd: mobile});
 }
 if (env.ANDROID_TARGET_SDK) {
   const sdk = env.ANDROID_TARGET_SDK;

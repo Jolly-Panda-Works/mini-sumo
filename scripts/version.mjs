@@ -11,6 +11,11 @@ export function nextVersion(tags, base, bump = 'patch') {
   latest = [...latest];
   const index = {major:0,minor:1,patch:2}[bump]; latest[index]++;
   for (let i=index+1;i<3;i++) latest[i]=0;
+  for (let i = 2; i > 0; i--) {
+    if (latest[i] < 1000) continue;
+    latest[i] = 0;
+    latest[i - 1]++;
+  }
   return latest.join('.');
 }
 export function versionCode(version) {
