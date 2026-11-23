@@ -1,0 +1,21 @@
+{
+  "name": "Mini Sumo",
+  "slug": "mini_sumo",
+  "appId": "com.jollypanda.mini_sumo",
+  "orientation": "portrait",
+  "stores": [
+    "bazaar",
+    "myket"
+  ],
+  "web": false,
+  "android": {
+    "profile": "mini",
+    "mobileDir": "apps/mobile",
+    "projectDir": "apps/mobile/android",
+    "generated": true,
+    "installMobile": true,
+    "webScript": "build:web",
+    "distDir": "apps/client/dist"
+  },
+  "nativeProject": "committed"
+}

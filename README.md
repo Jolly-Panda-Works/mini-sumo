@@ -242,7 +242,7 @@ Dev mode (`?dev`) has a sample of the invite popup.
 
 ## Build the apps yourself
 
-**GitHub Actions (recommended).** Every push to `main` builds the web, desktop and Android versions and publishes them as a GitHub Release. See [Releases and versions](#releases-and-versions).
+**GitHub Actions.** Each push to `main` builds a standalone Android debug APK. Each push to `Iranian-store` builds the signed APK and AAB for each store listed in `game.config.json`. Download the files from the **Android builds on push** run artifacts.
 
 **Locally:**
 
@@ -272,21 +272,9 @@ Configure under *Settings → Secrets and variables → Actions*:
 
 ## Releases and versions
 
-Releases are automatic: **every push to `main` that changes the game becomes a GitHub Release** containing Android APK/AAB files only. The version comes from the commit messages since the last release ([Conventional Commits](https://www.conventionalcommits.org/)):
+Push builds use the version in `package.json` and build the pushed commit. The debug APK uses the `com.jollypanda.mini_sumo.debug` application ID so it can be installed alongside a store build.
 
-| Commit messages since the last release | Next version (from 1.4.2) |
-| --- | --- |
-| a `feat!:` commit, or `BREAKING CHANGE` in a message body | 2.0.0 |
-| at least one `feat: …` | 1.5.0 |
-| `fix:`, `perf:`, `refactor:` or messages without a type | 1.4.3 |
-| only `docs:`, `chore:`, `ci:`, `test:`, `style:`, `build:` | no release (artifacts on the run only) |
-
-GitHub then updates `package.json` (commit `chore(release): vX.Y.Z [skip ci]`), tags `vX.Y.Z` and publishes the Release with a *What's changed* list built from the same messages. The version also goes into *About*, the desktop apps and Android (`versionCode = MAJOR×1,000,000 + MINOR×1,000 + PATCH`).
-
-- To pick a version yourself, set a higher `version` in `package.json` and push.
-- *Actions → Build → Run workflow* releases on demand; `bump` = `auto` (from the commits), `patch`, `minor` or `major`.
-- After a release, `git pull` to get the version commit.
-- If `main` is protected, allow GitHub Actions to push to it.
+The central builder manages store release versions and the store review workflow.
 
 ## Deployment
 
