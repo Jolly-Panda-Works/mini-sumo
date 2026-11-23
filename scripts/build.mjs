@@ -7,7 +7,7 @@ const root=process.cwd();
 const c=JSON.parse(fs.readFileSync('game.config.json','utf8'));
 const store=process.env.STORE||'debug';
 if(store!=='debug' && !c.stores.includes(store)) throw Error('Store edition is not configured');
-if(process.env.PUBLISH_STORES==='true') throw Error('Central builds must not call store APIs');
+if(process.env.PUBLISH_STORES==='true') throw Error('Android package builds must not call store APIs');
 const debug=store==='debug';
 const version=process.env.VERSION||JSON.parse(fs.readFileSync('package.json')).version;
 const code=versionCode(version);
@@ -58,7 +58,7 @@ if (env.ANDROID_TARGET_SDK) {
 const appGradle=path.join(android,'app/build.gradle');
 let gradle=fs.readFileSync(appGradle,'utf8');
 gradle=gradle.replace(/versionCode\s+\d+/,`versionCode ${code}`).replace(/versionName\s+"[^"]*"/,`versionName "${version}"`);
-if(!gradle.includes('// Central standalone debug')) gradle+='\n// Central standalone debug\nandroid { buildTypes { debug { applicationIdSuffix ".debug"; versionNameSuffix "-debug" } } }\n';
+if(!gradle.includes('// Standalone debug')) gradle+='\n// Standalone debug\nandroid { buildTypes { debug { applicationIdSuffix ".debug"; versionNameSuffix "-debug" } } }\n';
 fs.writeFileSync(appGradle,gradle);
 const manifestPath=path.join(android,'app/src/main/AndroidManifest.xml');
 let manifest=fs.readFileSync(manifestPath,'utf8');

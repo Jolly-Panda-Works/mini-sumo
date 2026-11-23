@@ -274,7 +274,7 @@ Configure under *Settings → Secrets and variables → Actions*:
 
 Push builds use the version in `package.json` and build the pushed commit. The debug APK uses the `com.jollypanda.mini_sumo.debug` application ID so it can be installed alongside a store build.
 
-The central builder manages store release versions and the store review workflow.
+Store packages are available for review in the workflow artifacts.
 
 ## Deployment
 
