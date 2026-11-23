@@ -145,6 +145,18 @@ Error|خطا
 Every win brings Sumo Coins, and the next arena closer.|با هر برد، سکه می‌گیری و به میدان بعدی نزدیک‌تر می‌شوی.
 FINISH|پایان
 Face|چهره
+Mask|ماسک
+No mask|بدون ماسک
+Lion|شیر
+Panda|پاندا
+Tiger|ببر
+Leopard|پلنگ
+Monkey|میمون
+Bear|خرس
+Dwarf bear|خرس کوتوله
+Red panda|پاندای سرخ
+Elephant|فیل
+Rhino|کرگدن
 Face our blue partner with WASD or arrows, then press Space to hit them!|با کلیدهای WASD یا جهت‌ها رو به حریف آبی بایست و با فاصله حمله کن!
 Face our blue partner with the joystick, then tap DASH to hit them!|با دستهٔ حرکت رو به حریف آبی بایست و دکمهٔ حمله را بزن!
 Final stretch: your dash recharges faster!|لحظه‌های پایانی: حمله‌ات سریع‌تر آماده می‌شود!
