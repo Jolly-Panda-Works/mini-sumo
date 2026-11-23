@@ -135,6 +135,13 @@ ENTER ROOKIE|ورود به میدان تازه‌کارها
 Earned (recent)|دریافتی‌های اخیر
 Easy|آسان
 Edit name|ویرایش نام
+Username|نام کاربری
+Save username|ذخیرهٔ نام کاربری
+Use 3 to 16 Persian letters. Spaces and half-spaces are allowed.|نام کاربری باید ۳ تا ۱۶ کاراکتر و با حروف فارسی باشد. فاصله و نیم‌فاصله مجاز است.
+Enter a valid username of 3 to 16 characters.|یک نام کاربری معتبر با ۳ تا ۱۶ کاراکتر وارد کن.
+This username is already taken.|این نام کاربری قبلاً گرفته شده است.
+Choose a valid username.|یک نام کاربری معتبر انتخاب کن.
+Couldn't save the username.|نام کاربری ذخیره نشد.
 Email|ایمیل
 Enjoying Mini Sumo? Tell us what you think in Cafe Bazaar.|از مینی سومو لذت می‌بری؟ نظرت را در بازار بنویس.
 Enter|ورود
