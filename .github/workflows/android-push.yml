@@ -1,0 +1,78 @@
+name: Android builds on push
+
+on:
+  push:
+    branches: [main, Iranian-store]
+
+permissions:
+  contents: read
+
+jobs:
+  editions:
+    runs-on: ubuntu-latest
+    outputs:
+      editions: ${{ steps.plan.outputs.editions }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - id: plan
+        run: |
+          if [[ "$GITHUB_REF_NAME" == main ]]; then
+            echo 'editions=["debug"]' >> "$GITHUB_OUTPUT"
+          else
+            node -p '"editions=" + JSON.stringify(require("./game.config.json").stores)' >> "$GITHUB_OUTPUT"
+          fi
+
+  android:
+    name: Android (${{ matrix.edition }})
+    needs: editions
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        edition: ${{ fromJSON(needs.editions.outputs.editions) }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools platforms;android-${{ vars.ANDROID_TARGET_SDK || '35' }} build-tools;35.0.0
+          log-accepted-android-sdk-licenses: false
+      - uses: gradle/actions/setup-gradle@v4
+      - run: npm ci
+      - name: Build Android package
+        env:
+          STORE: ${{ matrix.edition }}
+          VITE_SERVER_URL: ${{ vars.VITE_SERVER_URL }}
+          VITE_PUBLIC_URL: ${{ vars.VITE_PUBLIC_URL }}
+          ANDROID_TARGET_SDK: ${{ vars.ANDROID_TARGET_SDK }}
+          BAZAAR_RSA_KEY: ${{ vars.BAZAAR_RSA_KEY }}
+          BAZAAR_DEVELOPER_ID: ${{ vars.BAZAAR_DEVELOPER_ID }}
+          MYKET_PUBLIC_KEY: ${{ vars.MYKET_PUBLIC_KEY }}
+          KEYSTORE_BASE64: ${{ matrix.edition != 'debug' && secrets.ANDROID_KEYSTORE_BASE64 || '' }}
+          KEYSTORE_PASSWORD: ${{ matrix.edition != 'debug' && secrets.ANDROID_KEYSTORE_PASSWORD || '' }}
+          KEY_ALIAS: ${{ matrix.edition != 'debug' && secrets.ANDROID_KEY_ALIAS || '' }}
+          KEY_PASSWORD: ${{ matrix.edition != 'debug' && secrets.ANDROID_KEY_PASSWORD || '' }}
+        run: node scripts/build.mjs
+      - name: Verify APK signature
+        run: |
+          signer=$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n 1)
+          for apk in out/*.apk; do
+            "$signer" verify "$apk"
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mini-sumo-${{ matrix.edition }}-${{ github.run_number }}
+          path: out/
+          if-no-files-found: error

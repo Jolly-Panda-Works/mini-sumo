@@ -23,6 +23,10 @@ const env={...process.env,VITE_STORE:store,VITE_APP_VERSION:version,VITE_BASE:'.
 if(c.android.profile==='mini') {
   env.VITE_SERVER_URL ||= 'wss://sumo.ryujin.fans';
   env.VITE_PUBLIC_URL ||= 'https://sumo.ryujin.fans/';
+  if (store === 'bazaar') {
+    const bazaarConfig = JSON.parse(fs.readFileSync(path.join(mobile, 'bazaar.config.json'), 'utf8'));
+    env.VITE_BAZAAR_DEVELOPER_ID ||= env.BAZAAR_DEVELOPER_ID || bazaarConfig.developerId || '';
+  }
 }
 const run=(exe,args,opts={})=>execFileSync(exe,args,{stdio:'inherit',env,...opts});
 const npm=(args,opts={})=>run(win?'npm.cmd':'npm',args,{shell:win,...opts});
@@ -43,6 +47,13 @@ npx(['cap','sync','android'],{cwd:mobile});
 if(c.android.profile==='mini') {
   for(const name of ['orientation','fullscreen','deep-link']) run(process.execPath,[`scripts/${name}.mjs`],{cwd:mobile});
   if(!debug) run(process.execPath,[`scripts/${store}.mjs`],{cwd:mobile});
+}
+if (env.ANDROID_TARGET_SDK) {
+  const sdk = env.ANDROID_TARGET_SDK;
+  if (!/^\d+$/.test(sdk)) throw Error('ANDROID_TARGET_SDK must be an integer');
+  const variablesGradle = path.join(android, 'variables.gradle');
+  const variables = fs.readFileSync(variablesGradle, 'utf8');
+  fs.writeFileSync(variablesGradle, variables.replace(/((?:compile|target)SdkVersion\s*=\s*)\d+/g, (_, setting) => setting + sdk));
 }
 const appGradle=path.join(android,'app/build.gradle');
 let gradle=fs.readFileSync(appGradle,'utf8');
