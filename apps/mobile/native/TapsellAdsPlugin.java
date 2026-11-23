@@ -24,7 +24,7 @@ public class TapsellAdsPlugin extends Plugin {
 
     @Override
     public void load() {
-        Tapsell.initialize(getContext().getApplicationContext(), getContext().getString(R.string.tapsell_app_key));
+        Tapsell.initialize(getActivity().getApplication(), getContext().getString(R.string.tapsell_app_key));
     }
 
     private String zone(String placement) {
