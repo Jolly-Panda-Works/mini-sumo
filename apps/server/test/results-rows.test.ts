@@ -10,6 +10,7 @@ vi.mock("../../client/src/network/RoomManager", () => ({
 vi.mock("../../client/src/network/economyClient", () => ({ economyStore: { get: () => ({ lastResult: { xp: 0, prize: 0, rewards: 0, kind: "rewarded" }, catalog: null }), subscribe: () => () => {} } }));
 vi.mock("../../client/src/settings", () => ({ settingsStore: { get: () => ({ introStage: "done" }), subscribe: () => () => {} } }));
 vi.mock("../../client/src/network/friendsClient", () => ({ friendsAvailable: () => false }));
+vi.mock("../../client/src/network/ads", () => ({ adBreak: async () => {}, noteBoutFinished: () => {} }));
 vi.mock("../../client/src/uiStore", () => ({}));
 vi.mock("../../client/src/audio/AudioManager", () => ({ audio: {} }));
 vi.mock("../../client/src/ui/Avatar", () => ({ avatarSrc: () => "avatar.webp" }));

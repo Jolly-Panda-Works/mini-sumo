@@ -43,6 +43,7 @@ All values are in `apps/server/src/economy/config.ts` (`ECONOMY`).
 | Welcome gift | 200 | Once per player: enough for a first Rookie bout. |
 | Training bout | 0 | Free practice: no coins, but XP and stats (the round lasted ≥ 20 s and you didn't leave it). |
 | Daily coins | +100 | Once per day from the coin shop. |
+| Rewarded ad | +50 | Prepared, not live: 5 a day, 5 minutes apart. Needs a native ad plugin (see [ADS.fa.md](ADS.fa.md)). |
 | Level up | 50 + 25 × level | For every level reached. |
 | Paid arena win | prize | See below. |
 
@@ -139,6 +140,7 @@ The ledger is append-only; tests check that the ledger sum always equals the bal
 | `prize:<matchId>` | the single prize of a match |
 | `reward:<matchId>:<account>` | free bout reward |
 | `purchase:<account>:<clientKey>` | cosmetic purchase (client sends a UUID per click) |
+| `ad:<account>:<adId>` | rewarded ad (client sends a UUID per watched ad) |
 
 Tables: `accounts`, `wallets`, `transactions`, `ownership`, `arena_entries`, `settlements`, `match_results` (schema in `Economy.ts`). The database file is `DATABASE_PATH` (default `data/mini-sumo.db`, relative to the server's working directory). Back it up; it is the only copy of player balances.
 
@@ -166,6 +168,7 @@ The coin shop (coin button on the home screen) lists six Sumo Coin packs (`COIN_
 | `SHOP_ENABLED` | `true` | Cosmetic purchases. |
 | `PREMIUM_CURRENCY_ENABLED` | `false` | Gems. Keep off. |
 | `REAL_MONEY_PURCHASES_ENABLED` | `false` | Keep off. Even when set, no checkout can succeed: no provider exists. |
+| `AD_REWARDS_ENABLED` | `false` | Rewarded ads pay coins online. The server takes the client's word (bounded by the daily limit) until the ad network can confirm views. |
 
 ## Payments (prepared, not active)
 
@@ -190,6 +193,7 @@ To add a provider later:
 | `GET /api/profile` | token | Balances, owned items, look, stats, daily progress |
 | `GET /api/ledger?limit=` | token | Transaction history |
 | `POST /api/shop/purchase` | token | `{ itemId, idempotencyKey }` |
+| `POST /api/ads/reward` | token | `{ adId }`: pays one watched rewarded ad |
 | `PUT /api/profile/appearance` | token | Save the equipped look (owned items only) |
 | `POST /api/payments/checkout` | token | Always `501` |
 

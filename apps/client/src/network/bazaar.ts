@@ -33,6 +33,51 @@ export type BuyResult = "bought" | "cancelled";
 const store = import.meta.env.VITE_STORE === "myket" ? "myket" : "bazaar";
 const storeName = store === "myket" ? "Myket" : "Cafe Bazaar";
 const pluginName = store === "myket" ? "Myket" : "Bazaar";
+const REMOVE_ADS = "remove_ads";
+const entitlementKey = `mini-sumo:${store}:remove-ads`;
+
+export function adsRemoved(): boolean {
+  try {
+    return localStorage.getItem(entitlementKey) === "1";
+  } catch {
+    return false;
+  }
+}
+
+let adFree = adsRemoved();
+function setAdsRemoved(owned: boolean): boolean {
+  adFree = owned;
+  try {
+    localStorage.setItem(entitlementKey, owned ? "1" : "0");
+  } catch {
+    // The current session still has the store's answer.
+  }
+  return owned;
+}
+
+export async function refreshRemoveAds(): Promise<boolean> {
+  if (!bazaarEnabled()) return false;
+  try {
+    const { purchases } = await (await connect()).purchases();
+    return setAdsRemoved(purchases.some((purchase) => purchase.productId === REMOVE_ADS));
+  } catch {
+    return adFree;
+  }
+}
+
+export async function buyRemoveAds(): Promise<BuyResult> {
+  const plugin = await connect();
+  try {
+    const purchase = await plugin.purchase({ productId: REMOVE_ADS });
+    if (purchase.productId !== REMOVE_ADS) throw new Error("Unexpected product in purchase response.");
+    setAdsRemoved(true);
+    return "bought";
+  } catch (error) {
+    if ((error as { code?: string }).code === "CANCELLED") return "cancelled";
+    if (await refreshRemoveAds()) return "bought";
+    throw error instanceof Error ? error : new Error("The purchase failed.");
+  }
+}
 
 function native(): BazaarNative | null {
   const cap = (window as unknown as { Capacitor?: { isPluginAvailable?(name: string): boolean; Plugins?: Record<string, unknown> } }).Capacitor;
@@ -52,13 +97,15 @@ export async function bazaarPrices(): Promise<Record<string, string>> {
   if (!plugin?.skuDetails) return {};
   try {
     await plugin.connect();
-    const { products } = await plugin.skuDetails({ productIds: Object.values(BAZAAR_PRODUCTS) });
+    const { products } = await plugin.skuDetails({ productIds: [...Object.values(BAZAAR_PRODUCTS), REMOVE_ADS] });
     const prices: Record<string, string> = {};
     for (const [packId, productId] of Object.entries(BAZAAR_PRODUCTS)) {
       const found = products.find((p) => p.productId === productId);
       if (found?.price) prices[packId] = found.price;
     }
-    pricesCache = prices;
+    const removeAds = products.find((product) => product.productId === REMOVE_ADS);
+    if (removeAds?.price) prices[REMOVE_ADS] = removeAds.price;
+    if (Object.keys(prices).length) pricesCache = prices;
     return prices;
   } catch {
     return {};
@@ -142,6 +189,7 @@ export async function restoreBazaarPurchases(): Promise<number> {
   try {
     const plugin = await connect();
     const { purchases } = await plugin.purchases();
+    setAdsRemoved(purchases.some((purchase) => purchase.productId === REMOVE_ADS));
     let coins = 0;
     for (const purchase of purchases) {
       try {
