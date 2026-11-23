@@ -5,7 +5,7 @@ import { setAboutOpen, setSettingsOpen } from "../uiStore";
 import { Dialog } from "./Dialog";
 import { setDevEnabled } from "./DevPanel";
 import { setDevOpen, showWarning } from "../uiStore";
-import { AboutButton, GreenArtButton, VibrationToggle } from "./ArtButtons";
+import { AboutButton, VibrationToggle } from "./ArtButtons";
 import { DashModeChoice } from "./DashModeChoice";
 import { Icon, type IconName } from "./Icon";
 
@@ -67,8 +67,7 @@ export function SettingsPanel() {
 
         <section className="settings__section" aria-label="Controls">
           <h3 className="settings__heading">Controls</h3>
-          <div className="field"><span className="field__label">Dash</span><DashModeChoice value={settings.dashMode} onChange={(dashMode) => settingsStore.update({ dashMode, dashModeChosen: true })} /></div>
-          {!inRoom && <GreenArtButton className="tutorial__replay-art" label="Replay tutorial" onClick={() => { close(); settingsStore.update({ tutorialCompleted: false }); }} />}
+          <div className="field"><span className="field__label">Dash</span><DashModeChoice value={settings.dashMode} onChange={(dashMode) => settingsStore.update({ dashMode })} /></div>
           <div className="field">
             <span className="field__label">Joystick</span>
             <div className="art-choice" role="radiogroup" aria-label="Joystick">

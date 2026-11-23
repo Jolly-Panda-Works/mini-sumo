@@ -169,15 +169,10 @@ export function Tutorial() {
     const len = Math.hypot(x, y); if (len > 1) { x /= len; y /= len; }
     p.touch = { x, y }; setKnob({ x: x * 35, y: y * 35 });
   };
-  const finish = (dashMode: "manual" | "auto") => settingsStore.update({ dashMode, dashModeChosen: true, tutorialCompleted: true });
-  const chooseOrFinish = () => {
+  const finish = (dashMode: "manual" | "auto") => settingsStore.update({ dashMode, tutorialCompleted: true });
+  const chooseDashMode = () => {
     setCompletionOpen(false);
-    if (settingsStore.get().dashModeChosen) finish(settingsStore.get().dashMode);
-    else changeStep(3);
-  };
-  const skipPractice = () => {
-    if (settingsStore.get().dashModeChosen) finish(settingsStore.get().dashMode);
-    else changeStep(3);
+    changeStep(3);
   };
   const titles = ["Follow the golden marker", "Land your first dash", "Push them out!", "Choose your dash style"];
   const descriptions = [touch ? "Hi! I'm your panda coach. Drag the joystick and bring the red wrestler to the golden circle!" : "Hi! I'm your panda coach. Use WASD or arrows to bring the red wrestler to the golden circle!", touch ? "Face our blue partner with the joystick, then tap DASH to hit them!" : "Face our blue partner with WASD or arrows, then press Space to hit them!", "Now finish the move! Push or dash the blue wrestler past the straw rope. Stay inside yourself!", "Nice work! How would you like to dash? You can change this anytime in Settings."];
@@ -195,7 +190,7 @@ export function Tutorial() {
       <div className="tutorial__guides"><PandaCoach key={pose} className={`tutorial__panda tutorial__panda--${pose}`} pose={done ? "celebrate" : step === 0 ? "ready" : step === 1 ? "reach" : "kick"} /></div>
       <div className="tutorial__copy"><span className="tutorial__step">{step < 3 ? `PANDA COACH · ${step + 1} / 3` : "READY TO PLAY"}</span><h2>{titles[step]}</h2><p aria-live="polite">{done ? successMessage : coachMessage || descriptions[step]}</p></div>
     </div>}
-    {completionOpen && <Dialog title="Training complete!" className="tutorial-success" variant="sub" hideClose dismissible={false} onClose={chooseOrFinish} footer={<button className="art art--great" autoFocus onClick={chooseOrFinish} aria-label="Great! Let's play"><img src={`${import.meta.env.BASE_URL}ui/btn-great.webp`} alt="" draggable={false} /></button>}>
+    {completionOpen && <Dialog title="Training complete!" className="tutorial-success" variant="sub" hideClose dismissible={false} onClose={chooseDashMode} footer={<button className="art art--great" autoFocus onClick={chooseDashMode} aria-label="Great! Let's play"><img src={`${import.meta.env.BASE_URL}ui/btn-great.webp`} alt="" draggable={false} /></button>}>
       <PandaCoach className="tutorial-success__panda" pose="celebrate" />
       <p>You've mastered the basics! Step into the ring and put your skills to the test against real opponents.</p>
     </Dialog>}
@@ -207,7 +202,7 @@ export function Tutorial() {
     {step < 3 && <>
       <div className="tutorial__actions" aria-live="polite">
         {done && step < 2 ? <button className="tutorial__art-button tutorial__next" aria-label="Great! Continue" onClick={() => changeStep(step + 1)}><img src={`${import.meta.env.BASE_URL}ui/btn-start-blank.webp`} alt="" draggable={false} /><span>CONTINUE</span></button> : !done && <span>Try it in the ring</span>}
-        {!done && <button className="tutorial__art-button tutorial__skip" aria-label="Skip practice" onClick={skipPractice}><img src={`${import.meta.env.BASE_URL}ui/label-empty.webp`} alt="" draggable={false} /><span>SKIP PRACTICE</span></button>}
+        {!done && <button className="tutorial__art-button tutorial__skip" aria-label="Skip practice" onClick={chooseDashMode}><img src={`${import.meta.env.BASE_URL}ui/label-empty.webp`} alt="" draggable={false} /><span>SKIP PRACTICE</span></button>}
       </div>
       {touch && !done && <div className={`tutorial__stick${step === 0 && knob.x === 0 && knob.y === 0 ? " tutorial__stick--hint" : ""}`} style={{ backgroundImage: `url(${import.meta.env.BASE_URL}hud/joy-base.webp)` }} role="application" aria-label="Practice joystick: drag to move"
         onPointerDown={(e) => { if (stick.current !== null) return; stick.current = e.pointerId; e.currentTarget.setPointerCapture(e.pointerId); moveStick(e); }}

@@ -10,30 +10,34 @@ async function loadSettings(saved: object | null) {
   return { settingsStore, storage };
 }
 afterEach(() => vi.unstubAllGlobals());
-describe("first-time dash choice", () => {
-  it("asks a new player once, then preserves the choice during replay and reload", async () => {
+describe("first-run tutorial settings", () => {
+  it("preserves tutorial completion and dash choice after reload", async () => {
     const { settingsStore, storage } = await loadSettings(null);
     expect(settingsStore.get().introStage).toBe("first");
-    expect(settingsStore.get().dashModeChosen).toBe(false);
+    expect(settingsStore.get().tutorialCompleted).toBe(false);
     expect(settingsStore.get().starterRewardPresented).toBe(false);
     expect(settingsStore.get().menuTourCompleted).toBe(false);
-    settingsStore.update({ tutorialCompleted: true, dashMode: "auto", dashModeChosen: true });
-    settingsStore.update({ tutorialCompleted: false });
-    expect(settingsStore.get().dashModeChosen).toBe(true);
+    settingsStore.update({ tutorialCompleted: true, dashMode: "auto" });
     settingsStore.update({ starterRewardPresented: true, introStage: "second", menuTourIndex: 2 });
     const next = await loadSettings(JSON.parse(storage.get("mini-sumo:settings")!));
-    expect(next.settingsStore.get().dashModeChosen).toBe(true);
+    expect(next.settingsStore.get().tutorialCompleted).toBe(true);
     expect(next.settingsStore.get().dashMode).toBe("auto");
     expect(next.settingsStore.get().starterRewardPresented).toBe(true);
     expect(next.settingsStore.get().introStage).toBe("second");
     expect(next.settingsStore.get().menuTourIndex).toBe(2);
     expect(next.settingsStore.get().menuTourCompleted).toBe(false);
   });
-  it("migrates a previous completed tutorial without asking for dash mode again", async () => {
+  it("migrates a previous completed tutorial", async () => {
     const { settingsStore } = await loadSettings({ tutorialCompleted: true, dashMode: "manual" });
-    expect(settingsStore.get().dashModeChosen).toBe(true);
+    expect(settingsStore.get().tutorialCompleted).toBe(true);
     expect(settingsStore.get().menuTourCompleted).toBe(true);
     expect(settingsStore.get().introStage).toBe("done");
     expect(settingsStore.get().starterRewardPresented).toBe(true);
+  });
+  it("does not restart the tutorial if the old replay button cleared completion", async () => {
+    const { settingsStore } = await loadSettings({ tutorialCompleted: false, dashModeChosen: true, dashMode: "auto", introStage: "done" });
+    expect(settingsStore.get().tutorialCompleted).toBe(true);
+    expect(settingsStore.get().dashMode).toBe("auto");
+    expect(settingsStore.get().introStage).toBe("done");
   });
 });

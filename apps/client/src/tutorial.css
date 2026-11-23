@@ -43,7 +43,6 @@
 .starter-reward__footer { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; }
 .dlg-starter-reward .tutorial-success__panda { width: min(36%, 130px); max-height: 12vh; }
 @media (max-height: 500px) { .dlg-starter-reward .tutorial-success__panda { max-height: 48px; } }
-.tutorial__replay-art { align-self: center; margin-inline: auto; display: block; }
 .dlg-starter-reward .sub-dialog__body { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; }
 .starter-reward__coins { font-size: 26px; font-weight: 800; color: #a44c12; }
 .menu-tour { position: fixed; inset: 0; z-index: 100; pointer-events: auto; color: #472b19; }

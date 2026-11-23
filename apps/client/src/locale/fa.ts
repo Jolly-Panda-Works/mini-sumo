@@ -322,7 +322,6 @@ Rematch|بازی دوباره
 Remove|حذف
 Remove friend|حذف دوست
 Remove friend?|دوست حذف شود؟
-Replay tutorial|تکرار آموزش
 Requests|درخواست‌ها
 Retry|تلاش دوباره
 Return home|بازگشت به خانه
