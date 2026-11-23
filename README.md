@@ -272,7 +272,7 @@ Configure under *Settings → Secrets and variables → Actions*:
 
 ## Releases and versions
 
-**Latest Android release** · v1.46.5
+**Latest Android release** · v1.46.7
 
 Each push to `main` gets an automatic patch version and an Android GitHub Release for the pushed commit. The same version appears in the game under Settings → About and is recorded in the README and package files on `main`. The debug APK can be installed alongside the signed APK.
 
