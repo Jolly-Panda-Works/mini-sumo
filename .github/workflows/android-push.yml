@@ -80,15 +80,50 @@ jobs:
           path: out/
           if-no-files-found: error
 
-      - name: Send the Bazaar build requested in this commit
-        if: matrix.edition == 'bazaar' && github.ref == 'refs/heads/Iranian-store' && contains(github.event.head_commit.message, '[submit bazaar]')
-        env:
-          BAZAAR_PISHKHAN_TOKEN: ${{ secrets.BAZAAR_PISHKHAN_TOKEN }}
-          BAZAAR_CHANNEL: ${{ vars.BAZAAR_CHANNEL || 'alpha' }}
-          BAZAAR_AUTO_PUBLISH: 'false'
-          BAZAAR_KEEP_DRAFT: 'true'
+  release:
+    name: Attach store builds to GitHub Release
+    needs: android
+    if: github.ref == 'refs/heads/Iranian-store' && contains(github.event.head_commit.message, '[release stores]')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: mini-sumo-*-${{ github.run_number }}
+          path: builds
+      - name: Attach signed APKs and AABs
         run: |
-          VERSION=$(node -p "require('./package.json').version")
-          CODE=$(node --input-type=module -e 'import { versionCode } from "./scripts/version.mjs"; console.log(versionCode(process.argv[1]));' "$VERSION")
-          node tools/bazaar-notes.mjs check "$RUNNER_TEMP/bazaar-release-notes.json"
-          node tools/pishkhan-release.mjs "out/mini_sumo-v$VERSION-bazaar.apk" --version "$VERSION" --code "$CODE" --changelog "$RUNNER_TEMP/bazaar-release-notes.json"
+          version=$(node -p 'require("./package.json").version')
+          tag="v$version"
+          for attempt in $(seq 1 12); do
+            if gh release view "$tag" --json isDraft --jq '.isDraft == false' 2>/dev/null | grep -qx true; then
+              break
+            fi
+            sleep 10
+          done
+          gh release view "$tag" --json isDraft --jq '.isDraft == false' | grep -qx true
+          mkdir -p release
+          for store in bazaar myket; do
+            for extension in apk aab; do
+              name="mini_sumo-v$version-$store.$extension"
+              cp "builds/mini-sumo-$store-$GITHUB_RUN_NUMBER/$name" "release/$name"
+            done
+          done
+          (cd release && sha256sum *.apk *.aab > SHA256SUMS-stores.txt)
+          existing=$(gh release view "$tag" --json assets --jq '.assets[].name')
+          missing=()
+          for file in release/*; do
+            if ! grep -Fxq -- "${file##*/}" <<< "$existing"; then
+              missing+=("$file")
+            fi
+          done
+          if (( ${#missing[@]} )); then
+            gh release upload "$tag" "${missing[@]}"
+          fi
+          gh release view "$tag" --json url --jq '.url' >> "$GITHUB_STEP_SUMMARY"
