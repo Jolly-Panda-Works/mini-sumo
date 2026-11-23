@@ -1,6 +1,6 @@
 {
   "name": "mini-sumo",
-  "version": "1.46.1",
+  "version": "1.46.2",
   "private": true,
   "type": "module",
   "description": "Mini Sumo: a 3D multiplayer party game for Android built with React Three Fiber and Colyseus.",
