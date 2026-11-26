@@ -1,5 +1,5 @@
 {
-  "version": "1.46.8",
-  "fa": "• رابط بازی، منوها و پیام‌ها فارسی شدند.\n• ۱۰ ماسک حیوانی تازه به شخصی‌سازی اضافه شد. رنگ بدن کشتی‌گیر هم با ماسک هماهنگ می‌شود.\n• نام کاربری فارسی با ۳ تا ۱۶ کاراکتر و راهنمای کوتاه‌تر در فرم ورود نام.\n• امکان دریافت سکه با تماشای تبلیغ جایزه‌ای و خرید بستهٔ حذف تبلیغات بین مسابقه‌ها اضافه شد.\n• آموزش برای شروع بازی نمایش داده می‌شود و گزینهٔ اجرای دوبارهٔ آن از تنظیمات حذف شد.",
-  "en": "• The game interface, menus and messages are now in Persian.\n• Added 10 animal masks to customization. The wrestler's colors adapt to the chosen mask.\n• Persian usernames must be 3–16 characters long, and the username form has a shorter hint.\n• Added optional rewarded ads for coins and a one-time purchase to remove between-match ads.\n• The tutorial remains part of the first-time experience. Its replay option was removed from Settings."
+  "version": "1.46.10",
+  "fa": "• رفع مشکل اتصال به سرور و نمایش پیام‌های بازی\n• رفع مشکل نمایش تبلیغات در بازار و مایکت",
+  "en": "• Fixed issues with server connections and in-game messages.\n• Fixed ad display issues in the Bazaar and Myket editions."
 }
