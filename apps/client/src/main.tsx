@@ -1,4 +1,4 @@
-import { activityContext, track } from "./analytics";
+import { activityContext, startAnalyticsSessions, track } from "./analytics";
 import { networkStore } from "./network/networkMode";
 import { settingsStore } from "./settings";
 import { gameStore, sessionStore } from "./network/RoomManager";
@@ -49,6 +49,7 @@ window.addEventListener("boot:done", () => track("game_started", {
 document.addEventListener("visibilitychange", () => track(document.hidden ? "game_paused" : "game_resumed", {
   context: activityContext, screen: currentScreen(), match_phase: gameStore.get().phase,
 }));
+startAnalyticsSessions();
 startBoot();
 
 // Art used from CSS (set here so the URLs follow the app's base path).

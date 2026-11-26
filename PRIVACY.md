@@ -2,7 +2,7 @@
 
 Mini Sumo is built to collect as little as possible.
 
-**No accounts, no analytics, no ads, no tracking.**
+Android builds configured with Metrix send gameplay analytics to Metrix. These include sessions, tutorial steps, match results, feature usage, store and ad outcomes, and in-game currency activity. The game sends categories and amounts in custom events and keeps player names, emails, invite codes and purchase tokens out of those events.
 
 ## What the game stores on your device
 
@@ -12,14 +12,14 @@ Mini Sumo is built to collect as little as possible.
 
 If you sign in with Google Play in your profile, your game progress (coins, level, items, name and look) is saved with Google Play Games *Saved Games* in your Google account, so you can restore it on another phone. It is stored by Google under your account and is not sent to us. Sign-in is optional.
 
-## What the game server sees (online play, coming soon)
+## Online play
 
 - The display name you type, your in-game input and connection metadata (such as your IP address) for as long as you are connected to a room.
-- Rooms exist only in memory and disappear when everyone leaves. The game server does not write player data to disk. Whoever operates a server may keep standard web-server logs (for example nginx access logs).
+- Rooms exist in memory. The server stores account progress, ownership and wallet transactions. Whoever operates a server may keep standard web-server logs (for example nginx access logs).
 
 ## Third parties
 
-- The game font (*Baloo 2*) is bundled with the app, so the game makes no requests to font or analytics services.
+- The game font (*Baloo 2*) is bundled with the app, so loading the font requires no external request.
 - Links to [useffarahmand.com](https://www.useffarahmand.com) and GitHub open in your browser and are subject to those sites' policies.
 
 ## Contact
