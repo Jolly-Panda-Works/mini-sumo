@@ -51,6 +51,7 @@ jobs:
         env:
           MYKET_ACCESS_TOKEN: ${{ secrets.MYKET_ACCESS_TOKEN }}
           MYKET_AUTO_PUBLISH: 'true'
+          MYKET_REQUEUE_VERSION: ${{ contains(github.event.head_commit.message, '[requeue myket 1.46.10]') && '1.46.10' || '' }}
         run: |
           node tools/bazaar-notes.mjs check "$RUNNER_TEMP/notes.json"
           node tools/myket-release.mjs "$APK" --version "$VERSION" --code "$CODE" --changelog "$RUNNER_TEMP/notes.json"

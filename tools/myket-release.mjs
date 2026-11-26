@@ -63,12 +63,37 @@ async function call(method, path = "", body) {
 
 const why = (res) => `HTTP ${res.status}: ${res.text.slice(0, 300)}`;
 
+async function commitForReview() {
+  const committed = await call("POST", "/commit", {
+    isManualPublish: !autoPublish,
+    message: `Mini Sumo ${version} (versionCode ${code}), sent automatically by GitHub Actions.`,
+  });
+  if (!committed.ok) fail(`Couldn't send the release for review: ${why(committed)}`);
+  console.log(
+    `::notice::Mini Sumo ${version} is with Myket for review${autoPublish ? "; it's published as soon as it's approved" : "; publish it in the panel once approved"}.`,
+  );
+}
+
 // 1. Already on Myket (a re-run, or the version wasn't bumped): nothing to do. The docs don't
 // spell out the list's fields, so any versionCode in the answer counts.
 for (const status of ["WaitingForApproval", "Approved"]) {
   const list = await call("GET", `?status=${status}&limit=20`);
   if (!list.ok) fail(`Couldn't list the releases: ${why(list)}`);
   const codes = [...list.text.matchAll(/"version_?code"\s*:\s*(\d+)/gi)].map((m) => Number(m[1]));
+  if (status === "WaitingForApproval" && process.env.MYKET_REQUEUE_VERSION === version && autoPublish) {
+    const releases = JSON.parse(list.text).releases;
+    if (!Array.isArray(releases)) fail("Unexpected release list; review was preserved.");
+    if (releases.length) {
+      if (releases.length !== 1 || !codes.length || !codes.every(value => value === code)) {
+        fail("The pending release could not be identified uniquely; review was preserved.");
+      }
+      const reverted = await call("DELETE", "/revert");
+      if (!reverted.ok) fail(`Couldn't withdraw the matching review: ${why(reverted)}`);
+      console.log("Matching review withdrawn; reusing the uploaded APK.");
+      await commitForReview();
+      process.exit(0);
+    }
+  }
   if (Math.max(0, ...codes) >= code) {
     console.log(`::notice::Myket already has versionCode ${Math.max(...codes)} (${status}); not sending ${version} (${code}).`);
     process.exit(0);
@@ -94,12 +119,4 @@ const uploaded = await call("PUT", "/upload", form);
 if (!uploaded.ok) fail(`Couldn't upload the APK: ${why(uploaded)}`);
 console.log("APK uploaded.");
 
-// 4. Ask Myket to review it.
-const committed = await call("POST", "/commit", {
-  isManualPublish: !autoPublish,
-  message: `Mini Sumo ${version} (versionCode ${code}), sent automatically by GitHub Actions.`,
-});
-if (!committed.ok) fail(`Couldn't send the release for review: ${why(committed)}`);
-console.log(
-  `::notice::Mini Sumo ${version} is with Myket for review${autoPublish ? "; it's published as soon as it's approved" : "; publish it in the panel once approved"}.`,
-);
+await commitForReview();
