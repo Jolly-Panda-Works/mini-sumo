@@ -41,8 +41,8 @@ jobs:
         if: matrix.store == 'bazaar'
         env:
           BAZAAR_PISHKHAN_TOKEN: ${{ secrets.BAZAAR_PISHKHAN_TOKEN }}
-          BAZAAR_CHANNEL: ${{ vars.BAZAAR_CHANNEL || 'alpha' }}
-          BAZAAR_AUTO_PUBLISH: 'false'
+          BAZAAR_CHANNEL: public
+          BAZAAR_AUTO_PUBLISH: 'true'
         run: |
           node tools/bazaar-notes.mjs check "$RUNNER_TEMP/notes.json"
           node tools/pishkhan-release.mjs "$APK" --version "$VERSION" --code "$CODE" --changelog "$RUNNER_TEMP/notes.json"
@@ -50,7 +50,7 @@ jobs:
         if: matrix.store == 'myket'
         env:
           MYKET_ACCESS_TOKEN: ${{ secrets.MYKET_ACCESS_TOKEN }}
-          MYKET_AUTO_PUBLISH: 'false'
+          MYKET_AUTO_PUBLISH: 'true'
         run: |
           node tools/bazaar-notes.mjs check "$RUNNER_TEMP/notes.json"
           node tools/myket-release.mjs "$APK" --version "$VERSION" --code "$CODE" --changelog "$RUNNER_TEMP/notes.json"
