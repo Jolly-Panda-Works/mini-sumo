@@ -1,4 +1,4 @@
-import { track, trackRevenue } from "../analytics";
+import { track, trackRevenue, withActivityContext } from "../analytics";
 import { BAZAAR_PRODUCTS, packForBazaarProduct, type BazaarPurchaseRequest, type BazaarPurchaseResponse, type CoinPack } from "@mini-sumo/shared";
 import { economyStore, refreshProfile, request } from "./economyClient";
 import { localEconomy } from "./localEconomy";
@@ -189,7 +189,7 @@ async function reportRevenue(productId: string) {
 async function measurePurchase(productId: string, buy: () => Promise<BuyResult>) {
   track("store_purchase_started", { product_id: productId });
   try {
-    const result = await buy();
+    const result = await withActivityContext("store", buy);
     track("store_purchase_finished", { product_id: productId, outcome: result === "bought" ? "success" : "cancelled" });
     return result;
   } catch (error) {

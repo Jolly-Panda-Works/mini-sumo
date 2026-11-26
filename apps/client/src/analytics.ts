@@ -3,6 +3,13 @@ interface AnalyticsPlugin {
   event(data: { name: string; fields: Attributes }): Promise<void>;
   revenue(data: { amount: number }): Promise<void>;
 }
+export let activityContext = "game";
+export async function withActivityContext<T>(context: string, action: () => Promise<T>) {
+  const previous = activityContext;
+  activityContext = context;
+  try { return await action(); }
+  finally { activityContext = previous; }
+}
 function plugin(): AnalyticsPlugin | undefined {
   const cap = (window as Window & { Capacitor?: { Plugins?: { GameAnalytics?: AnalyticsPlugin } } }).Capacitor;
   return cap?.Plugins?.GameAnalytics;

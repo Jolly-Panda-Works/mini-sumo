@@ -1,4 +1,4 @@
-import { track } from "./analytics";
+import { activityContext, track } from "./analytics";
 import { networkStore } from "./network/networkMode";
 import { settingsStore } from "./settings";
 import { gameStore, sessionStore } from "./network/RoomManager";
@@ -47,7 +47,7 @@ window.addEventListener("boot:done", () => track("game_started", {
   load_time_ms: Math.round(performance.now()), first_screen: currentScreen(), network_mode: networkStore.get().mode,
 }), { once: true });
 document.addEventListener("visibilitychange", () => track(document.hidden ? "game_paused" : "game_resumed", {
-  screen: currentScreen(), match_phase: gameStore.get().phase,
+  context: activityContext, screen: currentScreen(), match_phase: gameStore.get().phase,
 }));
 startBoot();
 
