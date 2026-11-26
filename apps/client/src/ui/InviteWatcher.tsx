@@ -63,7 +63,7 @@ export function InviteWatcher() {
         void dismissInvite(invite.id);
         if (choice === "ok") {
           if (sessionStore.get().status === "connected") await roomManager.leave();
-          await roomManager.joinByCode(invite.roomId, settingsStore.get().name);
+          await roomManager.joinByCode(invite.roomId, settingsStore.get().name, "friend");
         }
       }
     };

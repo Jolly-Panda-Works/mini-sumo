@@ -1,3 +1,4 @@
+import { track } from "../analytics";
 import { Client } from "colyseus.js";
 import {
   COUNTDOWN_MS,
@@ -242,7 +243,38 @@ class RoomManager {
    * Joins an arena's matchmaking. Paid arenas charge the entry fee on the server when the
    * room accepts you; they need the online server.
    */
-  async enterArena(arenaId: string, name: string): Promise<boolean> {
+  private entryKey = "";
+  private entryAttempt = 0;
+  private introRound = 0;
+  private matchStartedAt = 0;
+  private ringOuts = 0;
+  private previousResult = "unknown";
+
+  private async attemptEntry(arena: string, source: string, introRound: number, join: () => Promise<boolean>) {
+    if (sessionStore.get().status === "connecting") return false;
+    const key = [arena, source, introRound].join("/");
+    this.entryAttempt = this.entryKey === key ? this.entryAttempt + 1 : 1;
+    this.entryKey = key;
+    this.introRound = introRound;
+    const fields = { arena_id: arena, entry_point: source, intro_round: introRound, attempt: this.entryAttempt };
+    track("arena_entry_requested", fields);
+    try {
+      if (await join()) return true;
+    } catch (error) {
+      track("arena_entry_failed", { ...fields, reason: error instanceof IntroUsernameError ? "invalid_username" : "join_failed" });
+      throw error;
+    }
+    const message = sessionStore.get().error || "";
+    const reason = /full/i.test(message) ? "room_full" : /reach|offline/i.test(message) ? "server_unavailable" : /coin|balance/i.test(message) ? "insufficient_coins" : "join_failed";
+    track("arena_entry_failed", { ...fields, reason });
+    return false;
+  }
+
+  enterArena(arenaId: string, name: string) {
+    return this.attemptEntry(arenaId, "arena_select", 0, () => this.joinArena(arenaId, name));
+  }
+
+  private async joinArena(arenaId: string, name: string): Promise<boolean> {
     const appearance = settingsStore.get().appearance;
     await this.modeReady;
     // Training uses the player's difficulty; other arenas pick one at random for their tier.
@@ -273,7 +305,11 @@ class RoomManager {
   }
 
   /** Always an isolated bot room, online or offline; no entry charge for these two lessons. */
-  async enterIntroArena(introRound: 1 | 2): Promise<boolean> {
+  enterIntroArena(round: 1 | 2) {
+    return this.attemptEntry("rookie", "onboarding", round, () => this.joinIntroArena(round));
+  }
+
+  private async joinIntroArena(introRound: 1 | 2): Promise<boolean> {
     await this.modeReady;
     const { name, appearance } = settingsStore.get();
     const local: LocalRoomOptions = { name, appearance, isPrivate: false, maxPlayers: INTRO_PLAYERS[introRound], botLevel: "easy", arenaId: "rookie", introRound, level: myLevel() };
@@ -291,7 +327,11 @@ class RoomManager {
     }
   }
 
-  createPrivate(name: string, maxPlayers: number): Promise<boolean> {
+  createPrivate(name: string, maxPlayers: number) {
+    return this.attemptEntry("private", "create_room", 0, () => this.createPrivateRoom(name, maxPlayers));
+  }
+
+  private createPrivateRoom(name: string, maxPlayers: number): Promise<boolean> {
     const appearance = settingsStore.get().appearance;
     const botLevel = settingsStore.get().botLevel;
     const options: JoinOptions = { name, usernamePolicy, private: true, maxPlayers, appearance, arenaId: "private", botLevel };
@@ -304,7 +344,14 @@ class RoomManager {
     );
   }
 
-  async joinByCode(code: string, name: string): Promise<boolean> {
+  joinByCode(code: string, name: string, channel = "link") {
+    return this.attemptEntry("private", "invite", 0, () => this.joinCode(code, name)).then(joined => {
+      if (joined) track("invite_joined", { invite_channel: channel, room_type: "private" });
+      return joined;
+    });
+  }
+
+  private async joinCode(code: string, name: string): Promise<boolean> {
     const trimmed = code.trim();
     if (!ROOM_CODE_PATTERN.test(trimmed)) {
       sessionStore.update({ error: "Room codes are letters and numbers. Paste the code or open the invite link." });
@@ -329,6 +376,7 @@ class RoomManager {
 
   async leave(): Promise<void> {
     const room = this._room;
+    this.interruptMatch("player_left");
     this.detach();
     sessionStore.set({ status: "idle", roomId: "", sessionId: "", error: null, unstable: false });
     if (room) {
@@ -366,6 +414,7 @@ class RoomManager {
   }
 
   rematch(): void {
+    track("rematch_requested", { arena_id: gameStore.get().arenaId, previous_result: this.previousResult });
     this._room?.send(ClientMessage.Rematch);
   }
 
@@ -532,6 +581,7 @@ class RoomManager {
     });
 
     room.onMessage(ServerMessage.Eliminated, (msg: EliminatedPayload) => {
+      if (msg.by === this.sessionId && msg.reason === "ringOut") this.ringOuts++;
       const isYou = msg.sessionId === this.sessionId;
       const text =
         msg.reason === "left"
@@ -577,6 +627,7 @@ class RoomManager {
 
     room.onMessage(ServerMessage.Economy, (msg: EconomyResultMessage) => {
       setLastResult(msg);
+      if (msg.levelUp && msg.level && msg.previousLevel) track("player_level_up", { old_level: msg.previousLevel, new_level: msg.level, source: "match" });
       if (msg.kind === "cancelled") pushToast(msg.note, "info", 4000);
       if (msg.levelUp && msg.level && msg.previousLevel) {
         const levelUp = { from: msg.previousLevel, to: msg.level, coins: msg.levelReward ?? 0 };
@@ -601,6 +652,7 @@ class RoomManager {
 
     room.onLeave((code) => {
       if (this._room !== room) return; // we left on purpose
+      this.interruptMatch(closedBy ? "room_closed" : "disconnected");
       this.detach();
       sessionStore.set({ status: "idle", roomId: "", sessionId: "", unstable: false, error: null });
       if (closedBy) {
@@ -691,11 +743,35 @@ class RoomManager {
     this.snapshotKey = key;
     const previous = gameStore.get();
     gameStore.set(next);
+    if (next.phase === Phase.Playing && (previous.phase !== Phase.Playing || previous.round !== next.round)) {
+      this.matchStartedAt = performance.now();
+      this.ringOuts = 0;
+      track("match_started", { arena_id: next.arenaId, difficulty: next.botLevel, mode: networkStore.get().mode,
+        intro_round: this.introRound, attempt: this.entryAttempt, player_count: next.players.length,
+        ...(next.isPrivate || this.offline || this.introRound ? { bot_count: next.players.filter(p => p.isBot).length,
+          human_count: next.players.filter(p => !p.isBot).length } : {}) });
+      this.entryKey = "";
+    }
+    if (next.phase === Phase.RoundOver && this.matchStartedAt) {
+      this.previousResult = next.isDraw ? "draw" : next.winnerId === this.sessionId ? "win" : "loss";
+      track("match_finished", { arena_id: next.arenaId, result: this.previousResult, ring_outs: this.ringOuts,
+        duration_sec: Math.round((performance.now() - this.matchStartedAt) / 1000),
+        placement: next.players.find(p => p.isYou)?.placement ?? 0 });
+      this.matchStartedAt = 0;
+    }
     this.playPhaseCues(previous, next);
     const before = previous.players.find((p) => p.isYou)?.powerUp ?? "";
     const after = next.players.find((p) => p.isYou)?.powerUp ?? "";
     if (after && after !== before) audio.sample("powerup-on");
     else if (before && !after) audio.sample("powerup-off");
+  }
+
+  private interruptMatch(reason: string) {
+    if (!this.matchStartedAt) return;
+    const game = gameStore.get();
+    track("match_interrupted", { reason, arena_id: game.arenaId, match_phase: game.phase,
+      elapsed_sec: Math.round((performance.now() - this.matchStartedAt) / 1000) });
+    this.matchStartedAt = 0;
   }
 
   private playPhaseCues(prev: GameSnapshot, next: GameSnapshot): void {
