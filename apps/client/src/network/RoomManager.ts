@@ -749,7 +749,7 @@ class RoomManager {
       track("match_started", { arena_id: next.arenaId, difficulty: next.botLevel, mode: networkStore.get().mode,
         intro_round: this.introRound, attempt: this.entryAttempt, player_count: next.players.length,
         ...(this.introRound ? { human_count: 1, bot_count: Math.max(0, next.players.length - 1) } : {}),
-        ...(next.isPrivate || this.offline ? { bot_count: next.players.filter(p => p.isBot).length,
+        ...(!this.introRound && (next.isPrivate || this.offline) ? { bot_count: next.players.filter(p => p.isBot).length,
           human_count: next.players.filter(p => !p.isBot).length } : {}) });
       this.entryKey = "";
     }

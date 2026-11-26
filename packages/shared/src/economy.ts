@@ -393,6 +393,8 @@ export type LedgerCategory =
   | "adjustment";
 
 export interface LedgerEntry {
+  /** Recorded by newer servers when the transaction commits. */
+  balanceAfter?: number;
   id: string;
   currency: Currency;
   amount: number;

@@ -174,12 +174,12 @@ async function reportWallet(profile: ProfileResponse) {
   const seen = ledgerSeen.get(key) ?? new Set<string>();
   const balances = { ...profile.balances };
   for (const entry of entries) {
-    const balance = balances[entry.currency];
+    const balance = entry.balanceAfter ?? (local ? balances[entry.currency] : undefined);
     balances[entry.currency] -= entry.amount;
     if (seen.has(entry.id) || Date.parse(entry.createdAt) < analyticsSince || !entry.amount) continue;
     const amount = Math.abs(entry.amount);
     track(entry.amount > 0 ? "currency_earned" : "currency_spent", {
-      currency_type: entry.currency, amount, ...(local ? { balance_after: balance } : {}),
+      currency_type: entry.currency, amount, ...(balance !== undefined ? { balance_after: balance } : {}),
       [entry.amount > 0 ? "source" : "sink"]: entry.category,
     });
     if (entry.category === "cosmetic_purchase" && entry.itemId) {
