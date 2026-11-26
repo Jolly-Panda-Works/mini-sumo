@@ -82,30 +82,28 @@ for (const which of ["last-committed/", "last-published/"]) {
   }
 }
 
-// 2. A draft of this version (an alpha waiting for you in the panel) is kept; an older one,
-// left by a failed run, would block the new release.
+// A previous alpha submission may have already uploaded this version as a draft.
 const draft = await call("GET", "last-uncommitted/");
-if (draft.json.type === "success" && highestCode(draft.json.release) >= code) {
-  console.log(`::notice::A draft of versionCode ${highestCode(draft.json.release)} is already in the Bazaar panel; not sending ${version} again.`);
-  process.exit(0);
-}
 if (draft.json.type === "success") {
-  fail("An older Bazaar draft already exists. It has been preserved.");
+  const packages = draft.json.release?.packages ?? [];
+  if (!packages.length || !packages.every(pkg => Number(pkg.version_code) === code && (!pkg.version_name || pkg.version_name === version))) {
+    fail("The existing Bazaar draft does not match this release. It has been preserved.");
+  }
+  console.log("Using the uploaded draft for this version.");
+} else {
+  const created = await call("POST");
+  if (!created.ok) fail(`Couldn't create the release: ${created.json.message ?? created.status}`);
+  console.log("Release created.");
+
+  // 4. The APK.
+  const form = new FormData();
+  form.append("architecture", "all");
+  form.append("apk", await openAsBlob(apk, { type: "application/vnd.android.package-archive" }), apk.split(/[\\/]/).pop());
+  const uploaded = await call("POST", "upload/", form);
+  if (!uploaded.ok) fail(`Couldn't upload the APK: ${uploaded.json.message ?? uploaded.status}`);
+  const pkg = uploaded.json.package ?? {};
+  console.log(`APK uploaded: version ${pkg.version_name} (${pkg.version_code}), ${pkg.apk_size} bytes.`);
 }
-
-// 3. New release.
-const created = await call("POST");
-if (!created.ok) fail(`Couldn't create the release: ${created.json.message ?? created.status}`);
-console.log("Release created.");
-
-// 4. The APK.
-const form = new FormData();
-form.append("architecture", "all");
-form.append("apk", await openAsBlob(apk, { type: "application/vnd.android.package-archive" }), apk.split(/[\\/]/).pop());
-const uploaded = await call("POST", "upload/", form);
-if (!uploaded.ok) fail(`Couldn't upload the APK: ${uploaded.json.message ?? uploaded.status}`);
-const pkg = uploaded.json.package ?? {};
-console.log(`APK uploaded: version ${pkg.version_name} (${pkg.version_code}), ${pkg.apk_size} bytes.`);
 
 // 5. Alpha: stays a draft; the release group is chosen in the panel.
 if (alpha) {
