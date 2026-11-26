@@ -1,15 +1,20 @@
+import { track } from "../analytics";
+import { useStepView, finishStep } from "./onboardingAnalytics";
 import { useState, type FormEvent } from "react";
 import { validateUsername } from "@mini-sumo/shared";
 import { saveUsername, usernameHint, usernamePolicy } from "../network/profileSync";
 import { networkStore } from "../network/networkMode";
 import { useStore } from "../store";
 
-export function UsernameForm({ initial, className, onSaved }: { initial: string; className: string; onSaved?: () => void }) {
+export function UsernameForm({ initial, className, onSaved, entryPoint = "profile" }: { initial: string; entryPoint?: "signup" | "rookie_recovery" | "profile"; className: string; onSaved?: () => void }) {
   const [name, setName] = useState(initial);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const checking = useStore(networkStore).mode === "checking";
   const valid = validateUsername(name, usernamePolicy);
+
+  const step = entryPoint === "profile" ? null : "username_" + entryPoint;
+  useStepView(step);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -18,8 +23,11 @@ export function UsernameForm({ initial, className, onSaved }: { initial: string;
     setError("");
     try {
       await saveUsername(valid);
+      track("username_edit_finished", { entry_point: entryPoint, outcome: "success" });
+      if (step) finishStep(step);
       onSaved?.();
     } catch (cause) {
+      track("username_edit_finished", { entry_point: entryPoint, outcome: "failed", reason: "save_rejected" });
       setError(cause instanceof Error ? cause.message : "Couldn't save the username.");
     } finally {
       setSaving(false);

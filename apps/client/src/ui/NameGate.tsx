@@ -7,7 +7,7 @@ export function NameGate() {
   return (
     <Dialog title="Welcome!" onClose={() => undefined} hideClose className="name-gate" variant="welcome">
       <p className="name-gate__title">What should we call you?</p>
-      <UsernameForm initial={settingsStore.get().name} className="name-gate__form" />
+      <UsernameForm entryPoint="signup" initial={settingsStore.get().name} className="name-gate__form" />
     </Dialog>
   );
 }

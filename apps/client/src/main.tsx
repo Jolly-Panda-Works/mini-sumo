@@ -1,3 +1,7 @@
+import { track } from "./analytics";
+import { networkStore } from "./network/networkMode";
+import { settingsStore } from "./settings";
+import { gameStore, sessionStore } from "./network/RoomManager";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
@@ -32,6 +36,19 @@ void roomManager.ready.then(() => {
   void initPlayGames();
   void initBazaarApp();
 });
+function currentScreen() {
+  const settings = settingsStore.get();
+  if (sessionStore.get().roomId) return "arena";
+  if (!settings.storySeen) return "story";
+  if (!settings.onboarded) return "username";
+  return settings.tutorialCompleted ? "menu" : "tutorial";
+}
+window.addEventListener("boot:done", () => track("game_started", {
+  load_time_ms: Math.round(performance.now()), first_screen: currentScreen(), network_mode: networkStore.get().mode,
+}), { once: true });
+document.addEventListener("visibilitychange", () => track(document.hidden ? "game_paused" : "game_resumed", {
+  screen: currentScreen(), match_phase: gameStore.get().phase,
+}));
 startBoot();
 
 // Art used from CSS (set here so the URLs follow the app's base path).
