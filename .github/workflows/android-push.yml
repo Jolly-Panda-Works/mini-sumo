@@ -61,7 +61,7 @@ jobs:
         with:
           packages: platform-tools platforms;android-${{ vars.ANDROID_TARGET_SDK || '35' }} build-tools;35.0.0
           log-accepted-android-sdk-licenses: false
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
       - run: npm ci
       - name: Build Android package
         env:
