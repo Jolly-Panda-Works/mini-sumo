@@ -1,6 +1,5 @@
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { popupLayer, useStackLevel } from "./Dialog";
 import { BuyButton } from "./ArtButtons";
 import { audio } from "../audio/AudioManager";
 import { useStore } from "../store";
@@ -31,16 +30,22 @@ export function NoticePopup() {
   const ui = useStore(uiStore);
   const notice = ui.notices[0];
   if (!notice) return null;
-  // In the popup layer, after any open popups, so it always shows on top of them.
-  return createPortal(<NoticeView key={notice.id} notice={notice} />, popupLayer());
+  return createPortal(<NoticeView key={notice.id} notice={notice} />, document.body);
 }
 
 function NoticeView({ notice }: { notice: Notice }) {
-  const zIndex = useStackLevel();
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  useLayoutEffect(() => {
+    const dialog = dialogRef.current!;
+    dialog.showModal();
+    return () => dialog.close();
+  }, []);
+
   useEffect(() => {
     audio.sample(notice.kind === "message" ? "menu-open" : "reject");
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        e.preventDefault();
         e.stopPropagation();
         notice.resolve(notice.actions.some((a) => a.id === "cancel") ? "cancel" : "close");
       }
@@ -51,13 +56,19 @@ function NoticeView({ notice }: { notice: Notice }) {
 
   const actions = [...notice.actions].sort((a, b) => Number(Boolean(b.primary)) - Number(Boolean(a.primary)));
   return (
-    <div className="overlay overlay--notice" style={{ zIndex }}>
+    <dialog
+      ref={dialogRef}
+      className="overlay overlay--notice"
+      role={notice.kind === "message" ? "dialog" : "alertdialog"}
+      aria-label={notice.title}
+      onCancel={(event) => {
+        event.preventDefault();
+        notice.resolve(notice.actions.some((action) => action.id === "cancel") ? "cancel" : "close");
+      }}
+    >
       <section
         className={`notice-popup notice-popup--${notice.kind}`}
         style={{ backgroundImage: `url("${BASE}ui/popup-${notice.kind}.webp")` }}
-        role={notice.kind === "message" ? "dialog" : "alertdialog"}
-        aria-modal="true"
-        aria-label={`${notice.kind}: ${notice.title}`}
       >
         {notice.closable && (
           <button type="button" className="notice-popup__close" onClick={() => notice.resolve("cancel")} aria-label="Close" data-sfx="none">
@@ -109,6 +120,6 @@ function NoticeView({ notice }: { notice: Notice }) {
           </div>
         </div>
       </section>
-    </div>
+    </dialog>
   );
 }

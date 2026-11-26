@@ -93,7 +93,7 @@ export function syncProfile(): Promise<void> {
         applyingServer = true;
         const serverName = validateUsername(profile.name, usernamePolicy);
         settingsStore.update({
-          ...(serverName ? { name: serverName } : body.name ? { onboarded: false } : {}),
+          ...(serverName ? { name: serverName } : {}),
           ...(profile.profileUpdatedAt > body.updatedAt ? { appearance: sanitizeAppearance(profile.appearance) } : {}),
         });
         applyingServer = false;
