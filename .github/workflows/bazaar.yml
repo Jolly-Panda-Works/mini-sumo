@@ -144,6 +144,14 @@ jobs:
           # Myket billing (its public key: myket.config.json or the variable MYKET_PUBLIC_KEY).
           if [ "${{ matrix.store }}" = myket ]; then MYKET_PUBLIC_KEY="${{ vars.MYKET_PUBLIC_KEY }}" node scripts/myket.mjs; fi
 
+      - name: Configure Tapsell ads
+        working-directory: apps/mobile
+        env:
+          TAPSELL_APP_KEY: ${{ secrets.TAPSELL_APP_KEY }}
+          TAPSELL_REWARDED_ZONE: ${{ vars.TAPSELL_REWARDED_ZONE }}
+          TAPSELL_INTERSTITIAL_ZONE: ${{ vars.TAPSELL_INTERSTITIAL_ZONE }}
+        run: node scripts/tapsell.mjs
+
       - name: Target SDK (optional, repository variable ANDROID_TARGET_SDK)
         if: vars.ANDROID_TARGET_SDK != ''
         working-directory: apps/mobile/android
