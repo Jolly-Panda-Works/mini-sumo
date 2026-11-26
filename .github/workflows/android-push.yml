@@ -73,6 +73,8 @@ jobs:
           ANDROID_TARGET_SDK: ${{ vars.ANDROID_TARGET_SDK }}
           BAZAAR_RSA_KEY: ${{ vars.BAZAAR_RSA_KEY }}
           BAZAAR_DEVELOPER_ID: ${{ vars.BAZAAR_DEVELOPER_ID }}
+          METRIX_APP_ID: ${{ vars.METRIX_APP_ID }}
+          METRIX_API_KEY: ${{ secrets.METRIX_API_KEY }}
           TAPSELL_APP_KEY: ${{ secrets.TAPSELL_APP_KEY }}
           TAPSELL_REWARDED_ZONE: ${{ vars.TAPSELL_REWARDED_ZONE }}
           TAPSELL_INTERSTITIAL_ZONE: ${{ vars.TAPSELL_INTERSTITIAL_ZONE }}
