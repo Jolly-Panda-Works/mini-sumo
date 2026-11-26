@@ -1,3 +1,4 @@
+import { track } from "../analytics";
 import { useEffect, useState } from "react";
 import { MIN_PLAYERS, Phase } from "@mini-sumo/shared";
 import { networkStore } from "../network/networkMode";
@@ -71,7 +72,7 @@ export function Lobby() {
   const startArea = autoStart ? (
     // Paid arenas start on their own: the same button as Training, counting down (no tap needed).
     <button className="start-btn lobby__start" disabled aria-live="polite">
-      <span className="start-btn__text">{searchSeconds > 1 ? `Start match in ${searchSeconds}…` : "Starting…"}</span>
+      <span className="start-btn__text">{searchSeconds > 1 ? `Start match in ${searchSeconds}â€¦` : "Startingâ€¦"}</span>
     </button>
   ) : isHost ? (
           <>
@@ -82,7 +83,7 @@ export function Lobby() {
               aria-live="polite"
             >
               <span className="start-btn__text">
-                {searching ? `Start match in ${searchSeconds}…` : canStart ? "Start match" : "Waiting for others…"}
+                {searching ? `Start match in ${searchSeconds}â€¦` : canStart ? "Start match" : "Waiting for othersâ€¦"}
               </span>
             </button>
             {!canStart && !searching && (
@@ -157,7 +158,7 @@ export function Lobby() {
                     Invite a friend
                   </button>
                 ) : (
-                  "Waiting for a wrestler…"
+                  "Waiting for a wrestlerâ€¦"
                 )}
               </li>
             ),
@@ -178,7 +179,7 @@ export function Lobby() {
             full={full}
           />
         )}
-        {paid && <p className="hint hint--center">Leave with × before the bout starts to get your entry back.</p>}
+        {paid && <p className="hint hint--center">Leave with Ã— before the bout starts to get your entry back.</p>}
     </Dialog>
   );
 }
@@ -225,6 +226,7 @@ function InvitePicker({
   const share = async () => {
     try {
       await navigator.share({ title: "Mini Sumo", text: "Join my Mini Sumo room!", url: roomManager.inviteLink() });
+      track("invite_sent", { invite_channel: "share_sheet", room_type: "private" });
     } catch {
       // Share sheet dismissed.
     }

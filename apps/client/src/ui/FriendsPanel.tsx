@@ -1,3 +1,4 @@
+import { useFeatureOpened } from "./featureAnalytics";
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import type { FriendEntry } from "@mini-sumo/shared";
 import { addFriend, answerFriend, friendsAvailable, friendsStore, inviteFriend, loadFriends } from "../network/friendsClient";
@@ -16,6 +17,7 @@ import { FriendProfilePopup } from "./FriendProfilePopup";
  * who's online. Tap a friend for their profile; "Play" invites an online friend to a game.
  */
 export function FriendsPanel() {
+  useFeatureOpened("friends");
   const network = useStore(networkStore);
   const friends = useStore(friendsStore);
   const [code, setCode] = useState("");
@@ -75,7 +77,7 @@ export function FriendsPanel() {
           <section className="friends__code">
             <span className="field__label">Your friend code</span>
             <button className="code-field friends__code-value" onClick={() => void copyCode()} aria-label="Copy your friend code">
-              <span className="code-field__text">{data?.code ?? "······"}</span>
+              <span className="code-field__text">{data?.code ?? "Â·Â·Â·Â·Â·Â·"}</span>
             </button>
           </section>
 
@@ -208,7 +210,7 @@ export function PlayButton({ friend }: { friend: FriendEntry }) {
   );
 }
 
-/** A small art button (ACCEPT, DECLINE, PLAY, INVITE, SENT…). */
+/** A small art button (ACCEPT, DECLINE, PLAY, INVITE, SENTâ€¦). */
 export function SmallArt({
   art,
   label,

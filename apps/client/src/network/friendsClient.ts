@@ -1,3 +1,4 @@
+import { track } from "../analytics";
 import type { FriendProfile, FriendsResponse, GameInvite } from "@mini-sumo/shared";
 import { createStore } from "../store";
 import { economyStore, request } from "./economyClient";
@@ -47,8 +48,11 @@ export const friendProfile = (accountId: string) => request<FriendProfile>(`/fri
 /** Anyone's public profile (from the leaderboard), with how you're connected. */
 export const playerProfile = (accountId: string) => request<FriendProfile>(`/players/profile?id=${encodeURIComponent(accountId)}`);
 
-export const inviteFriend = (accountId: string, roomId: string) =>
-  request<GameInvite>("/invites", { method: "POST", body: JSON.stringify({ accountId, roomId }) });
+export async function inviteFriend(accountId: string, roomId: string) {
+  const invite = await request<GameInvite>("/invites", { method: "POST", body: JSON.stringify({ accountId, roomId }) });
+  track("invite_sent", { invite_channel: "friend", room_type: "private" });
+  return invite;
+}
 
 export const fetchInvites = () => request<{ invites: GameInvite[] }>("/invites").then((r) => r.invites);
 

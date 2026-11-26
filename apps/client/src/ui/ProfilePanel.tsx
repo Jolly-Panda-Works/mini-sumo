@@ -1,3 +1,4 @@
+import { useFeatureOpened } from "./featureAnalytics";
 import { useEffect, useRef, useState } from "react";
 import { IntroPanelFooter, finishIntroProfile } from "./IntroPanelFooter";
 import { UsernameForm } from "./UsernameForm";
@@ -29,6 +30,7 @@ function EditName({ onClose }: { onClose: () => void }) {
 
 /** Level and XP, name (edit with the pencil) and play stats. */
 export function ProfilePanel() {
+  useFeatureOpened("profile");
   const settings = useStore(settingsStore);
   const economy = useStore(economyStore);
   const statsRef = useRef<HTMLDListElement>(null);
@@ -205,7 +207,7 @@ export function ProfilePanel() {
               <button
                 className="art bazaar-art"
                 aria-disabled={!bazaarAppAvailable() || bazaarLogin.status === "working"}
-                aria-label={bazaarLogin.status === "working" ? "Signing in with Bazaar…" : "Sign in with Bazaar"}
+                aria-label={bazaarLogin.status === "working" ? "Signing in with Bazaarâ€¦" : "Sign in with Bazaar"}
                 onClick={() => (bazaarAppAvailable() ? void signInWithBazaar() : pushToast("Sign in with Bazaar works in the Cafe Bazaar app", "info"))}
               >
                 <img src={`${base}ui/btn-bazaar-signin.webp`} alt="" width={480} height={147} draggable={false} />
@@ -231,7 +233,7 @@ export function ProfilePanel() {
               <button
                 className="art bazaar-art"
                 aria-disabled={bazaarWeb === "working"}
-                aria-label={bazaarWeb === "working" ? "Opening Bazaar…" : "Sign in with Bazaar"}
+                aria-label={bazaarWeb === "working" ? "Opening Bazaarâ€¦" : "Sign in with Bazaar"}
                 onClick={() => {
                   setBazaarWeb("working");
                   void startBazaarWebLogin().catch(() => {

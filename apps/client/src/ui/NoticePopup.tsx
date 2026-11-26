@@ -1,3 +1,5 @@
+import { track } from "../analytics";
+import { gameStore, sessionStore } from "../network/RoomManager";
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { BuyButton } from "./ArtButtons";
@@ -34,10 +36,32 @@ export function NoticePopup() {
 }
 
 function NoticeView({ notice }: { notice: Notice }) {
+  const types: Record<string, string> = {
+    "Update available": "update_available", "Update required": "update_required",
+    "Connection lost": "server_unavailable", "Couldn't connect": "connection_failed",
+    "Choose a username": "invalid_username",
+  };
+  const noticeType = types[notice.title] || notice.kind;
+  const screen = sessionStore.get().roomId ? gameStore.get().phase : "menu";
+  const reported = useRef(false);
+  const answered = useRef(false);
+  const answer = (id: string) => {
+    if (answered.current) return;
+    answered.current = true;
+    const label = notice.actions.find(a => a.id === id)?.label.toLowerCase();
+    const action = label && ["update", "later", "ok", "retry"].includes(label) ? label :
+      ["cancel", "close", "ok", "retry", "leave"].includes(id) ? id : "other";
+    track("blocking_notice_action", { notice_type: noticeType, screen, action });
+    notice.resolve(id);
+  };
   const dialogRef = useRef<HTMLDialogElement>(null);
   useLayoutEffect(() => {
     const dialog = dialogRef.current!;
     dialog.showModal();
+    if (!reported.current) {
+      reported.current = true;
+      track("blocking_notice_shown", { notice_type: noticeType, screen });
+    }
     return () => dialog.close();
   }, []);
 
@@ -47,7 +71,7 @@ function NoticeView({ notice }: { notice: Notice }) {
       if (e.key === "Escape") {
         e.preventDefault();
         e.stopPropagation();
-        notice.resolve(notice.actions.some((a) => a.id === "cancel") ? "cancel" : "close");
+        answer(notice.actions.some((a) => a.id === "cancel") ? "cancel" : "close");
       }
     };
     window.addEventListener("keydown", onKey, true);
@@ -63,7 +87,7 @@ function NoticeView({ notice }: { notice: Notice }) {
       aria-label={notice.title}
       onCancel={(event) => {
         event.preventDefault();
-        notice.resolve(notice.actions.some((action) => action.id === "cancel") ? "cancel" : "close");
+        answer(notice.actions.some((action) => action.id === "cancel") ? "cancel" : "close");
       }}
     >
       <section
@@ -71,7 +95,7 @@ function NoticeView({ notice }: { notice: Notice }) {
         style={{ backgroundImage: `url("${BASE}ui/popup-${notice.kind}.webp")` }}
       >
         {notice.closable && (
-          <button type="button" className="notice-popup__close" onClick={() => notice.resolve("cancel")} aria-label="Close" data-sfx="none">
+          <button type="button" className="notice-popup__close" onClick={() => answer("cancel")} aria-label="Close" data-sfx="none">
             <img src={`${BASE}ui/close.webp`} alt="" draggable={false} />
           </button>
         )}
@@ -89,7 +113,7 @@ function NoticeView({ notice }: { notice: Notice }) {
                     price={action.price}
                     label={`${action.label} for ${action.price} Sumo Coins`}
                     sfx="none"
-                    onClick={() => notice.resolve(action.id)}
+                    onClick={() => answer(action.id)}
                   />
                 );
               }
@@ -99,7 +123,7 @@ function NoticeView({ notice }: { notice: Notice }) {
                   key={action.id}
                   type="button"
                   className="art art--notice"
-                  onClick={() => notice.resolve(action.id)}
+                  onClick={() => answer(action.id)}
                   autoFocus={i === 0}
                   aria-label={action.label}
                 >
@@ -110,7 +134,7 @@ function NoticeView({ notice }: { notice: Notice }) {
                   key={action.id}
                   type="button"
                   className={`plank-btn${action.primary ? " plank-btn--primary" : ""}`}
-                  onClick={() => notice.resolve(action.id)}
+                  onClick={() => answer(action.id)}
                   autoFocus={i === 0}
                 >
                   {action.label}

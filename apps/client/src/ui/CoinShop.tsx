@@ -1,3 +1,4 @@
+import { useFeatureOpened } from "./featureAnalytics";
 import { useEffect, useState } from "react";
 import { AD_RULES, COIN_PACKS, DAILY_GIFT_COINS, type CoinPack } from "@mini-sumo/shared";
 import { rewardedAdsAvailable, watchRewardedAd } from "../network/ads";
@@ -16,6 +17,7 @@ import { ComingSoonButton, GreenArtButton, PriceButton } from "./ArtButtons";
 
 /** Coin shop: daily free coins and coin packs (bought through Cafe Bazaar in the Bazaar build). */
 export function CoinShop() {
+  useFeatureOpened("coin_shop");
   const economy = useStore(economyStore);
   const balance = economy.profile?.balances.coins ?? 0;
   const base = import.meta.env.BASE_URL;

@@ -1,3 +1,4 @@
+import { track } from "../analytics";
 import { useEffect, useState } from "react";
 import { adBreak, noteBoutFinished } from "../network/ads";
 import { addFriendById, friendsAvailable, friendsStore, loadFriends } from "../network/friendsClient";
@@ -50,6 +51,7 @@ export function Results() {
   }, []);
 
   const playAgain = () => {
+    track("rematch_requested", { arena_id: game.arenaId, previous_result: game.isDraw ? "draw" : winner?.isYou ? "win" : "loss" });
     const arenaId = game.arenaId;
     void roomManager.leave().then(adBreak).then(() => roomManager.enterArena(arenaId, settingsStore.get().name));
   };
