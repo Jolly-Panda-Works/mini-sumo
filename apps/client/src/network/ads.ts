@@ -1,3 +1,4 @@
+import { track, withActivityContext } from "../analytics";
 import { AD_RULES, interstitialDue, type AdRewardRequest, type AdRewardResponse } from "@mini-sumo/shared";
 import { refreshRemoveAds } from "./bazaar";
 import { pushToast } from "../uiStore";
@@ -98,16 +99,46 @@ export function adBreak(): Promise<void> {
   return activeBreak;
 }
 
+async function displayAd(ads: AdsNative, placement: Placement) {
+  const fields = { ad_type: placement, placement: placement === "rewarded" ? "coin_shop" : "after_match" };
+  const start = performance.now();
+  track("ad_requested", fields);
+  let prepared = false;
+  let opened = false;
+  const onOpen = () => {
+    if (opened) return;
+    opened = true;
+    track("ad_shown", { ...fields, load_time_ms: Math.round(performance.now() - start) });
+  };
+  const eventName = "mini-sumo:ad-opened-" + placement;
+  window.addEventListener(eventName, onOpen);
+  try {
+    await ads.prepare({ placement });
+    prepared = true;
+    if (placement === "interstitial") {
+      pushToast("Ad break", "info");
+      await new Promise(resolve => window.setTimeout(resolve, AD_RULES.interstitialNoticeMs));
+    }
+    const result = await withActivityContext("ad", () => ads.show({ placement }));
+    if (result.shown) onOpen();
+    const outcome = !result.shown ? "error" : placement === "rewarded" && !result.rewarded ? "closed_early" : "completed";
+    track("ad_finished", { ...fields, outcome });
+    return result;
+  } catch (error) {
+    track("ad_finished", { ...fields, outcome: prepared ? "error" : "unavailable" });
+    throw error;
+  } finally {
+    window.removeEventListener(eventName, onOpen);
+  }
+}
+
 async function showInterstitial(): Promise<void> {
   if (!plugin || pace.bouts < pace.threshold) return;
   const totalBouts = economyStore.get().profile?.stats.matches ?? 0;
   if (!interstitialDue({ totalBouts: Math.max(totalBouts, pace.bouts), boutsSinceAd: pace.bouts, msSinceAd: Date.now() - pace.at, payer: false })) return;
   try {
     if (await refreshRemoveAds()) return;
-    await plugin.prepare({ placement: "interstitial" });
-    pushToast("Ad break", "info");
-    await new Promise((resolve) => window.setTimeout(resolve, AD_RULES.interstitialNoticeMs));
-    const { shown } = await plugin.show({ placement: "interstitial" });
+    const { shown } = await displayAd(plugin, "interstitial");
     if (shown) adClosed();
   } catch {
     // No ad right now: play on.
@@ -128,9 +159,20 @@ export function rewardedAdsAvailable(): boolean {
 /** Shows a rewarded ad and pays it. Returns the coins; 0 when it wasn't watched to the end. */
 export async function watchRewardedAd(): Promise<number> {
   if (!plugin) return 0;
-  await plugin.prepare({ placement: "rewarded" });
-  const { rewarded, adId } = await plugin.show({ placement: "rewarded" });
+  const { rewarded, adId } = await displayAd(plugin, "rewarded");
   if (!rewarded) return 0;
+  const networkMode = networkStore.get().mode;
+  try {
+    const coins = await payReward(adId);
+    if (!coins) track("ad_reward_failed", { placement: "coin_shop", network_mode: networkMode, reason: "not_credited" });
+    return coins;
+  } catch (error) {
+    track("ad_reward_failed", { placement: "coin_shop", network_mode: networkMode, reason: "claim_failed" });
+    throw error;
+  }
+}
+
+async function payReward(adId?: string): Promise<number> {
   if (networkStore.get().mode !== "online") {
     const coins = localEconomy.claimAdReward();
     await refreshProfile();

@@ -707,16 +707,18 @@ export class Economy {
       match_id: string | null;
       item_id: string | null;
       created_at: string;
+      balance_after: number;
     }>(
       this.db
         .prepare(
-          "SELECT id, currency, amount, category, reason, match_id, item_id, created_at FROM transactions WHERE account_id = ? ORDER BY created_at DESC, rowid DESC LIMIT ?",
+          "SELECT id, currency, amount, category, reason, match_id, item_id, created_at, balance_after FROM transactions WHERE account_id = ? ORDER BY created_at DESC, rowid DESC LIMIT ?",
         )
         .all(accountId, count),
     ).map((t) => ({
       id: t.id,
       currency: t.currency,
       amount: t.amount,
+      balanceAfter: t.balance_after,
       category: t.category,
       reason: t.reason,
       matchId: t.match_id,

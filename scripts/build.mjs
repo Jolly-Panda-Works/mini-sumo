@@ -52,6 +52,7 @@ if(c.android.profile==='mini') {
     run(process.execPath, ['scripts/tapsell.mjs'], {cwd: mobile});
   }
 }
+if (c.android.profile === 'mini' && !debug) run(process.execPath, ['scripts/metrix.mjs'], {cwd: mobile});
 if (env.ANDROID_TARGET_SDK) {
   const sdk = env.ANDROID_TARGET_SDK;
   if (!/^\d+$/.test(sdk)) throw Error('ANDROID_TARGET_SDK must be an integer');

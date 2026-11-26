@@ -1,3 +1,4 @@
+import { useStepView, finishStep } from "./onboardingAnalytics";
 import { useCallback, useEffect, useState } from "react";
 import { settingsStore } from "../settings";
 import { GreenArtButton } from "./ArtButtons";
@@ -54,7 +55,7 @@ export function StoryCutscene() {
   const pageDone = shown >= panels.length;
   const last = page === PAGES.length - 1;
 
-  const finish = useCallback(() => settingsStore.update({ storySeen: true }), []);
+  const finish = useCallback((skipped = false) => { finishStep("story", skipped ? "skipped" : "completed"); settingsStore.update({ storySeen: true }); }, []);
   const advance = useCallback(() => {
     if (!pageDone) setShown(shown + 1);
     else if (!last) {
@@ -65,6 +66,7 @@ export function StoryCutscene() {
 
   // The comic starts when the loading screen has gone.
   const [ready, setReady] = useState(() => !document.getElementById("boot"));
+  useStepView(ready ? "story" : null);
   useEffect(() => {
     if (ready) return;
     const start = () => setReady(true);
@@ -95,7 +97,7 @@ export function StoryCutscene() {
 
   return (
     <div className="story" onClick={advance}>
-      <button className="story__skip" onClick={(e) => { e.stopPropagation(); finish(); }}>Skip</button>
+      <button className="story__skip" onClick={(e) => { e.stopPropagation(); finish(true); }}>Skip</button>
       <div className="story__page" key={page}>
         {panels.map((panel, i) => (
           <figure key={i} className={`story__panel${i < shown ? " story__panel--on" : ""}`} style={{ flexGrow: panel.size ?? 1 }}>
@@ -111,7 +113,7 @@ export function StoryCutscene() {
       </div>
       <div className="story__foot" onClick={(e) => e.stopPropagation()}>
         {pageDone && last ? (
-          <GreenArtButton label="BEGIN" onClick={finish} />
+          <GreenArtButton label="BEGIN" onClick={() => finish()} />
         ) : (
           pageDone && <span className="story__hint">Tap to continue</span>
         )}

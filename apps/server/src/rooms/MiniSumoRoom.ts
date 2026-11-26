@@ -203,14 +203,8 @@ export class MiniSumoRoom extends Room<MiniSumoState> {
     if (!check.ok) throw new ServerError(4003, check.error);
 
     const profile = economy && accountId ? economy.profile(accountId) : null;
-    let name = profile?.name || options.name;
-    if (economy && accountId && !profile?.name) {
-      try {
-        name = economy.setUsername(accountId, name, options.usernamePolicy);
-      } catch (error) {
-        throw new ServerError(4005, error instanceof EconomyError ? error.message : "Choose a valid username.");
-      }
-    }
+    // Joining a room never claims an account name. Unnamed accounts get the seat's default name.
+    const name = accountId ? profile?.name : options.name;
 
     const appearance = economy && accountId ? economy.saveAppearance(accountId, options.appearance) : options.appearance;
     if (this.paid) {

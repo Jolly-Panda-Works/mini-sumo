@@ -204,6 +204,13 @@ jobs:
           # Google Play Games sign-in + cloud save (repository variable PLAY_GAMES_APP_ID).
           PLAY_GAMES_APP_ID="${{ vars.PLAY_GAMES_APP_ID }}" node scripts/play-games.mjs
 
+      - name: Configure Metrix analytics
+        working-directory: apps/mobile
+        env:
+          METRIX_APP_ID: ${{ vars.METRIX_APP_ID }}
+          METRIX_API_KEY: ${{ secrets.METRIX_API_KEY }}
+        run: node scripts/metrix.mjs
+
       - name: Target SDK (optional, repository variable ANDROID_TARGET_SDK)
         if: vars.ANDROID_TARGET_SDK != ''
         working-directory: apps/mobile/android

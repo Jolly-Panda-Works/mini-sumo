@@ -1,6 +1,7 @@
-import { useEffect } from "react";
+import { track } from "../analytics";
+import { gameStore, sessionStore } from "../network/RoomManager";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { popupLayer, useStackLevel } from "./Dialog";
 import { BuyButton } from "./ArtButtons";
 import { audio } from "../audio/AudioManager";
 import { useStore } from "../store";
@@ -31,18 +32,46 @@ export function NoticePopup() {
   const ui = useStore(uiStore);
   const notice = ui.notices[0];
   if (!notice) return null;
-  // In the popup layer, after any open popups, so it always shows on top of them.
-  return createPortal(<NoticeView key={notice.id} notice={notice} />, popupLayer());
+  return createPortal(<NoticeView key={notice.id} notice={notice} />, document.body);
 }
 
 function NoticeView({ notice }: { notice: Notice }) {
-  const zIndex = useStackLevel();
+  const types: Record<string, string> = {
+    "Update available": "update_available", "Update required": "update_required",
+    "Connection lost": "server_unavailable", "Couldn't connect": "connection_failed",
+    "Choose a username": "invalid_username",
+  };
+  const noticeType = types[notice.title] || notice.kind;
+  const screen = sessionStore.get().roomId ? gameStore.get().phase : "menu";
+  const reported = useRef(false);
+  const answered = useRef(false);
+  const answer = (id: string) => {
+    if (answered.current) return;
+    answered.current = true;
+    const label = notice.actions.find(a => a.id === id)?.label.toLowerCase();
+    const action = label && ["update", "later", "ok", "retry"].includes(label) ? label :
+      ["cancel", "close", "ok", "retry", "leave"].includes(id) ? id : "other";
+    track("blocking_notice_action", { notice_type: noticeType, screen, action });
+    notice.resolve(id);
+  };
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  useLayoutEffect(() => {
+    const dialog = dialogRef.current!;
+    dialog.showModal();
+    if (!reported.current) {
+      reported.current = true;
+      track("blocking_notice_shown", { notice_type: noticeType, screen });
+    }
+    return () => dialog.close();
+  }, []);
+
   useEffect(() => {
     audio.sample(notice.kind === "message" ? "menu-open" : "reject");
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        e.preventDefault();
         e.stopPropagation();
-        notice.resolve(notice.actions.some((a) => a.id === "cancel") ? "cancel" : "close");
+        answer(notice.actions.some((a) => a.id === "cancel") ? "cancel" : "close");
       }
     };
     window.addEventListener("keydown", onKey, true);
@@ -51,16 +80,22 @@ function NoticeView({ notice }: { notice: Notice }) {
 
   const actions = [...notice.actions].sort((a, b) => Number(Boolean(b.primary)) - Number(Boolean(a.primary)));
   return (
-    <div className="overlay overlay--notice" style={{ zIndex }}>
+    <dialog
+      ref={dialogRef}
+      className="overlay overlay--notice"
+      role={notice.kind === "message" ? "dialog" : "alertdialog"}
+      aria-label={notice.title}
+      onCancel={(event) => {
+        event.preventDefault();
+        answer(notice.actions.some((action) => action.id === "cancel") ? "cancel" : "close");
+      }}
+    >
       <section
         className={`notice-popup notice-popup--${notice.kind}`}
         style={{ backgroundImage: `url("${BASE}ui/popup-${notice.kind}.webp")` }}
-        role={notice.kind === "message" ? "dialog" : "alertdialog"}
-        aria-modal="true"
-        aria-label={`${notice.kind}: ${notice.title}`}
       >
         {notice.closable && (
-          <button type="button" className="notice-popup__close" onClick={() => notice.resolve("cancel")} aria-label="Close" data-sfx="none">
+          <button type="button" className="notice-popup__close" onClick={() => answer("cancel")} aria-label="Close" data-sfx="none">
             <img src={`${BASE}ui/close.webp`} alt="" draggable={false} />
           </button>
         )}
@@ -78,7 +113,7 @@ function NoticeView({ notice }: { notice: Notice }) {
                     price={action.price}
                     label={`${action.label} for ${action.price} Sumo Coins`}
                     sfx="none"
-                    onClick={() => notice.resolve(action.id)}
+                    onClick={() => answer(action.id)}
                   />
                 );
               }
@@ -88,7 +123,7 @@ function NoticeView({ notice }: { notice: Notice }) {
                   key={action.id}
                   type="button"
                   className="art art--notice"
-                  onClick={() => notice.resolve(action.id)}
+                  onClick={() => answer(action.id)}
                   autoFocus={i === 0}
                   aria-label={action.label}
                 >
@@ -99,7 +134,7 @@ function NoticeView({ notice }: { notice: Notice }) {
                   key={action.id}
                   type="button"
                   className={`plank-btn${action.primary ? " plank-btn--primary" : ""}`}
-                  onClick={() => notice.resolve(action.id)}
+                  onClick={() => answer(action.id)}
                   autoFocus={i === 0}
                 >
                   {action.label}
@@ -109,6 +144,6 @@ function NoticeView({ notice }: { notice: Notice }) {
           </div>
         </div>
       </section>
-    </div>
+    </dialog>
   );
 }

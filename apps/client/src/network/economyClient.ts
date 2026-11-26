@@ -8,6 +8,7 @@ import {
   type LedgerResponse,
   type ProfileResponse,
 } from "@mini-sumo/shared";
+import { analyticsEnabled, track } from "../analytics";
 import { resolveServerUrl } from "../config";
 import { settingsStore } from "../settings";
 import { createStore } from "../store";
@@ -159,8 +160,42 @@ export function accountToken(): string | undefined {
   return readAccount()?.token;
 }
 
+// Read confirmed wallet transactions. The same ledger can arrive through refresh, restore or retry.
+const analyticsSince = performance.timeOrigin;
+const ledgerSeen = new Map<string, Set<string>>();
+let ledgerGeneration = 0;
+async function reportWallet(profile: ProfileResponse) {
+  if (!analyticsEnabled()) return;
+  const local = isLocal();
+  const generation = ++ledgerGeneration;
+  const entries = local ? localEconomy.ledger() : (await request<LedgerResponse>("/ledger?limit=100")).entries;
+  if (generation !== ledgerGeneration || economyStore.get().profile?.accountId !== profile.accountId) return;
+  const key = (local ? "local:" : "online:") + profile.accountId;
+  const seen = ledgerSeen.get(key) ?? new Set<string>();
+  const balances = { ...profile.balances };
+  for (const entry of entries) {
+    const balance = entry.balanceAfter ?? (local ? balances[entry.currency] : undefined);
+    balances[entry.currency] -= entry.amount;
+    if (seen.has(entry.id) || Date.parse(entry.createdAt) < analyticsSince || !entry.amount) continue;
+    const amount = Math.abs(entry.amount);
+    track(entry.amount > 0 ? "currency_earned" : "currency_spent", {
+      currency_type: entry.currency, amount, ...(balance !== undefined ? { balance_after: balance } : {}),
+      [entry.amount > 0 ? "source" : "sink"]: entry.category,
+    });
+    if (entry.category === "cosmetic_purchase" && entry.itemId) {
+      const item = economyStore.get().catalog?.items.find(i => i.id === entry.itemId);
+      track("item_purchased", { item_id: entry.itemId, item_category: item?.category ?? "cosmetic", price_coins: amount });
+    }
+    if (["welcome", "daily_gift", "ad_reward"].includes(entry.category)) {
+      track("reward_claimed", { reward_type: entry.category, amount, network_mode: local ? "offline" : "online" });
+    }
+  }
+  ledgerSeen.set(key, new Set(entries.map(entry => entry.id)));
+}
+
 function applyProfile(profile: ProfileResponse): void {
   economyStore.update({ profile, status: "ready", error: null });
+  void reportWallet(profile).catch(() => {});
   // Online: keep the device's copy of the progress up to date (used when offline).
   if (!isLocal()) localEconomy.mergeProgress({ xp: profile.level.xp, matches: profile.stats.matches, wins: profile.stats.wins });
   try {

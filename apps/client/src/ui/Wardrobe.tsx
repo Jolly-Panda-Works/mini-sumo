@@ -1,3 +1,5 @@
+import { track } from "../analytics";
+import { useFeatureOpened, featureSource } from "./featureAnalytics";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { IntroPanelFooter, finishIntroCustomize } from "./IntroPanelFooter";
 import { compactCoins } from "./Coins";
@@ -69,7 +71,7 @@ export function PreviewSumo({
     let arms = 0;
     const r = reaction ? (performance.now() - reaction.at) / REACT_MS : 1;
     if (reaction && r >= 0 && r < 1) {
-      const wave = Math.sin(r * Math.PI); // 0 → 1 → 0
+      const wave = Math.sin(r * Math.PI); // 0 â†’ 1 â†’ 0
       if (reaction.category === "outfit") {
         // Jump and spin all the way round.
         lift = Math.sin(r * Math.PI) * 0.55;
@@ -102,7 +104,7 @@ export function PreviewSumo({
 
 /** Where the wardrobe camera looks: the head (hair, colour, face) or the belt (outfits). */
 const FOCUS: Record<CosmeticCategory, { position: [number, number, number]; target: [number, number, number] }> = {
-  // The model stands at y = -0.85 in the preview: head centre ≈ 0.57, belt ≈ -0.25.
+  // The model stands at y = -0.85 in the preview: head centre â‰ˆ 0.57, belt â‰ˆ -0.25.
   hair: { position: [0, 0.98, 2.6], target: [0, 0.88, 0] },
   hairColor: { position: [0, 0.98, 2.6], target: [0, 0.88, 0] },
   face: { position: [0, 0.72, 2.35], target: [0, 0.72, 0] },
@@ -304,6 +306,7 @@ function ItemThumb({ category, look, index, color }: { category: CosmeticCategor
 }
 
 export function Wardrobe() {
+  useFeatureOpened("wardrobe");
   const { appearance, introStage } = useStore(settingsStore);
   const guided = introStage === "customize";
   const economy = useStore(economyStore);
@@ -337,6 +340,12 @@ export function Wardrobe() {
   /** Saves the owned part of a look (locally, to the room and to the account). */
   const wear = (look: Appearance) => {
     const wearable = restrictToOwned(look, ownedItems());
+    const previous = settingsStore.get().appearance;
+    for (const slot of Object.keys(wearable) as CosmeticCategory[]) {
+      if (wearable[slot] !== previous[slot]) track("cosmetic_equipped", {
+        slot, item_id: cosmeticItemId(slot, wearable[slot]), entry_point: featureSource("wardrobe"),
+      });
+    }
     settingsStore.update({ appearance: wearable });
     if (inLobby) roomManager.setAppearance(wearable);
     void saveAppearanceRemote();

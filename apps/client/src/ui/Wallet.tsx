@@ -1,3 +1,4 @@
+import { useFeatureOpened } from "./featureAnalytics";
 import { useEffect } from "react";
 import type { LedgerCategory } from "@mini-sumo/shared";
 import { economyStore, loadLedger, refreshProfile } from "../network/economyClient";
@@ -23,6 +24,7 @@ const LABELS: Record<LedgerCategory, string> = {
 
 /** Balance, totals and transaction history (from the server ledger). */
 export function Wallet() {
+  useFeatureOpened("wallet");
   const economy = useStore(economyStore);
   const profile = economy.profile;
 

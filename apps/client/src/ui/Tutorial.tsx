@@ -1,3 +1,4 @@
+import { useStepView, finishStep } from "./onboardingAnalytics";
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import type { Mesh } from "three";
@@ -117,7 +118,7 @@ function PracticeScene({ p, complete, feedback }: { p: Practice; complete: () =>
       Object.assign(p.me, createBody("tutorial-you", p.step === 2 ? 1.5 : -1.5, 0));
       Object.assign(p.opponent, createBody("tutorial-coach", p.step === 2 ? 4.5 : 1.5, 0, Math.PI));
       p.hitTarget = false; p.aimedDash = false;
-      feedback("Stay inside the straw rope! No penalty here — try again.");
+      feedback("Stay inside the straw rope! No penalty here â€” try again.");
     }
   });
   return <>
@@ -151,7 +152,8 @@ export function Tutorial() {
     return () => window.clearTimeout(timer);
   }, [done, step]);
   const begin = () => requestPracticeDash(p);
-  const changeStep = (next: number) => { reset(p, next); setCoachMessage(""); setDone(false); setStep(next); setKnob({ x: 0, y: 0 }); };
+  useStepView("practice_" + step);
+  const changeStep = (next: number) => { finishStep("practice_" + step, !done && next === 3 ? "skipped" : "completed"); reset(p, next); setCoachMessage(""); setDone(false); setStep(next); setKnob({ x: 0, y: 0 }); };
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLElement && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
@@ -169,7 +171,7 @@ export function Tutorial() {
     const len = Math.hypot(x, y); if (len > 1) { x /= len; y /= len; }
     p.touch = { x, y }; setKnob({ x: x * 35, y: y * 35 });
   };
-  const finish = (dashMode: "manual" | "auto") => settingsStore.update({ dashMode, tutorialCompleted: true });
+  const finish = (dashMode: "manual" | "auto") => { finishStep("practice_3"); settingsStore.update({ dashMode, tutorialCompleted: true }); };
   const chooseDashMode = () => {
     setCompletionOpen(false);
     changeStep(3);
@@ -188,7 +190,7 @@ export function Tutorial() {
     </div>}
     {step < 3 && <div className="tutorial__card">
       <div className="tutorial__guides"><PandaCoach key={pose} className={`tutorial__panda tutorial__panda--${pose}`} pose={done ? "celebrate" : step === 0 ? "ready" : step === 1 ? "reach" : "kick"} /></div>
-      <div className="tutorial__copy"><span className="tutorial__step">{step < 3 ? `PANDA COACH · ${step + 1} / 3` : "READY TO PLAY"}</span><h2>{titles[step]}</h2><p aria-live="polite">{done ? successMessage : coachMessage || descriptions[step]}</p></div>
+      <div className="tutorial__copy"><span className="tutorial__step">{step < 3 ? `PANDA COACH Â· ${step + 1} / 3` : "READY TO PLAY"}</span><h2>{titles[step]}</h2><p aria-live="polite">{done ? successMessage : coachMessage || descriptions[step]}</p></div>
     </div>}
     {completionOpen && <Dialog title="Training complete!" className="tutorial-success" variant="sub" hideClose dismissible={false} onClose={chooseDashMode} footer={<button className="art art--great" autoFocus onClick={chooseDashMode} aria-label="Great! Let's play"><img src={`${import.meta.env.BASE_URL}ui/btn-great.webp`} alt="" draggable={false} /></button>}>
       <PandaCoach className="tutorial-success__panda" pose="celebrate" />

@@ -1,3 +1,4 @@
+import { useFeatureOpened } from "./featureAnalytics";
 import { useEffect, useLayoutEffect, useRef, useState, type Ref } from "react";
 import type { LeaderboardEntry, LeaderboardResponse } from "@mini-sumo/shared";
 import { request } from "../network/economyClient";
@@ -18,6 +19,7 @@ const MEDALS = ["gold", "silver", "bronze"] as const;
  * list), pinned to the top when you've scrolled past it.
  */
 export function LeaderboardPanel() {
+  useFeatureOpened("leaderboard");
   const network = useStore(networkStore);
   // Dev mode: sample rows instead of the server's.
   const sample = useStore(devSamples).leaderboard;
@@ -62,7 +64,7 @@ export function LeaderboardPanel() {
       ) : error ? (
         <p className="leaderboard__note">{error}</p>
       ) : !board ? (
-        <p className="leaderboard__note">Loading…</p>
+        <p className="leaderboard__note">Loadingâ€¦</p>
       ) : (
         <>
           {pin === "top" && meInList && <Row entry={board.you} you pinned />}

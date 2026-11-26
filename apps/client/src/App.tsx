@@ -1,5 +1,3 @@
-import { validateUsername } from "@mini-sumo/shared";
-import { usernamePolicy } from "./network/profileSync";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { LATE_GAME_MS, Phase } from "@mini-sumo/shared";
 import { GameCanvas } from "./game/GameCanvas";
@@ -195,7 +193,7 @@ export function App() {
   }, []);
 
   const needsStory = !inRoom && !settings.storySeen;
-  const needsName = !inRoom && (needsStory || !settings.onboarded || !validateUsername(settings.name, usernamePolicy));
+  const needsName = !inRoom && (needsStory || !settings.onboarded);
   const needsTutorial = !inRoom && !needsName && !settings.tutorialCompleted;
 
   let screen: ReactNode;

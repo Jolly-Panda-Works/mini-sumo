@@ -94,7 +94,10 @@ public class TapsellAdsPlugin extends Plugin {
                     call.resolve(result);
                 }
 
-                @Override public void onOpened() { main.post(() -> opened = true); }
+                @Override public void onOpened() { main.post(() -> {
+                    opened = true;
+                    getBridge().triggerWindowJSEvent("mini-sumo:ad-opened-" + placement);
+                }); }
                 @Override public void onClosed() { main.postDelayed(this::finish, 250); }
                 @Override public void onError(String message) { main.post(this::finish); }
                 @Override public void onRewarded(boolean completed) {
