@@ -2,7 +2,10 @@ name: Submit signed store APKs
 on:
   push:
     branches: [Iranian-store]
-    paths: [.github/workflows/submit-store-apks.yml]
+    paths:
+      - .github/workflows/submit-store-apks.yml
+      - apps/mobile/bazaar-release-notes.json
+      - apps/mobile/myket-release-notes.json
 permissions:
   contents: read
 jobs:
