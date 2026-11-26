@@ -137,6 +137,8 @@ export const gameStore = createStore<GameSnapshot>(EMPTY_GAME);
 
 const ROOM_CODE_PATTERN = /^[A-Za-z0-9_-]{4,40}$/;
 
+export class IntroUsernameError extends Error {}
+
 function friendlyError(error: unknown, serverUrl: string): string {
   const raw = error instanceof Error ? error.message : typeof error === "string" ? error : "";
   const message = raw.toLowerCase();
@@ -454,7 +456,13 @@ class RoomManager {
         this.attach(new LocalConnection(offlineRoom));
         return true;
       }
-      sessionStore.update({ status: "idle", error: friendlyError(error, this.serverUrl) });
+      const message = friendlyError(error, this.serverUrl);
+      // Older servers report username refusals as room errors with only a human-readable message.
+      if (offlineRoom?.introRound && /\busername\b|\busername_(invalid|taken)\b/i.test(message)) {
+        sessionStore.update({ status: "idle", error: null });
+        throw new IntroUsernameError(message);
+      }
+      sessionStore.update({ status: "idle", error: message });
       return false;
     }
   }

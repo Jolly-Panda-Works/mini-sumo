@@ -3,10 +3,11 @@ import { createPortal } from "react-dom";
 import { Canvas } from "@react-three/fiber";
 import { OUTFITS, STARTING_COINS } from "@mini-sumo/shared";
 import { economyStore, saveAppearanceRemote } from "../network/economyClient";
-import { roomManager, sessionStore } from "../network/RoomManager";
+import { IntroUsernameError, roomManager, sessionStore } from "../network/RoomManager";
 import { settingsStore } from "../settings";
-import { setProfileOpen, setWardrobeOpen, uiStore } from "../uiStore";
+import { setProfileOpen, setWardrobeOpen, showError, uiStore } from "../uiStore";
 import { useStore } from "../store";
+import { UsernameForm } from "./UsernameForm";
 import { Dialog, popupLayer } from "./Dialog";
 import { GreenArtButton } from "./ArtButtons";
 import { Coins } from "./Coins";
@@ -26,6 +27,7 @@ export function MenuOnboarding() {
   const session = useStore(sessionStore);
   const ui = useStore(uiStore);
   const [busy, setBusy] = useState(false);
+  const [renameRound, setRenameRound] = useState<1 | 2 | null>(null);
   const [error, setError] = useState("");
   const [rect, setRect] = useState<{ x: number; y: number; width: number; height: number; cardAtTop: boolean } | null>(null);
   const inRoom = session.status === "connected";
@@ -68,12 +70,25 @@ export function MenuOnboarding() {
         settingsStore.update({ introStage: round === 1 ? "first" : "second" });
         setError(sessionStore.get().error ?? "Couldn't start your bout. Try again.");
       }
-    } catch {
+    } catch (cause) {
       settingsStore.update({ introStage: round === 1 ? "first" : "second" });
-      setError("Couldn't start your bout. Try again.");
+      if (cause instanceof IntroUsernameError) {
+        await showError("Choose a username", cause.message);
+        setRenameRound(round);
+      } else {
+        setError("Couldn't start your bout. Try again.");
+      }
     } finally { setBusy(false); }
   };
   const nextStage = (introStage: typeof stage) => settingsStore.update({ introStage });
+  if (renameRound) return (
+    <Dialog title="Edit name" className="edit-name" variant="editname" hideClose dismissible={false} onClose={() => undefined}>
+      <UsernameForm initial={settings.name} className="edit-name__form" onSaved={() => {
+        setRenameRound(null);
+        void start(renameRound);
+      }} />
+    </Dialog>
+  );
   if (reward) return <Dialog title="Your starter reward!" className="starter-reward" variant="sub" hideClose dismissible={false} onClose={() => undefined}
     footer={<div className="starter-reward__footer"><div className="starter-reward__coins"><Coins amount={STARTING_COINS} signed /></div><GreenArtButton label="LET'S GO!" autoFocus onClick={() => settingsStore.update({ starterRewardPresented: true })} /></div>}>
     <PandaCoach className="intro-panda" pose="celebrate" /><p>A welcome gift for your first match!</p>
