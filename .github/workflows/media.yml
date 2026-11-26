@@ -24,7 +24,7 @@ jobs:
       VITE_NETWORK_MODE: offline
       VITE_APP_VERSION: media
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
