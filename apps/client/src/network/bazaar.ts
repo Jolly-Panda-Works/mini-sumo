@@ -1,3 +1,4 @@
+import { track, trackRevenue } from "../analytics";
 import { BAZAAR_PRODUCTS, packForBazaarProduct, type BazaarPurchaseRequest, type BazaarPurchaseResponse, type CoinPack } from "@mini-sumo/shared";
 import { economyStore, refreshProfile, request } from "./economyClient";
 import { localEconomy } from "./localEconomy";
@@ -65,11 +66,16 @@ export async function refreshRemoveAds(): Promise<boolean> {
   }
 }
 
-export async function buyRemoveAds(): Promise<BuyResult> {
+export function buyRemoveAds(): Promise<BuyResult> {
+  return measurePurchase(REMOVE_ADS, purchaseRemoveAds);
+}
+
+async function purchaseRemoveAds(): Promise<BuyResult> {
   const plugin = await connect();
   try {
     const purchase = await plugin.purchase({ productId: REMOVE_ADS });
     if (purchase.productId !== REMOVE_ADS) throw new Error("Unexpected product in purchase response.");
+    void reportRevenue(REMOVE_ADS);
     setAdsRemoved(true);
     return "bought";
   } catch (error) {
@@ -163,11 +169,40 @@ async function finish(plugin: BazaarNative, purchase: Purchase): Promise<boolean
   } catch {
     // Credited already; consuming is retried on the next restore (crediting is once per token).
   }
-  if (credited) await refreshProfile();
+  if (credited) { void reportRevenue(purchase.productId); await refreshProfile(); }
   return credited;
 }
 
-export async function buyCoinPack(pack: CoinPack): Promise<BuyResult> {
+async function reportRevenue(productId: string) {
+  const prices = await bazaarPrices();
+  const pack = packForBazaarProduct(productId);
+  const raw = prices[pack?.id ?? productId];
+  if (!raw) return;
+  const price = raw.replace(/[۰-۹]/g, d => String(d.charCodeAt(0) - 0x6f0))
+    .replace(/[٠-٩]/g, d => String(d.charCodeAt(0) - 0x660));
+  const match = price.match(/^\s*(?:IRR\s*)?([\d,٬\s]+)\s*(تومان|ریال|ريال|﷼|IRR|tomans?|rials?)?\s*$/i);
+  if (!match || (!match[2] && !/^\s*IRR/i.test(price))) return;
+  const amount = Number(match[1]!.replace(/[,٬\s]/g, ""));
+  trackRevenue(/تومان|toman/i.test(price) ? amount * 10 : amount);
+}
+
+async function measurePurchase(productId: string, buy: () => Promise<BuyResult>) {
+  track("store_purchase_started", { product_id: productId });
+  try {
+    const result = await buy();
+    track("store_purchase_finished", { product_id: productId, outcome: result === "bought" ? "success" : "cancelled" });
+    return result;
+  } catch (error) {
+    track("store_purchase_finished", { product_id: productId, outcome: "failed", reason: "store_or_verification" });
+    throw error;
+  }
+}
+
+export function buyCoinPack(pack: CoinPack): Promise<BuyResult> {
+  return measurePurchase(BAZAAR_PRODUCTS[pack.id] ?? pack.id, () => purchaseCoinPack(pack));
+}
+
+async function purchaseCoinPack(pack: CoinPack): Promise<BuyResult> {
   const productId = BAZAAR_PRODUCTS[pack.id];
   if (!productId) throw new Error(`This pack isn't sold in ${storeName}.`);
   const plugin = await connect();
