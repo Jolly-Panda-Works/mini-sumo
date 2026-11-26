@@ -12,12 +12,13 @@ async function device(rewarded: boolean) {
     setItem: (key: string, value: string) => data.set(key, value),
   };
   const event = vi.fn().mockResolvedValue(undefined);
+  const deviceEvents = new EventTarget();
   const show = vi.fn(async () => {
-    window.dispatchEvent(new Event("mini-sumo:ad-opened-rewarded"));
+    deviceEvents.dispatchEvent(new Event("mini-sumo:ad-opened-rewarded"));
     return { shown: true, rewarded };
   });
   vi.stubGlobal("localStorage", localStorage);
-  vi.stubGlobal("window", Object.assign(new EventTarget(), {
+  vi.stubGlobal("window", Object.assign(deviceEvents, {
     localStorage,
     Capacitor: { isPluginAvailable: () => true, Plugins: {
       Ads: { prepare: vi.fn().mockResolvedValue(undefined), show },
